@@ -1,0 +1,233 @@
+1) Make JSuneido compiler able to recognize 'struct'.
+     > Goal: be able to compile 90-100% of all definitions in existing code base.
+
+    (A) Implement struct parser.
+            >> DONE.
+
+    (B) Implement struct types.
+            (i)  Understand what the hell TypeItem::type() is actually doing.
+                     > GENERAL Suneido design principle: undefined references
+                               should validly compile until the point at which
+                               they need to be evaluated.
+                     > eg: class : NonExistentBase { } compiles.
+                     > eg: struct { NonExistentType member } compiles on
+                           CSuneido (although it fails to Display() -- APM is
+                           looking into this).
+                     > So in a given CSuneido Structure type you have:
+                           int TypeMulti::nitems -- count of TypeMulti::items
+                               array
+                           TypeItem * TypeMulti::items -- array
+                           ushort * Structure::mems -- array of symbol numbers
+                               representing member *names*. Nothing comparable
+                               in TypeParams b/c params are really uniquely
+                               described by their position for the purposes of
+                               calling a stdcall function.
+                     > ...and every TypeItem is set by the compiler to:
+                           short TypeItem::gnum = global number of the type name
+                               -- will be created if it did not exist, regard-
+                               less of whether it's a valid global name or not.
+                               i.e. struct { notFound1 member } also compiles
+                               just fine...
+                           short TypeItem::n is set to:
+                               0 for pointer
+                               > 0 for normal value (specifically, 1)
+                               < 0 for array (specifically, -length)
+                           Type * TypeItem::tval is set to 0.
+                     > Now when TypeItem::type() here is what it does:
+                           // Look up the global having the same name as the
+                           // type item. If they don't refer to the same thing,
+                           // then the type item's type member (tval) needs to
+                           // be updated.
+                           if (globals[gnum] != (Value) tval)
+                               {
+                               // If this is the first time type() has been
+                               // called.
+                               if (tval == 0)
+                                   {
+                                   // For pointer/array types, initialize tval
+                                   // to a new (typeless) pointer or array...
+                                   }
+                               // Throw an exception if the type doesn't
+                               // represent a "struct-able" type, and at the
+                               // same time, cast the value to a "struct-able"
+                               // type. Suppose I create a global symbol with
+                               // the name 'BadStruct' and the following
+                               // definition: struct { Control member }, and
+                               // then do the following:
+                               //    dllfn = dll long User32:GetActiveWindow(BadStruct * x);;
+                               //    dllfn(Object(0))
+                               // The above will throw with the error "can't
+                               // convert Class to Type", where the class in
+                               // question is 'Control'.
+                               Type* x = force<Type*>(globals[gnum]);
+                                   // template<class T> T force(Value x)
+                                   // is defined in value.h.
+                               // Ensure that tval points to the correct variant
+                               // of a singleton, pointer, or array. Note that
+                               // if the struct definition gets changed (i.e.
+                               // if user changes 'struct { RECT x }' to
+                               // 'struct { RECT[16] x }', it will be recompiled
+                               // so the assumptions below are valid.
+                               if (n > 0) // normal value
+                                   tval = x;
+                               else if (n == 0) // pointer
+                                   {
+                                   verify(tval);
+                                   ((TypePointer *) tval)->type = x;
+                                   }
+                               else // (n < 0) // array
+                                   {
+                                   verify(tval);
+                                   ((TypeArray *) tval)->type = x;
+                                   }
+                               } // if (globals[gnum] != (Value) tval
+                           verify(tval);
+                           return *tval;
+
+                     > Note that globals apparently persist until Unload() is
+                       called -- this is done e.g. by LibView delete item
+                       handler.
+                           CSuneido: Value unload() -- library.cpp @ 182
+                               implemented as globals.put(name.str(), Value())
+
+            (ii) End-to-end for "long"
+                    (a) C++ type
+                    (b) Java type
+                    (c) Bridge code to get handle into Java
+                QUESTIONS:
+                    Should JSDI have a dictionary name --> type?
+                    Should pointer be a separate type?
+                        How does CSuneido handle the fact that the DATA pointed-
+                           to by the pointer has to be marshalled? It uses
+                           a class called TypeItem() which handles all of
+                           pointer, array, and struct member.
+                               But that uses TypePointer() and TypeArray, which
+                               are defined in the CPP file (type.cpp) but not
+                               the H file.
+            (iii) End-to-end for struct.
+            (iv)  End-to-end for remaining primitive types.
+
+    (C) Implement struct compiler.
+
+        SUMMARY.
+        -- I now have the ability to push Java types being referred to by JSDI
+           C++ from Java into the global_refs class.
+               USAGE: jclass clazz(GLOBAL_REFS->java_lang_Integer());
+        -- JSDI::init() calls global_refs::init().
+
+        NEXT: WORKING SIMPLE FLOW.
+        -- Initialize all the primitives on the C++ side.
+               DONE.
+        -- Push the primitives back over onto the Java side.
+               DONE.
+        -- Once Java side has primitives, it is able to compile structs.
+               DONE.
+
+        NEXT2: Docs and tests consolidation.
+        -- Convert ParseStructTest ==> StructTest
+               [ ] Fix naming of old test methods
+               [ ] Rename old methods to make clear they are testing parsing.
+               [ ] Add new tests for
+                       compiling,
+                       toString()
+        -- Add Javadoc in tools
+               [ ] EnumLineEditor
+               [ ] FileEditor
+        -- Add C++ docs in:
+               [ ] global_refs
+                       DONE
+               [ ] jni_util
+                       for jni_auto_local, explain need to not excessively
+                       allocate.
+               [ ] jni_exception
+        -- Add TODO for docs everywhere
+        -- Add make docs to Makefile
+               DONE
+        -- COMMIT!!!!
+               [ ] Push C++ code ==> Mercurial.
+               [ ] Push Java code ==> Mercurial w packaged dll so that it can
+                   at least run...
+
+        NEXT3: IMPLEMENT COMPLEX TYPES, PROXYING, and PROXY BINDING/CLOSING OFF
+               the hierarchy (e.g. this is what TypeItem::type() is doing).
+        -- Major design decisions:
+               [ ] Framework for getting Size() ==> implement this end-to-end.
+               [ ] Framework for binding proxies and generating closure of the
+                   type hierarchy AND determining whether any previous closure
+                   was valid.
+               [ ] Finalization of Proxy contents.
+
+
+        NEXT4: IMPLEMENT STRINGS and BUFFERs.
+
+        BUILD ISSUES
+        -- doxygen
+            [ ] Modify header style (include guard, then doxygen docs)
+            [ ] Modify auto-generated header style.
+            [ ] Current number of warnings: 149
+        -- cppcheck
+
+================================================================================
+OBJECT LIFETIMES
+================================================================================
+Object lifetimes are valid only for that native invocation.
+    See http://developer.android.com/training/articles/perf-jni.html#local_and_global_references
+
+    KEY FUNCTIONS:
+        IsSameObject() -- never use == !!!
+        NewGlobalRef()
+        DeleteGlobalRef()
+
+The only way to get non-local references is via the functions NewGlobalRef and NewWeakGlobalRef.
+
+If you want to hold on to a reference for a longer period, you must use a "global" reference. The NewGlobalRef function takes the local reference as an argument and returns a global one. The global reference is guaranteed to be valid until you call DeleteGlobalRef.
+
+This pattern is commonly used when caching a jclass returned from FindClass, e.g.:
+
+jclass localClass = env->FindClass("MyClass");
+jclass globalClass = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
+All JNI methods accept both local and global references as arguments. It's possible for references to the same object to have different values. For example, the return values from consecutive calls to NewGlobalRef on the same object may be different. To see if two references refer to the same object, you must use the IsSameObject function. Never compare references with == in native code.
+
+
+
+================================================================================
+NECESSITY OF DOING CLEANUP OF LOCAL REFERENCES
+================================================================================
+
+Programmers are required to "not excessively allocate" local references. In
+practical terms this means that if you're creating large numbers of local
+references, perhaps while running through an array of objects, you should free
+them manually with DeleteLocalRef instead of letting JNI do it for you. The
+implementation is only required to reserve slots for 16 local references, so if
+you need more than that you should either delete as you go or use
+EnsureLocalCapacity/PushLocalFrame to reserve more.
+
+Note that jfieldIDs and jmethodIDs are opaque types, not object references, and
+should not be passed to NewGlobalRef. The raw data pointers returned by
+functions like GetStringUTFChars and GetByteArrayElements are also not objects.
+(They may be passed between threads, and are valid until the matching Release
+call.)
+
+One unusual case deserves separate mention. If you attach a native thread with
+AttachCurrentThread, the code you are running will never automatically free
+local references until the thread detaches. Any local references you create will
+have to be deleted manually. In general, any native code that creates local
+references in a loop probably needs to do some manual deletion.
+
+
+================================================================================
+ON STRUCT PACKING/ALIGNMENT
+================================================================================
+
+See here:
+
+http://msdn.microsoft.com/en-us/library/windows/desktop/aa383745(v=vs.85).aspx
+
+Controlling Structure Packing
+
+Projects should be compiled to use the default structure packing, which is
+currently 8 bytes because the largest integral type is 8 bytes. Doing so ensures
+that all structure types within the header files are compiled into the
+application with the same alignment the Windows API expects. It also ensures
+that structures with 8-byte values are properly aligned and will not cause
+alignment faults on processors that enforce data alignment.
