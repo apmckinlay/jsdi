@@ -1,13 +1,12 @@
-//==============================================================================
-// file: basic_type.h
-// auth: Victor Schappert
-// date: 20130625
-// desc: Interface contract for the 'basic' (non-struct, non-callback) part of
-//       the type hierarchy.
-//==============================================================================
-
 #ifndef __INCLUDED_BASIC_TYPE_H__
 #define __INCLUDED_BASIC_TYPE_H__
+
+/**
+ * \file basic_type.h
+ * \author Victor Schappert
+ * \since 20130625
+ * \brief Basic (non-struct, non-callback) part of the JSDI type hiearchy.
+ */
 
 #include "type_descriptor.h"
 #include "java_enum.h"
@@ -46,6 +45,8 @@ class basic_pointer : public type_descriptor
 
     public:
 
+        virtual void stream_insert(std::ostream& o) const;
+
         virtual void marshall_in(char *& stack_ptr, char *& heap_ptr,
                                  jobject value) const;
 
@@ -79,6 +80,8 @@ class basic_value : public type_descriptor
         //
 
     public:
+
+        virtual void stream_insert(std::ostream& o) const;
 
         const basic_pointer * pointer_type() const noexcept;
 
@@ -127,6 +130,8 @@ class basic_array : public type_descriptor
         //
 
     public:
+
+        virtual void stream_insert(std::ostream& o) const;
 
         virtual void marshall_in(char *& stack_ptr, char *& heap_ptr,
                                  jobject value) const;

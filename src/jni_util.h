@@ -13,6 +13,7 @@
 #include <jni.h>
 
 #include <cassert>
+#include <vector>
 
 namespace jsdi {
 
@@ -349,7 +350,120 @@ inline jni_auto_local<jobject>::~jni_auto_local()
 inline jni_auto_local<jobject>::operator jobject()
 { return d_object; }
 
+//==============================================================================
+//                      class jni_output_streambuf
+//==============================================================================
+
+/** \cond internal */
+class jni_utf8_output_streambuf : public std::streambuf,
+                                  private non_copyable
+{
+        //
+        // DATA
+        //
+
+        JNIEnv *          d_env;
+        std::vector<char> d_buf;
+
+        //
+        // CONSTRUCTORS
+        //
+
+    public:
+
+        jni_utf8_output_streambuf(JNIEnv * env, size_t capacity);
+
+        //
+        // ACCESSORS
+        //
+
+    public:
+
+        jstring jstr() const;
+
+        //
+        // ANCESTOR CLASS: std::streambuf
+        //
+
+    private:
+
+        virtual int_type overflow(int_type ch);
+};
+
+inline jstring jni_utf8_output_streambuf::jstr() const
+{
+    assert(pptr() < epptr());
+    *pptr() = '\0';
+    return d_env->NewStringUTF(&d_buf.front());
 }
- // namespace jsdi
+/** \endcond */
+
+//==============================================================================
+//                          class jni_utf8_ostream
+//==============================================================================
+
+/**
+ * \brief Output stream for generating immutable Java strings.
+ * \author Victor Schappert
+ * \since 20130701 (Happy Canada Day!)
+ *
+ * The values inserted into this stream should be compatible with JNI's
+ * &quot;modified UTF-8&quot; format in order to ensure that the strings sent to
+ * the Java side are valid.
+ *
+ * \note
+ * If we are sending a lot of strings back to the Java side, it may be
+ * worthwhile to refactor all of the string code in jsdi to use
+ * <dfn>wchar_t</dfn>, <dfn>std::wstring</dfn>, and <dfn>std::wostream</dfn> in
+ * order to eliminate an unnecessary conversion between 16-bit wide characters
+ * and modified UTF8-.
+ */
+class jni_utf8_ostream : public std::basic_ostream<char, std::char_traits<char>>,
+                         private non_copyable
+{
+        //
+        // DATA
+        //
+
+        jni_utf8_output_streambuf d_buf;
+
+        //
+        // CONSTRUCTORS
+        //
+
+    public:
+
+        /**
+         * Constructs a new stream.
+         * \param env Valid pointer to the JNI environment
+         * \param capacity Suggested initial capacity of the stream (the more
+         * accurate this is, the less reallocation or overallocation will be
+         * done).
+         */
+        jni_utf8_ostream(JNIEnv * env, size_t capacity = 127);
+
+        //
+        // ACCESSORS
+        //
+
+    public:
+
+        /**
+         * \brief Returns a newly allocated <dfn>jstring</dfn> containing the
+         * contents of the stream.
+         * \return A JNI reference to an immutable Java string containing the
+         * contents of the stream.
+         */
+        jstring jstr() const;
+};
+
+inline jni_utf8_ostream::jni_utf8_ostream(JNIEnv * env, size_t capacity)
+    : d_buf(env, capacity)
+{ init(&d_buf); }
+
+inline jstring jni_utf8_ostream::jstr() const
+{ return d_buf.jstr(); }
+
+} // namespace jsdi
 
 #endif // __INCLUDED_JNI_UTIL_H___

@@ -99,6 +99,10 @@ class type_descriptor : private non_copyable
 
     public:
 
+#ifndef NDEBUG
+        bool is_valid() const;  // only when asserts are enabled
+#endif
+
         size_t type_size() const;
 
         type_id type() const;
@@ -107,6 +111,8 @@ class type_descriptor : private non_copyable
 
         bool is_closed() const;
 
+        virtual void stream_insert(std::ostream& o) const = 0;
+
         virtual void marshall_in(char *& stack_ptr, char *& heap_ptr,
                                  jobject value) const = 0;
 
@@ -114,6 +120,11 @@ class type_descriptor : private non_copyable
 
         virtual jobject return_value(long lo, long hi) const;
 };
+
+#ifndef NDEBUG
+inline bool type_descriptor::is_valid() const
+{ return MAGIC == d_magic; }
+#endif
 
 inline size_t type_descriptor::type_size() const
 { return d_type_size; }
@@ -126,6 +137,12 @@ inline const std::string& type_descriptor::name() const
 
 inline bool type_descriptor::is_closed() const
 { return FLAG_CLOSED == (d_type_id & FLAG_CLOSED); }
+
+inline std::ostream& operator<<(std::ostream& o, const type_descriptor& td)
+{
+    td.stream_insert(o);
+    return o;
+}
 
 //==============================================================================
 //                             class type_list
