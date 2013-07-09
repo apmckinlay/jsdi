@@ -7,22 +7,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-/*
- * Class:     suneido_language_jsdi_type_Type
- * Method:    toStringNative
- * Signature: (J)Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_suneido_language_jsdi_type_Type_toStringNative
-  (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     suneido_language_jsdi_type_Type
- * Method:    sizeOf
- * Signature: (J)I
- */
-JNIEXPORT jint JNICALL Java_suneido_language_jsdi_type_Type_sizeOf
-  (JNIEnv *, jclass, jlong);
-
 #ifdef __cplusplus
 }
 #endif

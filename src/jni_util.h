@@ -351,19 +351,19 @@ inline jni_auto_local<jobject>::operator jobject()
 { return d_object; }
 
 //==============================================================================
-//                      class jni_output_streambuf
+//                     class jni_utf16_output_streambuf
 //==============================================================================
 
 /** \cond internal */
-class jni_utf8_output_streambuf : public std::streambuf,
-                                  private non_copyable
+class jni_utf16_output_streambuf : public std::basic_streambuf<char16_t>,
+                                   private non_copyable
 {
         //
         // DATA
         //
 
-        JNIEnv *          d_env;
-        std::vector<char> d_buf;
+        JNIEnv *              d_env;
+        std::vector<char16_t> d_buf;
 
         //
         // CONSTRUCTORS
@@ -371,7 +371,7 @@ class jni_utf8_output_streambuf : public std::streambuf,
 
     public:
 
-        jni_utf8_output_streambuf(JNIEnv * env, size_t capacity);
+        jni_utf16_output_streambuf(JNIEnv * env, size_t capacity);
 
         //
         // ACCESSORS
@@ -390,11 +390,10 @@ class jni_utf8_output_streambuf : public std::streambuf,
         virtual int_type overflow(int_type ch);
 };
 
-inline jstring jni_utf8_output_streambuf::jstr() const
+inline jstring jni_utf16_output_streambuf::jstr() const
 {
-    assert(pptr() < epptr());
-    *pptr() = '\0';
-    return d_env->NewStringUTF(&d_buf.front());
+    return d_env->NewString(reinterpret_cast<jchar *>(pbase()),
+                            epptr() - pbase());
 }
 /** \endcond */
 
@@ -418,14 +417,14 @@ inline jstring jni_utf8_output_streambuf::jstr() const
  * order to eliminate an unnecessary conversion between 16-bit wide characters
  * and modified UTF8-.
  */
-class jni_utf8_ostream : public std::basic_ostream<char, std::char_traits<char>>,
-                         private non_copyable
+class jni_utf16_ostream : public std::basic_ostream<char16_t, std::char_traits<char16_t>>,
+                          private non_copyable
 {
         //
         // DATA
         //
 
-        jni_utf8_output_streambuf d_buf;
+        jni_utf16_output_streambuf d_buf;
 
         //
         // CONSTRUCTORS
@@ -440,7 +439,7 @@ class jni_utf8_ostream : public std::basic_ostream<char, std::char_traits<char>>
          * accurate this is, the less reallocation or overallocation will be
          * done).
          */
-        jni_utf8_ostream(JNIEnv * env, size_t capacity = 127);
+        jni_utf16_ostream(JNIEnv * env, size_t capacity = 127);
 
         //
         // ACCESSORS
@@ -457,12 +456,160 @@ class jni_utf8_ostream : public std::basic_ostream<char, std::char_traits<char>>
         jstring jstr() const;
 };
 
-inline jni_utf8_ostream::jni_utf8_ostream(JNIEnv * env, size_t capacity)
+inline jni_utf16_ostream::jni_utf16_ostream(JNIEnv * env, size_t capacity)
     : d_buf(env, capacity)
 { init(&d_buf); }
 
-inline jstring jni_utf8_ostream::jstr() const
+inline jstring jni_utf16_ostream::jstr() const
 { return d_buf.jstr(); }
+
+//==============================================================================
+//                       class jni_utf8_string_region
+//==============================================================================
+
+// todo: docs
+// since: 20130709
+class jni_utf8_string_region : private non_copyable
+{
+        //
+        // TYPES
+        //
+
+    public:
+
+        typedef size_t size_type;
+
+        typedef char value_type;
+
+        typedef value_type * pointer;
+
+        typedef const value_type * const_pointer;
+
+        //
+        // DATA
+        //
+
+    private:
+
+        size_type d_size_bytes;
+        pointer   d_str;
+
+        //
+        // CONSTRUCTORS
+        //
+
+    public:
+
+        jni_utf8_string_region(JNIEnv * env, jstring str);
+
+        ~jni_utf8_string_region();
+
+        //
+        // ACCESSORS
+        //
+
+    public:
+
+        size_type size_bytes() const;
+
+        const_pointer str() const;
+};
+
+inline jni_utf8_string_region::jni_utf8_string_region(JNIEnv * env,
+                                                      jstring str)
+    : d_size_bytes(env->GetStringUTFLength(str))
+    , d_str(new char[d_size_bytes])
+{ env->GetStringUTFRegion(str, 0, d_size_bytes, d_str); }
+
+inline jni_utf8_string_region::~jni_utf8_string_region()
+{ delete [] d_str; }
+
+inline jni_utf8_string_region::size_type
+jni_utf8_string_region::size_bytes() const
+{ return d_size_bytes; }
+
+inline jni_utf8_string_region::const_pointer
+       jni_utf8_string_region::str() const
+{ return d_str; }
+
+//==============================================================================
+//                      class jni_utf16_string_region
+//==============================================================================
+
+// todo: docs
+// since: 20130709
+class jni_utf16_string_region : private non_copyable
+{
+        //
+        // TYPES
+        //
+
+    public:
+
+        typedef size_t size_type;
+
+        typedef char16_t value_type;
+
+        typedef value_type * pointer;
+
+        typedef const value_type * const_pointer;
+
+        //
+        // DATA
+        //
+
+    private:
+
+        size_type d_size;
+        pointer   d_str;
+
+        //
+        // CONSTRUCTORS
+        //
+
+    public:
+
+        jni_utf16_string_region(JNIEnv * env, jstring str);
+
+        ~jni_utf16_string_region();
+
+        //
+        // ACCESSORS
+        //
+
+    public:
+
+        size_type size() const;
+
+        const_pointer str() const;
+
+        const wchar_t * wstr() const;
+};
+
+inline jni_utf16_string_region::jni_utf16_string_region(JNIEnv * env,
+                                                        jstring str)
+    : d_size(env->GetStringLength(str))
+    , d_str(new char16_t[d_size])
+{ env->GetStringRegion(str, 0, d_size, reinterpret_cast<jchar *>(d_str)); }
+
+inline jni_utf16_string_region::~jni_utf16_string_region()
+{ delete [] d_str; }
+
+inline jni_utf16_string_region::size_type jni_utf16_string_region::size() const
+{ return d_size; }
+
+inline jni_utf16_string_region::const_pointer
+       jni_utf16_string_region::str() const
+{ return d_str; }
+
+inline const wchar_t * jni_utf16_string_region::wstr() const
+{
+    static_assert(
+        sizeof(wchar_t) == sizeof(char16_t),
+        "can't convert char16_t to wchar_t"
+    );
+    return reinterpret_cast<wchar_t *>(d_str);
+}
 
 } // namespace jsdi
 

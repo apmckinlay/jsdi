@@ -13,25 +13,26 @@ namespace jsdi {
 //                      class jni_utf8_output_streambuf
 //==============================================================================
 
-jni_utf8_output_streambuf::jni_utf8_output_streambuf(JNIEnv * env,
-                                                     size_t capacity)
+jni_utf16_output_streambuf::jni_utf16_output_streambuf(JNIEnv * env,
+                                                       size_t capacity)
     : d_env(env)
-    , d_buf(capacity + 1)    // leave one character at the end for NUL
+    , d_buf(capacity)
 {
-    char * base = &d_buf.front();
-    setp(base, base + d_buf.size() - 1);
+    assert(0 < capacity || !"Initial capacity must be more than zero");
+    char16_t * base = &d_buf.front();
+    setp(base, base + d_buf.size());
 }
 
-jni_utf8_output_streambuf::int_type jni_utf8_output_streambuf::overflow(
+jni_utf16_output_streambuf::int_type jni_utf16_output_streambuf::overflow(
     int_type ch)
 {
     if (traits_type::eof() != ch)
     {
-        if (pptr() < epptr())
+        if (epptr() <= pptr())
         {
             size_t size = d_buf.size();
             d_buf.resize(2 * size);
-            char * base = &d_buf.front();
+            char16_t * base = &d_buf.front();
             setp(base, base + size - 1);
             pbump(size);
         }

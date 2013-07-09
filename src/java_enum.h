@@ -34,7 +34,7 @@ template <typename EnumType>
 EnumType jni_enum_to_cpp(JNIEnv * env, jclass clazz, jobject e)
     throw (jni_exception);
 
-// [BEGIN:GENERATED CODE last updated Mon Jul 01 08:36:46 PDT 2013]
+// [BEGIN:GENERATED CODE last updated Sun Jul 07 13:55:40 PDT 2013]
 /**
  * \brief C++ enumeration corresponding to the Java enumeration <dfn>suneido.language.jsdi.type.BasicType</dfn>.
  * \author GenerateSharedEnums
@@ -48,6 +48,8 @@ enum suneido_language_jsdi_type_BasicType
     SHORT,
     LONG,
     INT64,
+    FLOAT,
+    DOUBLE,
 };
 
 /** \cond internal */
