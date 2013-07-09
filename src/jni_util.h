@@ -589,8 +589,11 @@ class jni_utf16_string_region : private non_copyable
 inline jni_utf16_string_region::jni_utf16_string_region(JNIEnv * env,
                                                         jstring str)
     : d_size(env->GetStringLength(str))
-    , d_str(new char16_t[d_size])
-{ env->GetStringRegion(str, 0, d_size, reinterpret_cast<jchar *>(d_str)); }
+    , d_str(new char16_t[d_size + 1])
+{
+    env->GetStringRegion(str, 0, d_size, reinterpret_cast<jchar *>(d_str));
+    d_str[d_size] = u'\0';
+}
 
 inline jni_utf16_string_region::~jni_utf16_string_region()
 { delete [] d_str; }
