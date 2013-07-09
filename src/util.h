@@ -100,6 +100,7 @@ void operator<<(
     stream_type& s(dynamic_cast<stream_type&>(o)); // may throw std::bad_cast
     t.throw_(s.str());
 }
+
 } // namespace jsdi
 
 #endif // __INCLUDED_UTIL_H__
