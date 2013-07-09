@@ -4,3 +4,4 @@ doxygen
 recycle_bin
 bin
 obj
+.dep
