@@ -14,14 +14,14 @@
 
 namespace jsdi {
 
-// [BEGIN:GENERATED CODE last updated Sun Jul 07 13:55:40 PDT 2013]
+// [BEGIN:GENERATED CODE last updated Tue Jul 09 16:15:02 PDT 2013]
 template <>
 suneido_language_jsdi_type_BasicType jni_enum_to_cpp(JNIEnv * env, jclass clazz, jobject e)
 {
     jmethodID method_id = global_refs::ptr->java_lang_Enum__m_ordinal();
     jint ordinal = env->CallIntMethod(e, method_id);
     JNI_EXCEPTION_CHECK(env);
-    assert(0 <= ordinal && ordinal < 7);
+    assert(0 <= ordinal && ordinal < 9);
     return static_cast<suneido_language_jsdi_type_BasicType>(ordinal);
 }
 
@@ -34,11 +34,13 @@ static const char * const suneido_language_jsdi_type_BasicType__NAME[] =
     "INT64",
     "FLOAT",
     "DOUBLE",
+    "HANDLE",
+    "GDIOBJ",
 };
 
 std::ostream& operator<<(std::ostream& o, const suneido_language_jsdi_type_BasicType& e)
 {
-    assert(0 <= e && e < 7);
+    assert(0 <= e && e < 9);
     o << suneido_language_jsdi_type_BasicType__NAME[e]
       << '<' << static_cast<int>(e) << '>';
     return o;
