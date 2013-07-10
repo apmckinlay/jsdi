@@ -1,11 +1,15 @@
 1) Add support for gdiobj/handle basic types
-       Probably no need to implement ref counting for the time being...
+       DONE.
 2) Add support for string as a return type
        [ ] Just hack it for now, so that stuff compiles (hack to void)
+           DONE.
        [ ] Update suneidoc
+           DONE.
 3) As soon as CheckLibraries() / tests work
        [ ] push jsdi
+           DONE.
        [ ] push jsuneido
+           DONE.
 4) Implement general marshalling algorithm
 5) Implement string/buffer types, including Buffer() built-in
 
