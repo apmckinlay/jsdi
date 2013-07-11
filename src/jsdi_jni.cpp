@@ -31,56 +31,21 @@ using namespace jsdi;
 JNIEXPORT void JNICALL Java_suneido_language_jsdi_JSDI_init
   (JNIEnv * env, jclass)
 {
+    JNI_EXCEPTION_SAFE_BEGIN;
     global_refs::init(env);
+    JNI_EXCEPTION_SAFE_END(env);
 }
 
 JNIEXPORT jstring JNICALL Java_suneido_language_jsdi_JSDI_when
   (JNIEnv * env, jclass)
 {
+    jstring result(0);
+    JNI_EXCEPTION_SAFE_BEGIN
     jni_utf16_ostream o(env);
     o << u"todo: make when() result"; // TODO: make when() result
-    return o.jstr();
-}
-
-//==============================================================================
-//                JAVA CLASS: suneido.language.jsdi.type.Type
-//==============================================================================
-
-#include "gen/suneido_language_jsdi_type_Type.h"
-    // This #include isn't strictly necessary -- the only caller of these
-    // functions is the JVM. However, it is useful to have the generated code
-    // around.
-
-/*
- * Class:     suneido_language_jsdi_type_Type
- * Method:    toStringNative
- * Signature: (J)Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_suneido_language_jsdi_type_Type_toStringNative
-  (JNIEnv * env, jclass, jlong jsdiHandle)
-{
-    assert(jsdiHandle || !"Can't call toStringNative without a JSDI handle");
-    const type_descriptor * p =
-        reinterpret_cast<const type_descriptor *>(jsdiHandle);
-    assert(p->is_valid());
-    jni_utf16_ostream o(env);
-    o << u"TODO: delete this function and cleanup ostreaming";
-    return o.jstr();
-}
-
-/*
- * Class:     suneido_language_jsdi_type_Type
- * Method:    sizeOf
- * Signature: (J)I
- */
-JNIEXPORT jint JNICALL Java_suneido_language_jsdi_type_Type_sizeOf
-  (JNIEnv * env, jclass, jlong jsdiHandle)
-{
-    assert(jsdiHandle || !"Can't call sizeOf without a JSDI handle");
-    const type_descriptor * p =
-        reinterpret_cast<const type_descriptor *>(jsdiHandle);
-    assert(p->is_valid());
-    return static_cast<jint>(p->type_size());
+    result = o.jstr();
+    JNI_EXCEPTION_SAFE_END(env);
+    return result;
 }
 
 //==============================================================================
@@ -95,9 +60,13 @@ JNIEXPORT jint JNICALL Java_suneido_language_jsdi_type_Type_sizeOf
 JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_DllFactory_loadLibrary
   (JNIEnv * env, jclass, jstring libraryName)
 {
+    jlong result(0);
+    JNI_EXCEPTION_SAFE_BEGIN
     jni_utf16_string_region libraryName_(env, libraryName);
-    HMODULE result = LoadLibraryW(libraryName_.wstr());
-    return reinterpret_cast<jlong>(result);
+    HMODULE hmodule = LoadLibraryW(libraryName_.wstr());
+    result = reinterpret_cast<jlong>(hmodule);
+    JNI_EXCEPTION_SAFE_END(env);
+    return result;
 }
 
 /*
@@ -119,12 +88,16 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_dll_DllFactory_freeLibrary
 JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_DllFactory_getProcAddress
   (JNIEnv * env, jclass, jlong hModule, jstring procName)
 {
+    jlong result(0);
+    JNI_EXCEPTION_SAFE_BEGIN
     jni_utf8_string_region procName_(env, procName);
-    FARPROC result = GetProcAddress(reinterpret_cast<HMODULE>(hModule),
-                                    procName_.str());
+    FARPROC addr = GetProcAddress(reinterpret_cast<HMODULE>(hModule),
+        procName_.str());
         // NOTE: There is no GetProcAddressW... GetProcAddress() only accepts
         //       ANSI strings.
-    return reinterpret_cast<jlong>(result);
+    result = reinterpret_cast<jlong>(addr);
+    JNI_EXCEPTION_SAFE_END(env);
+    return result;
 }
 
 } // extern "C"
