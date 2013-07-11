@@ -1,3 +1,13 @@
+0) Now we are NPE-ing on the MarshallPlan iterable constructor because of
+   string, [in] string, and buffer. The problem is that for all of these, the
+   amount of memory to allocate is inferred from the arguments to the DLL --
+   it can't be known in advance. This requires a newer and groovier marshalling
+   scheme.
+
+0A) Some other code is failing to resolve because of inability to parse
+    callbacks (e.g. WndProc). So let's sort that out so we at least have the
+    whole data model in memory at once.
+
 1) Add support for gdiobj/handle basic types
        DONE.
 2) Add support for string as a return type
