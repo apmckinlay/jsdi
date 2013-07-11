@@ -518,8 +518,11 @@ class jni_utf8_string_region : private non_copyable
 inline jni_utf8_string_region::jni_utf8_string_region(JNIEnv * env,
                                                       jstring str)
     : d_size_bytes(env->GetStringUTFLength(str))
-    , d_str(new char[d_size_bytes])
-{ env->GetStringUTFRegion(str, 0, d_size_bytes, d_str); }
+    , d_str(new char[d_size_bytes + 1])
+{
+    env->GetStringUTFRegion(str, 0, d_size_bytes, d_str);
+    d_str[d_size_bytes] = '\0';
+}
 
 inline jni_utf8_string_region::~jni_utf8_string_region()
 { delete [] d_str; }
