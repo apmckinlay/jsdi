@@ -30,8 +30,17 @@ EXPORT_STDCALL int64_t TestInt64(int64_t a)
 EXPORT_STDCALL long TestSumFourLongs(long a, long b, long c, long d)
 { return a + b + c + d; }
 
-EXPORT_STDCALL long TestStrLen(char * str)
+EXPORT_STDCALL long TestStrLen(const char * str)
 { return str ? std::strlen(str) : 0; }
+
+EXPORT_STDCALL const char * TestHelloWorldReturn()
+{ return "hello world"; }
+
+EXPORT_STDCALL void TestHelloWorldOutParam(const char ** str)
+{ *str = "hello world"; }
+
+EXPORT_STDCALL void TestNullPtrOutParam(const char ** ptr)
+{ *ptr = 0; }
 
 } // extern "C"
 

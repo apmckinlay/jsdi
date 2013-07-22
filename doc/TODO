@@ -1,27 +1,3 @@
-0) Now we are NPE-ing on the MarshallPlan iterable constructor because of
-   string, [in] string, and buffer. The problem is that for all of these, the
-   amount of memory to allocate is inferred from the arguments to the DLL --
-   it can't be known in advance. This requires a newer and groovier marshalling
-   scheme.
-
-0A) Some other code is failing to resolve because of inability to parse
-    callbacks (e.g. WndProc). So let's sort that out so we at least have the
-    whole data model in memory at once.
-
-1) Add support for gdiobj/handle basic types
-       DONE.
-2) Add support for string as a return type
-       [ ] Just hack it for now, so that stuff compiles (hack to void)
-           DONE.
-       [ ] Update suneidoc
-           DONE.
-3) As soon as CheckLibraries() / tests work
-       [ ] push jsdi
-           DONE.
-       [ ] push jsuneido
-           DONE.
-4) Implement general marshalling algorithm
-5) Implement string/buffer types, including Buffer() built-in
 
 ...) Later:
        [ ] Collect marshalling and type stats
@@ -33,6 +9,18 @@
             [ ] Modify auto-generated header style.
             [ ] Current number of warnings: 149
         -- cppcheck
+
+
+================================================================================
+DLL INTERFACE GRAMMAR CLAMPDOWNS
+================================================================================
+
+1) pointers to basic types should not be permitted AT ALL. There is no...point
+   ...allowing them. If user desperately needs, can wrap them in a STRUCT, which
+   will give better behaviour anyway.
+
+2) string[N] and buffer[N] should not be permitted in dll params. If user
+   desperately needs, can wrap them in a STRUCT.
 
 
 ================================================================================
