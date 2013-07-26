@@ -62,7 +62,7 @@ $(BINDIR)/$(TARGET_EXE): $(OBJECTS_EXE)
 	@$(LD_EXE) $@ $(OBJECTS_EXE)
 
 $(BINDIR)/$(EXPORTS): $(OBJECTS_DLL)
-	@$(DLLTOOL) -e $@ -D $(TARGET_DLL) $(OBJECTS)
+	@$(DLLTOOL) -e $@ -D $(TARGET_DLL) $(OBJECTS_DLL)
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
 	@$(CC) $(CCFLAGS) -c $< -o $@
