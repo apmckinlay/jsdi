@@ -111,6 +111,8 @@ class jni_array_region: private non_copyable
         typedef typename jni_traits<JNIType>::const_value_type const_value_type;
         /** \brief Type of a pointer a region element. */
         typedef typename jni_traits<JNIType>::pointer pointer;
+        /** \brief Type of a reference to a #value_type. */
+        typedef typename jni_traits<JNIType>::reference reference;
         /** \brief Type of a reference to a #const_value_type. */
         typedef typename jni_traits<JNIType>::const_reference const_reference;
         /** \brief Random-access iterator to a #const_value_type. */
@@ -136,10 +138,26 @@ class jni_array_region: private non_copyable
          *        Java array.
          * \param env JNI environment
          * \param array Reference to a JNI primitive array of the correct type
-         *              (\em eg <dfn>jbyteArray</dfn>).
+         *              (\em eg <dfn>jbyteArray</dfn>)
          */
         jni_array_region(JNIEnv * env,
                          typename jni_traits<JNIType>::array_type array);
+
+        /**
+         * \brief Constructor for region containing all of the elements of the
+         *        Java array from index 0 up to a certain size.
+         * \param env JNI environment
+         * \param array Reference to a JNI primitive array of the correct type
+         *              (\em eg <dfn>jbyteArray</dfn>)
+         * \param size Desired size of the region; this must be known in advance
+         *             to be less than or equal to the array's length, because
+         *             this constructor does not check the length of the array
+         *
+         * The constructed region contains <dfn>array[0..size-1]</dfn>.
+         */
+        jni_array_region(JNIEnv * env,
+                         typename jni_traits<JNIType>::array_type array,
+                         size_type size);
 
         ~jni_array_region();
 
@@ -154,6 +172,14 @@ class jni_array_region: private non_copyable
          * \return Number of elements in the region.
          */
         size_type size() const;
+
+        /**
+         * \brief Subscripts an element of the region.
+         * \param n Zero-based index of the region element to return.
+         * \return Read-only reference to the element at position <dfn>n</dfn>.
+         * \see #operator[](size_type)
+         */
+        reference operator[](size_type n);
 
         /**
          * \brief Subscripts an element of the region.
@@ -189,7 +215,16 @@ inline jni_array_region<JNIType>::jni_array_region(
     JNIEnv * env, typename jni_traits<JNIType>::array_type array)
     : d_size(env->GetArrayLength(array)), d_array(new value_type[d_size])
 {
-    jni_array_get_region(env, array, 0, d_size, d_array);
+    jni_array_get_region<JNIType>(env, array, 0, d_size, d_array);
+}
+
+template <typename JNIType>
+inline jni_array_region<JNIType>::jni_array_region(
+    JNIEnv * env, typename jni_traits<JNIType>::array_type array,
+    size_type size)
+    : d_size(size), d_array(new value_type[d_size])
+{
+    jni_array_get_region<JNIType>(env, array, 0, d_size, d_array);
 }
 
 template<typename JNIType>
@@ -202,6 +237,14 @@ template<typename JNIType>
 inline typename jni_array_region<JNIType>::size_type jni_array_region<JNIType>::size() const
 {
     return d_size;
+}
+
+template<typename JNIType>
+inline typename jni_array_region<JNIType>::reference jni_array_region<
+    JNIType>::operator[](size_type n)
+{
+    assert(0 <= n && n < d_size);
+    return d_array[n];
 }
 
 template<typename JNIType>

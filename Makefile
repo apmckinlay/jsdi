@@ -10,13 +10,18 @@ OBJDIR  :=obj
 BINDIR  :=bin
 DEPDIR  :=.dep
 DOCDIR  :=doc
+ASMDIR  :=.asm
 
-EXPORTS   :=jsdi.exp
-TARGET    :=jsdi.dll
-SOURCES   :=$(wildcard $(SRCDIR)/*.cpp)
-OBJECTS   :=$(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
-DEPENDS   :=$(SOURCES:$(SRCDIR)/%.cpp=$(DEPDIR)/%.d)
-DOXYFILE  :=$(DOCDIR)/Doxyfile
+EXPORTS     :=jsdi.exp
+TARGET_DLL  :=jsdi.dll
+TARGET_EXE  :=jsdi.exe
+SOURCES     :=$(wildcard $(SRCDIR)/*.cpp)
+OBJECTS     :=$(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
+OBJECTS_DLL :=$(filter-out $(OBJDIR)/main_exe.o, $(OBJECTS))
+OBJECTS_EXE :=$(filter-out $(OBJDIR)/main_dll.o, $(OBJECTS))
+ASMFILES    :=$(SOURCES:$(SRCDIR)/%.cpp=$(ASMDIR)/%.s)
+DEPENDS     :=$(SOURCES:$(SRCDIR)/%.cpp=$(DEPDIR)/%.d)
+DOXYFILE    :=$(DOCDIR)/Doxyfile
 
 # NEEDED to prepend '_' to __stdcall function names when built with MinGW.
 # http://stackoverflow.com/q/17199904/1911388
@@ -30,10 +35,17 @@ INCLUDE_DIRS:="-I$(JAVA_HOME)/include" "-I$(JAVA_HOME)/include/win32"
 CCFLAGS:=-O$(OPTLEVEL) $(DEBUGOPTION) $(STDFLAGS) -Wall -fmessage-length=0 \
          $(INCLUDE_DIRS)
 
-LD:=g++ $(BINDIR)/$(EXPORTS) -o
-LDFLAGS:=-shared -s
+LD_DLL:=g++ $(BINDIR)/$(EXPORTS) -o
+LD_EXE:=g++ -o
+LDFLAGS_DLL:=-shared -s
 
-all: dirs $(BINDIR)/$(TARGET)
+all: dirs dll exe
+
+dll: $(BINDIR)/$(TARGET_DLL)
+
+exe: $(BINDIR)/$(TARGET_EXE)
+
+asm: $(ASMFILES)
 
 # Including DEPENDS will trigger dependency generation if the dependency files
 # don't yet exist. You have to include it after the default target, though, or
@@ -43,11 +55,14 @@ all: dirs $(BINDIR)/$(TARGET)
 # how to set up dependencies w the gcc toolchain.
 include $(DEPENDS)
 
-$(BINDIR)/$(TARGET): $(BINDIR)/$(EXPORTS)
-	@$(LD) $@ $(LDFLAGS) $(OBJECTS)
+$(BINDIR)/$(TARGET_DLL): $(BINDIR)/$(EXPORTS)
+	@$(LD_DLL) $@ $(LDFLAGS_DLL) $(OBJECTS_DLL)
 
-$(BINDIR)/$(EXPORTS): $(OBJECTS)
-	@$(DLLTOOL) -e $@ -D $(TARGET) $(OBJECTS)
+$(BINDIR)/$(TARGET_EXE): $(OBJECTS_EXE)
+	@$(LD_EXE) $@ $(OBJECTS_EXE)
+
+$(BINDIR)/$(EXPORTS): $(OBJECTS_DLL)
+	@$(DLLTOOL) -e $@ -D $(TARGET_DLL) $(OBJECTS)
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
 	@$(CC) $(CCFLAGS) -c $< -o $@
@@ -56,8 +71,11 @@ $(DEPENDS): $(DEPDIR)/%.d : $(SRCDIR)/%.cpp
 	@$(CC) $(CCFLAGS) -MF"$@" -MG -MM -MP \
                       -MT"$@" -MT"$(<:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)" "$<"
 
+$(ASMFILES): $(ASMDIR)/%.s : $(SRCDIR)/%.cpp
+	@$(CC) $(CCFLAGS) -S $< -o $@
+
 .PHONY: dirs
-dirs: $(OBJDIR) $(BINDIR) $(DEPDIR)
+dirs: $(OBJDIR) $(BINDIR) $(DEPDIR) $(ASMDIR)
 
 $(OBJDIR):
 	@mkdir $(OBJDIR)
@@ -68,9 +86,12 @@ $(BINDIR):
 $(DEPDIR):
 	@mkdir $(DEPDIR)
 
+$(ASMDIR):
+	@mkdir $(ASMDIR)
+
 .PHONY: clean
 clean:
-	@rm -f $(OBJDIR)/* $(BINDIR)/* $(DEPDIR)/*
+	@rm -f $(OBJDIR)/* $(BINDIR)/* $(DEPDIR)/* $(ASMDIR)/*
 
 docs:
 	@doxygen $(DOXYFILE) >/dev/null
