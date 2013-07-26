@@ -10,7 +10,6 @@
 #include "jni_util.h"
 #include "java_enum.h"
 #include "global_refs.h"
-#include "basic_type.h"
 #include "test.h"
 
 #include <iostream>
