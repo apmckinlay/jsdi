@@ -5,17 +5,16 @@
 // desc: Exports functions which can be used to test dll functionality
 //==============================================================================
 
-#include <cstdint>
+#include "test_exports.h"
+
 #include <cstring>
 
 extern "C" {
 
-#define EXPORT_STDCALL __declspec(dllexport) __stdcall
-
 EXPORT_STDCALL void TestVoid()
 { }
 
-EXPORT_STDCALL char TestChar(char a)
+EXPORT_STDCALL signed char TestChar(signed char a)
 { return a; }
 
 EXPORT_STDCALL short TestShort(short a)
@@ -27,8 +26,26 @@ EXPORT_STDCALL long TestLong(long a)
 EXPORT_STDCALL int64_t TestInt64(int64_t a)
 { return a; }
 
+EXPORT_STDCALL signed char TestSumTwoChars(signed char a, signed char b)
+{ return a + b; }
+
+EXPORT_STDCALL short TestSumTwoShorts(short a, short b)
+{ return a + b; }
+
+EXPORT_STDCALL long TestSumTwoLongs(long a, long b)
+{ return a + b; }
+
+EXPORT_STDCALL long TestSumThreeLongs(long a, long b, long c)
+{ return a + b + c; }
+
 EXPORT_STDCALL long TestSumFourLongs(long a, long b, long c, long d)
 { return a + b + c + d; }
+
+EXPORT_STDCALL int64_t TestSumCharPlusInt64(signed char a, int64_t b)
+{ return a + b; }
+
+EXPORT_STDCALL long TestSumPackedCharCharShortLong(Packed_CharCharShortLong x)
+{ return x.a + x.b + x.c + x.d; }
 
 EXPORT_STDCALL long TestStrLen(const char * str)
 { return str ? std::strlen(str) : 0; }
@@ -37,10 +54,10 @@ EXPORT_STDCALL const char * TestHelloWorldReturn()
 { return "hello world"; }
 
 EXPORT_STDCALL void TestHelloWorldOutParam(const char ** str)
-{ *str = "hello world"; }
+{ if (str) *str = "hello world"; }
 
 EXPORT_STDCALL void TestNullPtrOutParam(const char ** ptr)
-{ *ptr = 0; }
+{ if (ptr) *ptr = 0; }
 
 } // extern "C"
 
