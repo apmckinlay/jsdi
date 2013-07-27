@@ -50,8 +50,8 @@ EXPORT_STDCALL long TestSumPackedCharCharShortLong(Packed_CharCharShortLong x)
 EXPORT_STDCALL long TestStrLen(const char * str)
 { return str ? std::strlen(str) : 0; }
 
-EXPORT_STDCALL const char * TestHelloWorldReturn()
-{ return "hello world"; }
+EXPORT_STDCALL const char * TestHelloWorldReturn(long flag)
+{ return flag ? "hello world" : 0; }
 
 EXPORT_STDCALL void TestHelloWorldOutParam(const char ** str)
 { if (str) *str = "hello world"; }

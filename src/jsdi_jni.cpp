@@ -376,11 +376,12 @@ TEST(assembly,
         std::numeric_limits<long>::max() + std::numeric_limits<long>::min(),
         static_cast<long>(invoke_stdcall_(TestSumThreeLongs, 3, a))
     );
+    a[0] = -100;
+    a[1] =   99;
+    a[2] = -200;
+    a[3] =  199;
+    assert_equals(-2, static_cast<long>(invoke_stdcall_(TestSumFourLongs, 4, a)));
     a[0] = -1;
-    a[1] =  1;
-    a[2] =  3;
-    a[3] =  5;
-    assert_equals(8, static_cast<long>(invoke_stdcall_(TestSumFourLongs, 4, a)));
     *reinterpret_cast<int64_t *>(a + 1) = std::numeric_limits<int64_t>::max() - 2;
     assert_equals(
         std::numeric_limits<int64_t>::max() - 3,
@@ -409,9 +410,10 @@ TEST(assembly,
         "    Nor all that glitters, gold.         "
     );
     assert_equals(41*6, static_cast<long>(invoke_stdcall_(TestStrLen, 1, a)));
+    a[0] = 1; // true
     assert_equals(
         std::string("hello world"),
-        reinterpret_cast<const char *>(invoke_stdcall_(TestHelloWorldReturn, 0, a))
+        reinterpret_cast<const char *>(invoke_stdcall_(TestHelloWorldReturn, 1, a))
     );
     const char * str(0);
     reinterpret_cast<char const **&>(a) = &str;

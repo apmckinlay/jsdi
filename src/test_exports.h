@@ -54,7 +54,7 @@ EXPORT_STDCALL long TestSumPackedCharCharShortLong(Packed_CharCharShortLong x);
 
 EXPORT_STDCALL long TestStrLen(const char * str);
 
-EXPORT_STDCALL const char * TestHelloWorldReturn();
+EXPORT_STDCALL const char * TestHelloWorldReturn(long flag);
 
 EXPORT_STDCALL void TestHelloWorldOutParam(const char ** str);
 
