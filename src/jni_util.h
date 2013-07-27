@@ -243,7 +243,6 @@ template<typename JNIType>
 inline typename jni_array_region<JNIType>::reference jni_array_region<
     JNIType>::operator[](size_type n)
 {
-    assert(0 <= n && n < d_size);
     return d_array[n];
 }
 
@@ -251,7 +250,6 @@ template<typename JNIType>
 inline typename jni_array_region<JNIType>::const_reference jni_array_region<
     JNIType>::operator[](size_type n) const
 {
-    assert(0 <= n && n < d_size);
     return d_array[n];
 }
 
