@@ -331,6 +331,11 @@ inline void jni_array_release_elements<jbyte>(JNIEnv * env, jbyteArray array,
  * made to the array are propagated back to the JVM on destruction (or earlier,
  * depending on whether the array is a copy of the JVM data, or a pointer to
  * the actual JVM data).
+ *
+ * <em>Since the backing data of an instance of jni_array may be a
+ * <strong>copy</strong> of the underlying JVM data (see #is_copy() const),
+ * changes to the array may not be visible on the Java side until the instance
+ * is destroyed.
  */
 template<typename JNIType>
 class jni_array: private non_copyable
@@ -453,7 +458,7 @@ class jni_array: private non_copyable
 
 template <typename JNIType>
 inline jni_array<JNIType>::jni_array(JNIEnv * env, array_type array)
-    : d_array(jni_array_get_elements(env, array, &d_is_copy))
+    : d_array(jni_array_get_elements<JNIType>(env, array, &d_is_copy))
     , d_size(env->GetArrayLength(array))
     , d_env(env)
     , d_jarray(array)
@@ -461,8 +466,7 @@ inline jni_array<JNIType>::jni_array(JNIEnv * env, array_type array)
 
 template <typename JNIType>
 inline jni_array<JNIType>::~jni_array()
-{ jni_array_release_elements(d_env, d_jarray, d_array, 0); }
-
+{ jni_array_release_elements<JNIType>(d_env, d_jarray, d_array, 0); }
 
 template <typename JNIType>
 inline bool jni_array<JNIType>::is_copy() const
