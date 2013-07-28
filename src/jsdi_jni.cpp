@@ -16,11 +16,15 @@
 #include <cassert>
 #include <limits>
 
+using namespace jsdi;
+
 //==============================================================================
 //                                INTERNALS
 //==============================================================================
 
 namespace {
+
+enum { UNKNOWN_LOCATION = -1 };
 
 jlong invoke_stdcall(int args_size_bytes, const jbyte * args_ptr,
                      void * func_ptr)
@@ -61,11 +65,33 @@ jlong invoke_stdcall(int args_size_bytes, const jbyte * args_ptr,
 inline jlong invoke_stdcall(int arg_size_bytes, const jbyte * args_ptr, jlong func_ptr)
 { return invoke_stdcall(arg_size_bytes, args_ptr, reinterpret_cast<void *>(func_ptr)); }
 
+void ptrs_init(jbyte * args, const jint * ptr_array, jsize ptr_array_size)
+{
+    assert(0 == ptr_array_size % 2 || !"pointer array must have even size");
+    jint const * i(ptr_array), * e(ptr_array + ptr_array_size);
+    while (i < e)
+    {
+        jint ptr_pos = *i++;
+        jint ptd_to_pos = *i++;
+        // If the Java-side marshaller put UNKNOWN_LOCATION as the location to
+        // point to, just skip this pointer -- we will trust that the Java side
+        // put a NULL value into the data array. Otherwise, set the pointer in
+        // the data array to point to the appropriate location.
+        if (UNKNOWN_LOCATION != ptd_to_pos)
+        {
+            jbyte * ptr_addr = &args[ptr_pos];
+            jbyte * ptd_to_addr = &args[ptd_to_pos];
+            // Possible alignment issue if the Java-side marshaller didn't set
+            // things up so that the pointers are word-aligned. This is the
+            // Java side's job, however, and we trust it was done properly.
+            reinterpret_cast<void *&>(*ptr_addr) = ptd_to_addr;
+        }
+    }
+}
+
 } // anonymous namespace
 
 extern "C" {
-
-using namespace jsdi;
 
 //==============================================================================
 //                  JAVA CLASS: suneido.language.jsdi.JSDI
@@ -286,14 +312,17 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callDirectOnly
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
  * Method:    callIndirect
- * Signature: (JI[I[B)J
+ * Signature: (JI[B[I)J
  */
 JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callIndirect
-  (JNIEnv * env, jclass, jlong, jint, jintArray, jbyteArray)
+  (JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jbyteArray args, jintArray ptrArray)
 {
     jlong result;
     JNI_EXCEPTION_SAFE_BEGIN
-    todo_deleteme_Throw(__FUNCTION__);
+    jni_array<jbyte> args_(env, args);
+    jni_array_region<jint> ptr_array(env, ptrArray);
+    ptrs_init(&args_[0], &ptr_array[0], ptr_array.size());
+    result = invoke_stdcall(sizeDirect, &args_[0], funcPtr);
     JNI_EXCEPTION_SAFE_END(env);
     return result;
 }
@@ -301,10 +330,10 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callIndirect
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
  * Method:    callVariableIndirect
- * Signature: (JI[I[B[Ljava/lang/Object;[Z)J
+ * Signature: (JI[B[I[Ljava/lang/Object;[Z)J
  */
 JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIndirect
-  (JNIEnv * env, jclass, jlong, jint, jintArray, jbyteArray, jobjectArray, jbooleanArray)
+  (JNIEnv * env, jclass, jlong, jint, jbyteArray, jintArray, jobjectArray, jbooleanArray)
 {
     jlong result;
     JNI_EXCEPTION_SAFE_BEGIN
@@ -322,6 +351,7 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIn
 #ifndef __TEST_H_NO_TESTS__
 
 #include "test_exports.h"
+#include "util.h"
 
 #include <cstring>
 
@@ -421,6 +451,31 @@ TEST(assembly,
     assert_equals(std::string("hello world"), str);
     invoke_stdcall_(TestNullPtrOutParam, 1, a);
     assert_equals(0, str);
+);
+
+TEST(ptrs_init,
+    // single indirection
+    {
+        jbyte args[sizeof(long *) + sizeof(long)];
+        jint ptr_array[] = { 0, sizeof(long *) };
+        long *& ptr = reinterpret_cast<long *&>(args);
+        long const & ptd_to = reinterpret_cast<long const &>(*(args + sizeof(long *)));
+        ptrs_init(args, ptr_array, array_length(ptr_array));
+        *ptr = 0x19820207;
+        assert_equals(ptd_to, 0x19820207);
+    }
+    // double indirection
+    {
+        jbyte args[sizeof(long **) + sizeof(long *) + sizeof(long)];
+        jint ptr_array[] = { 0, sizeof(long **), sizeof(long **), sizeof(long **) + sizeof(long *) };
+        long **& ptr_ptr = reinterpret_cast<long **&>(args);
+        long const & ptd_to = reinterpret_cast<long const &>(
+            *(args + sizeof(long **) + sizeof(long *))
+        );
+        ptrs_init(args, ptr_array, array_length(ptr_array));
+        **ptr_ptr = 0x19900606;
+        assert_equals(ptd_to, 0x19900606);
+    }
 );
 
 #endif // __TEST_H_NO_TESTS__

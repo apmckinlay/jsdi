@@ -264,20 +264,20 @@ inline std::string runtime_stringify(const T& t)
         );                            \
     }
 
-#define TEST(name, code)                                         \
-namespace { /* anonymous namespace */                            \
+#define TEST(name, ...)                                          \
+namespace tests {                                                \
                                                                  \
 struct test_ ## name : public jsdi::test                         \
 {                                                                \
     test_ ## name() : test(__FILE__, #name) { }                  \
     void run()                                                   \
     {                                                            \
-        code                                                     \
+        __VA_ARGS__                                              \
     }                                                            \
 };                                                               \
 jsdi::test_registrar test_ ## name ## __(new test_ ## name);     \
                                                                  \
-} /* anonymous namespace */
+} /* namespace tests */
 
 #endif // #ifndef __TEST_H_NO_TESTS__
 
