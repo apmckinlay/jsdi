@@ -46,13 +46,25 @@ struct jni_traits
 template<>
 struct jni_traits<jbyte>
 {
-        typedef jbyteArray array_type;
-        typedef jbyte value_type;
-        typedef jbyte const const_value_type;
-        typedef value_type * pointer;
-        typedef const_value_type * const_pointer;
-        typedef value_type & reference;
-        typedef const_value_type & const_reference;
+    typedef jbyteArray array_type;
+    typedef jbyte value_type;
+    typedef jbyte const const_value_type;
+    typedef value_type * pointer;
+    typedef const_value_type * const_pointer;
+    typedef value_type & reference;
+    typedef const_value_type & const_reference;
+};
+
+template<>
+struct jni_traits<jint>
+{
+    typedef jintArray array_type;
+    typedef jint value_type;
+    typedef jint const const_value_type;
+    typedef value_type * pointer;
+    typedef const_value_type * const_pointer;
+    typedef value_type & reference;
+    typedef const_value_type & const_reference;
 };
 /** \endcond */
 
@@ -70,9 +82,13 @@ inline void jni_array_get_region(JNIEnv *,
 template<>
 inline void jni_array_get_region<jbyte>(JNIEnv * env, jbyteArray array,
                                         jsize start, jsize len, jbyte * buf)
-{
-    env->GetByteArrayRegion(array, start, len, buf);
-}
+{ env->GetByteArrayRegion(array, start, len, buf); }
+
+template<>
+inline void jni_array_get_region<jint>(JNIEnv * env, jintArray array,
+                                       jsize start, jsize len, jint * buf)
+{ env->GetIntArrayRegion(array, start, len, buf); }
+
 /** \endcond */
 
 /**
@@ -82,6 +98,7 @@ inline void jni_array_get_region<jbyte>(JNIEnv * env, jbyteArray array,
  * \since 20130628
  * \tparam The JNI data type on which to specialize the array region &mdash;
  *         \em eg <dfn>jbyte</dfn>.
+ * \see jni_array
  *
  * The array data is copied out of the JVM on construction using a JNI
  * <dfn>Get&lt;Type&gt;ArrayRegion(...)</dfn> function and deallocated on
@@ -97,10 +114,12 @@ class jni_array_region: private non_copyable
 
     public:
 
+        /** \brief Type of the underlying Java array. */
+        typedef typename jni_traits<JNIType>::array_type array_type;
         /** \brief An unsigned integral type. */
         typedef jsize size_type;
         /** \brief Type of the region elements (a JNI primitive type, such as
-         *         <dfn>jbyte</dfn>.
+         *         <dfn>jbyte</dfn>).
          * \see #const_value_type
          */
         typedef typename jni_traits<JNIType>::value_type value_type;
@@ -155,9 +174,7 @@ class jni_array_region: private non_copyable
          *
          * The constructed region contains <dfn>array[0..size-1]</dfn>.
          */
-        jni_array_region(JNIEnv * env,
-                         typename jni_traits<JNIType>::array_type array,
-                         size_type size);
+        jni_array_region(JNIEnv * env, array_type array, size_type size);
 
         ~jni_array_region();
 
@@ -169,40 +186,40 @@ class jni_array_region: private non_copyable
 
         /**
          * \brief Returns the number of elements in the region.
-         * \return Number of elements in the region.
+         * \return Number of elements in the region
          */
         size_type size() const;
 
         /**
          * \brief Subscripts an element of the region.
-         * \param n Zero-based index of the region element to return.
-         * \return Read-only reference to the element at position <dfn>n</dfn>.
+         * \param n Zero-based index of the region element to return
+         * \return Read-only reference to the element at position <dfn>n</dfn>
          * \see #operator[](size_type)
          */
         reference operator[](size_type n);
 
         /**
          * \brief Subscripts an element of the region.
-         * \param n Zero-based index of the region element to return.
-         * \return Read-only reference to the element at position <dfn>n</dfn>.
+         * \param n Zero-based index of the region element to return
+         * \return Read-only reference to the element at position <dfn>n</dfn>
          */
         const_reference operator[](size_type n) const;
 
         /**
          * \brief Returns a #const_iterator pointing to the first element of the
-         *        array.
-         * \return A #const_iterator to the beginning of the array.
+         *        array region.
+         * \return A #const_iterator to the beginning of the array region
          * \see #cend() const
          *
-         * If the array is empty, the returned iterator shall not be
+         * If the array region is empty, the returned iterator shall not be
          * dereferenced.
          */
         const_iterator cbegin() const;
 
         /**
          * \brief Returns a #const_iterator pointing to the \em past-the-end
-         *        element of the array.
-         * \return A #const_iterator to the end of the array.
+         *        element of the array region.
+         * \return A #const_iterator to the end of the array region
          * \see #cend() const
          *
          * The returned iterator shall not be dereferenced.
@@ -210,19 +227,21 @@ class jni_array_region: private non_copyable
         const_iterator cend() const;
 };
 
-template<typename JNIType>
-inline jni_array_region<JNIType>::jni_array_region(
-    JNIEnv * env, typename jni_traits<JNIType>::array_type array)
-    : d_size(env->GetArrayLength(array)), d_array(new value_type[d_size])
+template <typename JNIType>
+inline jni_array_region<JNIType>::jni_array_region(JNIEnv * env,
+                                                   array_type array)
+    : d_size(env->GetArrayLength(array))
+    , d_array(new value_type[d_size])
 {
     jni_array_get_region<JNIType>(env, array, 0, d_size, d_array);
 }
 
 template <typename JNIType>
-inline jni_array_region<JNIType>::jni_array_region(
-    JNIEnv * env, typename jni_traits<JNIType>::array_type array,
-    size_type size)
-    : d_size(size), d_array(new value_type[d_size])
+inline jni_array_region<JNIType>::jni_array_region(JNIEnv * env,
+                                                   array_type array,
+                                                   size_type size)
+    : d_size(size)
+    , d_array(new value_type[d_size])
 {
     jni_array_get_region<JNIType>(env, array, 0, d_size, d_array);
 }
@@ -268,9 +287,10 @@ inline typename jni_array_region<JNIType>::const_iterator jni_array_region<
 }
 
 //==============================================================================
-//                         class jni_primitive_array
+//                              class jni_array
 //==============================================================================
 
+/** \cond internal */
 template<typename JNIType>
 inline typename jni_traits<JNIType>::pointer jni_array_get_elements(
     JNIEnv *, typename jni_traits<JNIType>::array_type, jboolean *);
@@ -294,6 +314,181 @@ inline void jni_array_release_elements<jbyte>(JNIEnv * env, jbyteArray array,
 {
     env->ReleaseByteArrayElements(array, elems, mode);
 }
+/** \endcond */
+
+/**
+ * \brief Managed array of a JNI primitive type which was retrieved from a JNI
+ *        array reference.
+ * \author Victor Schappert
+ * \since 20130727
+ * \tparam The JNI data type on which to specialize the array region &mdash;
+ *         \em eg <dfn>jbyte</dfn>.
+ * \see jni_array_region
+ *
+ * The array data is retrieved from the JVM on construction using a JNI
+ * <dfn>Get&lt;Type&gt;ArrayElements(...)</dfn> function and released on
+ * destruction. This is a two-way data structure in the sense that any changes
+ * made to the array are propagated back to the JVM on destruction (or earlier,
+ * depending on whether the array is a copy of the JVM data, or a pointer to
+ * the actual JVM data).
+ */
+template<typename JNIType>
+class jni_array: private non_copyable
+{
+        //
+        // TYPES
+        //
+
+    public:
+
+        /** \brief Type of the underlying Java array. */
+        typedef typename jni_traits<JNIType>::array_type array_type;
+        /** \brief An unsigned integral type. */
+        typedef jsize size_type;
+        /** \brief Type of the region elements (a JNI primitive type, such as
+         *         <dfn>jbyte</dfn>).
+         * \see #const_value_type
+         */
+        typedef typename jni_traits<JNIType>::value_type value_type;
+        /**
+         * \brief Type of a <dfn>const</dfn> region element.
+         * \see #value_type
+         */
+        typedef typename jni_traits<JNIType>::const_value_type const_value_type;
+        /** \brief Type of a pointer a region element. */
+        typedef typename jni_traits<JNIType>::pointer pointer;
+        /** \brief Type of a reference to a #value_type. */
+        typedef typename jni_traits<JNIType>::reference reference;
+        /** \brief Type of a reference to a #const_value_type. */
+        typedef typename jni_traits<JNIType>::const_reference const_reference;
+        /** \brief Random-access iterator to a #const_value_type. */
+        typedef typename jni_traits<JNIType>::const_pointer const_iterator;
+
+        //
+        // DATA
+        //
+
+    private:
+
+        pointer    d_array;
+        size_type  d_size;
+        JNIEnv *   d_env;
+        array_type d_jarray;
+        jboolean   d_is_copy;
+
+        //
+        // CONSTRUCTORS
+        //
+
+    public:
+
+        /**
+         * \brief Constructor for an array containing all of the elements of the
+         *        Java array.
+         * \param env JNI environment
+         * \param array Reference to a JNI primitive array of the correct type
+         *              (\em eg <dfn>jbyteArray</dfn>)
+         */
+        jni_array(JNIEnv * env, array_type array);
+
+        ~jni_array();
+
+        //
+        // ACCESSORS
+        //
+
+    public:
+
+        /**
+         * \brief Indicates whether the array data is a copy of the underlying
+         * Java array.
+         * \return Whether the array data is a copy of the &quot;primary&quot;
+         * array held by the JVM (<dfn>true</dfn>); or whether this array
+         * directly refers to the JVM data (<dfn>false</dfn>).
+         */
+        bool is_copy() const;
+
+        /**
+         * \brief Returns the number of elements in the array.
+         * \return Number of elements in the array
+         */
+        size_type size() const;
+
+        /**
+         * \brief Subscripts an element of the array.
+         * \param n Zero-based index of the region element to return.
+         * \return Read-only reference to the element at position <dfn>n</dfn>
+         * \see #operator[](size_type)
+         */
+        reference operator[](size_type n);
+
+        /**
+         * \brief Subscripts an element of the array.
+         * \param n Zero-based index of the array element to return
+         * \return Read-only reference to the element at position <dfn>n</dfn>
+         */
+        const_reference operator[](size_type n) const;
+
+        /**
+         * \brief Returns a #const_iterator pointing to the first element of the
+         *        array.
+         * \return A #const_iterator to the beginning of the array.
+         * \see #cend() const
+         *
+         * If the array is empty, the returned iterator shall not be
+         * dereferenced.
+         */
+        const_iterator cbegin() const;
+
+        /**
+         * \brief Returns a #const_iterator pointing to the \em past-the-end
+         *        element of the array.
+         * \return A #const_iterator to the end of the array.
+         * \see #cend() const
+         *
+         * The returned iterator shall not be dereferenced.
+         */
+        const_iterator cend() const;
+};
+
+template <typename JNIType>
+inline jni_array<JNIType>::jni_array(JNIEnv * env, array_type array)
+    : d_array(jni_array_get_elements(env, array, &d_is_copy))
+    , d_size(env->GetArrayLength(array))
+    , d_env(env)
+    , d_jarray(array)
+{ assert(d_array); }
+
+template <typename JNIType>
+inline jni_array<JNIType>::~jni_array()
+{ jni_array_release_elements(d_env, d_jarray, d_array, 0); }
+
+
+template <typename JNIType>
+inline bool jni_array<JNIType>::is_copy() const
+{ return JNI_TRUE == d_is_copy; }
+
+template <typename JNIType>
+inline typename jni_array<JNIType>::size_type jni_array<JNIType>::size() const
+{ return d_size; }
+
+template <typename JNIType>
+inline typename jni_array<JNIType>::reference jni_array<JNIType>::operator[](
+    size_type n)
+{ return d_array[n]; }
+
+template <typename JNIType>
+inline typename jni_array<JNIType>::const_reference jni_array<JNIType>::operator[](
+    size_type n) const
+{ return d_array[n]; }
+
+template <typename JNIType>
+inline typename jni_array<JNIType>::const_iterator jni_array<JNIType>::cbegin() const
+{ return d_array; }
+
+template <typename JNIType>
+inline typename jni_array<JNIType>::const_iterator jni_array<JNIType>::cend() const
+{ return d_array + d_size; }
 
 //==============================================================================
 //                           class jni_auto_local
