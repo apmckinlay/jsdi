@@ -115,16 +115,16 @@ void global_refs::init(JNIEnv * env) throw(jni_exception)
 
     global_refs * g = &global_refs_;
 
-    // [BEGIN:GENERATED CODE last updated Fri Jun 28 17:56:42 PDT 2013]
-    g->java_lang_Boolean_ = get_global_class_ref(env, "Ljava/lang/Boolean;");
+    // [BEGIN:GENERATED CODE last updated Sun Jul 28 15:11:06 PDT 2013]
+    g->java_lang_Boolean_ = get_global_class_ref(env, "java/lang/Boolean");
     g->java_lang_Boolean__f_TRUE_ = get_static_field_id(env, g->java_lang_Boolean_, "TRUE", "Ljava/lang/Boolean;");
     g->java_lang_Boolean__f_FALSE_ = get_static_field_id(env, g->java_lang_Boolean_, "FALSE", "Ljava/lang/Boolean;");
-    g->java_lang_Integer_ = get_global_class_ref(env, "Ljava/lang/Integer;");
+    g->java_lang_Integer_ = get_global_class_ref(env, "java/lang/Integer");
     g->java_lang_Integer__init_ = get_method_id(env, g->java_lang_Integer_, "<init>", "(I)V");
     g->java_lang_Integer__m_intValue_ = get_method_id(env, g->java_lang_Integer_, "intValue", "()I");
-    g->java_lang_Enum_ = get_global_class_ref(env, "Ljava/lang/Enum;");
+    g->java_lang_Enum_ = get_global_class_ref(env, "java/lang/Enum");
     g->java_lang_Enum__m_ordinal_ = get_method_id(env, g->java_lang_Enum_, "ordinal", "()I");
-    g->suneido_language_jsdi_type_BasicType_ = get_global_class_ref(env, "Lsuneido/language/jsdi/type/BasicType;");
+    g->suneido_language_jsdi_type_BasicType_ = get_global_class_ref(env, "suneido/language/jsdi/type/BasicType");
     // [END:GENERATED CODE]
 
     g->TRUE_object_ = get_static_field_value_object(
