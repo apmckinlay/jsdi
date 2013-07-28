@@ -84,18 +84,18 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callDirectOnly
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
  * Method:    callIndirect
- * Signature: (JI[I[B)J
+ * Signature: (JI[B[I)J
  */
 JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callIndirect
-  (JNIEnv *, jclass, jlong, jint, jintArray, jbyteArray);
+  (JNIEnv *, jclass, jlong, jint, jbyteArray, jintArray);
 
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
  * Method:    callVariableIndirect
- * Signature: (JI[I[B[Ljava/lang/Object;[Z)J
+ * Signature: (JI[B[I[Ljava/lang/Object;[Z)J
  */
 JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIndirect
-  (JNIEnv *, jclass, jlong, jint, jintArray, jbyteArray, jobjectArray, jbooleanArray);
+  (JNIEnv *, jclass, jlong, jint, jbyteArray, jintArray, jobjectArray, jbooleanArray);
 
 #ifdef __cplusplus
 }
