@@ -59,5 +59,8 @@ EXPORT_STDCALL void TestHelloWorldOutParam(const char ** str)
 EXPORT_STDCALL void TestNullPtrOutParam(const char ** ptr)
 { if (ptr) *ptr = 0; }
 
+EXPORT_STDCALL double TestReturnPtrPtrPtrDouble(const double *** ptr)
+{ return (ptr && *ptr && **ptr) ? ***ptr : 0.0; }
+
 } // extern "C"
 

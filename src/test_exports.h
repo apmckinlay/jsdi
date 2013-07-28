@@ -60,6 +60,8 @@ EXPORT_STDCALL void TestHelloWorldOutParam(const char ** str);
 
 EXPORT_STDCALL void TestNullPtrOutParam(const char ** ptr);
 
+EXPORT_STDCALL double TestReturnPtrPtrPtrDouble(const double *** ptr);
+
 } // extern "C"
 
 #endif // __INCLUDED_TEST_EXPORTS_H___
