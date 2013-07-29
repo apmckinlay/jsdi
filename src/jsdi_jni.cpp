@@ -22,6 +22,12 @@ using namespace jsdi;
 //                                INTERNALS
 //==============================================================================
 
+/* TODO: do we need to be able to handle Win32 exceptions? If so, we'll want
+ *       to wrap things in SEH code *at some level*. But do we want that
+ *       overhead around every DLL call, regardless of whether it is expected
+ *       to throw an exception?
+ */
+
 namespace {
 
 enum { UNKNOWN_LOCATION = -1 };
@@ -29,7 +35,7 @@ enum { UNKNOWN_LOCATION = -1 };
 jlong invoke_stdcall(int args_size_bytes, const jbyte * args_ptr,
                      void * func_ptr)
 {
-    unsigned long hi32, lo32;
+    uint32_t hi32, lo32;
     assert(0 == args_size_bytes % 4 || !"Argument size must be a multiple of 4 bytes");
 #if defined(__GNUC__)
     asm
@@ -52,8 +58,8 @@ jlong invoke_stdcall(int args_size_bytes, const jbyte * args_ptr,
         "2:\n\t"
             "call  * %4"
         : "=d" (hi32), "=a" (lo32)
-        : "r" (args_size_bytes), "r" (args_ptr), "r" (func_ptr)
-        :
+        : "0" (args_size_bytes), "1" (args_ptr), "mr" (func_ptr)
+        : "%ecx" /* eax, ecx, edx are caller-save */, "cc"
     );
 #else
 #pragma error "Replacement for inline assembler required"
@@ -62,8 +68,8 @@ jlong invoke_stdcall(int args_size_bytes, const jbyte * args_ptr,
     return static_cast<jlong>(unsigned_result);
 }
 
-inline jlong invoke_stdcall(int arg_size_bytes, const jbyte * args_ptr, jlong func_ptr)
-{ return invoke_stdcall(arg_size_bytes, args_ptr, reinterpret_cast<void *>(func_ptr)); }
+inline jlong invoke_stdcall(int args_size_bytes, const jbyte * args_ptr, jlong func_ptr)
+{ return invoke_stdcall(args_size_bytes, args_ptr, reinterpret_cast<void *>(func_ptr)); }
 
 void ptrs_init(jbyte * args, const jint * ptr_array, jsize ptr_array_size)
 {
