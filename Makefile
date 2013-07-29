@@ -63,7 +63,7 @@ DEBUGOPTION:=-g
 LD_FLAGS_DLL+= $(DEBUGOPTION)
 else ifeq ($(CONFIG),release)
 OPTLEVEL:=3
-DEBUGOPTION:=
+DEBUGOPTION:=-DNDEBUG
 LD_FLAGS_DLL+= -s
 else
 $(error Unsupported CONFIG value: '$(CONFIG)')
