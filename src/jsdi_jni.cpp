@@ -32,6 +32,20 @@ namespace {
 
 enum { UNKNOWN_LOCATION = -1 };
 
+
+/**
+ * This function is very limited in capability. In particular, it cannot:
+ *     - Call stdcall functions which return floating-point values. This is
+ *       because such values are returned in ST(0), the top register of the
+ *       floating-point stack, not in the EAX/EDX pair, under stdcall.
+ *     - Call stdcall functions which return aggregates of 5-7, or 9+ bytes in
+ *       size, because these functions require the caller to pass the address
+ *       of the return value as a silent parameter in EAX.
+ *
+ * See: http://pic.dhe.ibm.com/infocenter/ratdevz/v7r5/index.jsp?topic=
+ *     %2Fcom.ibm.etools.pl1.win.doc%2Ftopics%2Fxf6700.htm
+ * See also: http://stackoverflow.com/q/17912828/1911388
+ */
 jlong invoke_stdcall(int args_size_bytes, const jbyte * args_ptr,
                      void * func_ptr)
 {
@@ -359,7 +373,7 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIn
 #include "test_exports.h"
 #include "util.h"
 
-#include <cstring>
+#include <algorithm>
 
 namespace {
 
@@ -373,10 +387,21 @@ inline jlong invoke_stdcall_(FuncPtr f, int nlongs, long * args)
     );
 }
 
+template<typename FuncPtr>
+inline jlong invoke_stdcall_(FuncPtr f, int nbytes, jbyte * args)
+{ return invoke_stdcall(nbytes, args, reinterpret_cast<jlong>(f)); }
+
 } // anonymous namespace
 
 TEST(assembly,
-    long a[4];
+    union
+    {
+        long a[4];
+        const char * str;
+        const char ** pstr;
+        Packed_CharCharShortLong p_ccsl;
+        int64_t int64;
+    };
     invoke_stdcall_(TestVoid, 0, a);
     a[0] = static_cast<long>('a');
     assert_equals('a', static_cast<char>(invoke_stdcall_(TestChar, 1, a)));
@@ -384,7 +409,7 @@ TEST(assembly,
     assert_equals(0xf1, static_cast<short>(invoke_stdcall_(TestShort, 1, a)));
     a[0] = 0x20130725;
     assert_equals(0x20130725, static_cast<long>(invoke_stdcall_(TestLong, 1, a)));
-    *reinterpret_cast<int64_t *>(a) = std::numeric_limits<int64_t>::min();
+    int64 = std::numeric_limits<int64_t>::min();
     assert_equals(
         std::numeric_limits<int64_t>::min(),
         invoke_stdcall_(TestInt64, 2, a)
@@ -423,40 +448,37 @@ TEST(assembly,
         std::numeric_limits<int64_t>::max() - 3,
         invoke_stdcall_(TestSumCharPlusInt64, 3, a)
     );
-    Packed_CharCharShortLong * p_ccs =
-        reinterpret_cast<Packed_CharCharShortLong *>(a);
-    p_ccs->a = -1;
-    p_ccs->b = -3;
-    p_ccs->c = -129;
-    p_ccs->d = -70000;
+    p_ccsl.a = -1;
+    p_ccsl.b = -3;
+    p_ccsl.c = -129;
+    p_ccsl.d = -70000;
     assert_equals(
         -70133,
         static_cast<long>(invoke_stdcall_(
             TestSumPackedCharCharShortLong,
-            (sizeof(*p_ccs) + sizeof(long) - 1) / sizeof(long),
+            (sizeof(p_ccsl) + sizeof(long) - 1) / sizeof(long),
             a
         ))
     );
-    a[0] = reinterpret_cast<long>(
+    str =
         "From hence ye beauties, undeceived,     \n"
         "Know, one false step is ne'er retrieved,\n"
         "    And be with caution bold.           \n"
         "Not all that tempts your wandering eyes \n"
         "And heedless hearts is lawful prize;    \n"
-        "    Nor all that glitters, gold.         "
-    );
+        "    Nor all that glitters, gold.         ";
     assert_equals(41*6, static_cast<long>(invoke_stdcall_(TestStrLen, 1, a)));
     a[0] = 1; // true
     assert_equals(
         std::string("hello world"),
         reinterpret_cast<const char *>(invoke_stdcall_(TestHelloWorldReturn, 1, a))
     );
-    const char * str(0);
-    reinterpret_cast<char const **&>(a) = &str;
+    const char * tmp_str(0);
+    pstr = &tmp_str;
     invoke_stdcall_(TestHelloWorldOutParam, 1, a);
-    assert_equals(std::string("hello world"), str);
+    assert_equals(std::string("hello world"), tmp_str);
     invoke_stdcall_(TestNullPtrOutParam, 1, a);
-    assert_equals(0, str);
+    assert_equals(0, tmp_str);
 );
 
 TEST(ptrs_init,
@@ -480,7 +502,52 @@ TEST(ptrs_init,
         );
         ptrs_init(args, ptr_array, array_length(ptr_array));
         **ptr_ptr = 0x19900606;
-        assert_equals(ptd_to, 0x19900606);
+        assert_equals(0x19900606, ptd_to);
+    }
+    // triple indirection
+    {
+        union u_
+        {
+            struct
+            {
+                double *** ptr_ptr_ptr;
+                double **  ptr_ptr;
+                double *   ptr;
+                double     value;
+            } x;
+            jbyte args[sizeof(x)];
+        } u;
+        jint ptr_array[] =
+        {
+            0,
+                reinterpret_cast<char *>(&u.x.ptr_ptr) - reinterpret_cast<char *>(&u.args[0]),
+            reinterpret_cast<char *>(&u.x.ptr_ptr) - reinterpret_cast<char *>(&u.args[0]),
+                reinterpret_cast<char *>(&u.x.ptr) - reinterpret_cast<char *>(&u.args[0]),
+            reinterpret_cast<char *>(&u.x.ptr) - reinterpret_cast<char *>(&u.args[0]),
+                reinterpret_cast<char *>(&u.x.value) - reinterpret_cast<char *>(&u.args[0]),
+        };
+        ptrs_init(u.args, ptr_array, array_length(ptr_array));
+        const double expect = -123456789.0 + (1.0 / 32.0);
+        ***u.x.ptr_ptr_ptr = expect;
+        assert_equals(expect, u.x.value);
+        for (int k = 0; k < 10; ++k)
+        {
+            std::shared_ptr<u_> u2(new u_);
+            std::fill(u2->args, u2->args + array_length(u2->args), 0);
+            std::vector<jint> ptr_vector(ptr_array, ptr_array + array_length(ptr_array));
+            assert(array_length(ptr_array) == ptr_vector.size());
+            ptrs_init(u2->args, &ptr_vector[0], ptr_vector.size());
+            const double expect2 = double(k) * double(k) * double(k);
+            ***u2->x.ptr_ptr_ptr = expect2;
+            assert_equals(
+                expect2,
+                static_cast<double>(TestReturnPtrPtrPtrDoubleAsUInt64(u2->x.ptr_ptr_ptr))
+            );
+            const double got2 = static_cast<double>(
+                invoke_stdcall_(TestReturnPtrPtrPtrDoubleAsUInt64, sizeof (double ***), u2->args)
+            );
+            assert_equals(expect2, got2);
+        }
     }
 );
 
