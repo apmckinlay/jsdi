@@ -65,8 +65,13 @@ EXPORT_STDCALL uint64_t TestReturnPtrPtrPtrDoubleAsUInt64(
     // The parameter type is because: http://stackoverflow.com/a/1404795/1911388
     // The return value is uint64_t because floating-point values are returned
     // in ST0, which we can't handle at the moment.
-    double value(ptr && *ptr && **ptr ? ***ptr : 0.0);
-    return static_cast<uint64_t>(value);
+    union
+    {
+        volatile double   as_dbl;
+        volatile uint64_t as_uint64;
+    };
+    as_dbl = ptr && *ptr && **ptr ? ***ptr : 0.0;
+    return as_uint64;
 }
 
 } // extern "C"

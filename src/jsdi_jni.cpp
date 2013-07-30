@@ -539,14 +539,17 @@ TEST(ptrs_init,
             ptrs_init(u2->args, &ptr_vector[0], ptr_vector.size());
             const double expect2 = double(k) * double(k) * double(k);
             ***u2->x.ptr_ptr_ptr = expect2;
-            assert_equals(
-                expect2,
-                static_cast<double>(TestReturnPtrPtrPtrDoubleAsUInt64(u2->x.ptr_ptr_ptr))
-            );
-            const double got2 = static_cast<double>(
+            union
+            {
+                double   as_dbl;
+                uint64_t as_uint64;
+            };
+            as_uint64 = TestReturnPtrPtrPtrDoubleAsUInt64(u2->x.ptr_ptr_ptr);
+            assert_equals(expect2, as_dbl);
+            as_uint64 = static_cast<uint64_t>(
                 invoke_stdcall_(TestReturnPtrPtrPtrDoubleAsUInt64, sizeof (double ***), u2->args)
             );
-            assert_equals(expect2, got2);
+            assert_equals(expect2, as_dbl);
         }
     }
 );
