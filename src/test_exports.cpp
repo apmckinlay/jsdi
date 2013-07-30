@@ -59,8 +59,15 @@ EXPORT_STDCALL void TestHelloWorldOutParam(const char ** str)
 EXPORT_STDCALL void TestNullPtrOutParam(const char ** ptr)
 { if (ptr) *ptr = 0; }
 
-EXPORT_STDCALL double TestReturnPtrPtrPtrDouble(const double *** ptr)
-{ return (ptr && *ptr && **ptr) ? ***ptr : 0.0; }
+EXPORT_STDCALL uint64_t TestReturnPtrPtrPtrDoubleAsUInt64(
+    const double * const * const * ptr)
+{
+    // The parameter type is because: http://stackoverflow.com/a/1404795/1911388
+    // The return value is uint64_t because floating-point values are returned
+    // in ST0, which we can't handle at the moment.
+    double value(ptr && *ptr && **ptr ? ***ptr : 0.0);
+    return static_cast<uint64_t>(value);
+}
 
 } // extern "C"
 
