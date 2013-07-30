@@ -97,8 +97,8 @@ static jobject get_static_field_value_object(JNIEnv * env, jclass clazz,
 //                            struct global_refs
 //==============================================================================
 
-global_refs const * global_refs::ptr(0);
 global_refs global_refs_;
+global_refs const * const GLOBAL_REFS(&global_refs_);
 
 // NOTE: This function MUST be called once, and MAY ONLY be called once, prior
 //       to the use of ANY JSDI functionality by ANY Java thread via JNI. This
@@ -108,14 +108,13 @@ global_refs global_refs_;
 //       types.
 void global_refs::init(JNIEnv * env) throw(jni_exception)
 {
-    assert(! ptr);
     //
     // Load the global references
     //
 
     global_refs * g = &global_refs_;
 
-    // [BEGIN:GENERATED CODE last updated Sun Jul 28 15:11:06 PDT 2013]
+    // [BEGIN:GENERATED CODE last updated Tue Jul 30 09:17:38 PDT 2013]
     g->java_lang_Boolean_ = get_global_class_ref(env, "java/lang/Boolean");
     g->java_lang_Boolean__f_TRUE_ = get_static_field_id(env, g->java_lang_Boolean_, "TRUE", "Ljava/lang/Boolean;");
     g->java_lang_Boolean__f_FALSE_ = get_static_field_id(env, g->java_lang_Boolean_, "FALSE", "Ljava/lang/Boolean;");
@@ -124,7 +123,7 @@ void global_refs::init(JNIEnv * env) throw(jni_exception)
     g->java_lang_Integer__m_intValue_ = get_method_id(env, g->java_lang_Integer_, "intValue", "()I");
     g->java_lang_Enum_ = get_global_class_ref(env, "java/lang/Enum");
     g->java_lang_Enum__m_ordinal_ = get_method_id(env, g->java_lang_Enum_, "ordinal", "()I");
-    g->suneido_language_jsdi_type_BasicType_ = get_global_class_ref(env, "suneido/language/jsdi/type/BasicType");
+    g->byte_ARRAY_ = get_global_class_ref(env, "[B");
     // [END:GENERATED CODE]
 
     g->TRUE_object_ = get_static_field_value_object(
@@ -133,11 +132,6 @@ void global_refs::init(JNIEnv * env) throw(jni_exception)
         env, g->java_lang_Boolean_, g->java_lang_Boolean__f_FALSE_, "FALSE");
     jni_auto_local<jobject> zero(env, env->NewObject(g->java_lang_Integer_, g->java_lang_Integer__init_, 0));
     g->ZERO_object_ = globalize(env, zero, "zero");
-
-    //
-    // Make the global references available outside.
-    //
-    ptr = &global_refs_;
 }
 
 } // namespace jsdi

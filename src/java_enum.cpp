@@ -14,11 +14,11 @@
 
 namespace jsdi {
 
-// [BEGIN:GENERATED CODE last updated Tue Jul 09 16:15:02 PDT 2013]
+// [BEGIN:GENERATED CODE last updated Tue Jul 30 09:33:34 PDT 2013]
 template <>
 suneido_language_jsdi_type_BasicType jni_enum_to_cpp(JNIEnv * env, jclass clazz, jobject e)
 {
-    jmethodID method_id = global_refs::ptr->java_lang_Enum__m_ordinal();
+    jmethodID method_id = GLOBAL_REFS->java_lang_Enum__m_ordinal();
     jint ordinal = env->CallIntMethod(e, method_id);
     JNI_EXCEPTION_CHECK(env);
     assert(0 <= ordinal && ordinal < 9);
