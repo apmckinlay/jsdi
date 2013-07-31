@@ -66,6 +66,18 @@ struct jni_traits<jint>
     typedef value_type & reference;
     typedef const_value_type & const_reference;
 };
+
+template<>
+struct jni_traits<jboolean>
+{
+    typedef jbooleanArray array_type;
+    typedef jboolean value_type;
+    typedef jboolean const const_value_type;
+    typedef value_type * pointer;
+    typedef const_value_type * const_pointer;
+    typedef value_type & reference;
+    typedef const_value_type & const_reference;
+};
 /** \endcond */
 
 //==============================================================================
@@ -89,6 +101,10 @@ inline void jni_array_get_region<jint>(JNIEnv * env, jintArray array,
                                        jsize start, jsize len, jint * buf)
 { env->GetIntArrayRegion(array, start, len, buf); }
 
+template<>
+inline void jni_array_get_region<jboolean>(JNIEnv * env, jbooleanArray array,
+                                           jsize start, jsize len, jboolean * buf)
+{ env->GetBooleanArrayRegion(array, start, len, buf); }
 /** \endcond */
 
 /**
@@ -116,7 +132,7 @@ class jni_array_region: private non_copyable
 
         /** \brief Type of the underlying Java array. */
         typedef typename jni_traits<JNIType>::array_type array_type;
-        /** \brief An unsigned integral type. */
+        /** \brief A signed integral type. */
         typedef jsize size_type;
         /** \brief Type of the region elements (a JNI primitive type, such as
          *         <dfn>jbyte</dfn>).
@@ -348,7 +364,7 @@ class jni_array: private non_copyable
 
         /** \brief Type of the underlying Java array. */
         typedef typename jni_traits<JNIType>::array_type array_type;
-        /** \brief An unsigned integral type. */
+        /** \brief An signed integral type. */
         typedef jsize size_type;
         /** \brief Type of the region elements (a JNI primitive type, such as
          *         <dfn>jbyte</dfn>).
@@ -589,6 +605,49 @@ inline jni_auto_local<jobject>::~jni_auto_local()
 
 inline jni_auto_local<jobject>::operator jobject()
 { return d_object; }
+
+template<>
+class jni_auto_local<jstring>
+{
+        //
+        // DATA
+        //
+
+        JNIEnv * d_env;
+        jstring  d_string;
+
+        //
+        // CONSTRUCTORS
+        //
+
+    public:
+
+        jni_auto_local(JNIEnv * env, const jchar * unicode_chars,
+                       const jsize size);
+
+        ~jni_auto_local();
+
+        //
+        // ACCESSORS
+        //
+
+    public:
+
+        operator jstring();
+};
+
+inline jni_auto_local<jstring>::jni_auto_local(JNIEnv * env,
+                                               const jchar * unicode_chars,
+                                               const jsize size)
+    : d_env(env)
+    , d_string(env->NewString(unicode_chars, size))
+{ }
+
+inline jni_auto_local<jstring>::~jni_auto_local()
+{ d_env->DeleteLocalRef(d_string); }
+
+inline jni_auto_local<jstring>::operator jstring()
+{ return d_string; }
 
 //==============================================================================
 //                     class jni_utf16_output_streambuf

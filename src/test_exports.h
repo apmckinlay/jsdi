@@ -28,6 +28,15 @@ struct Packed_CharCharShortLong
     long         d;
 };
 
+struct Recursive_StringSum
+{
+    Packed_CharCharShortLong x[2];
+    const char *             str;
+    char *                   buffer;
+    int                      len;
+    Recursive_StringSum *    inner;
+};
+
 EXPORT_STDCALL void TestVoid();
 
 EXPORT_STDCALL signed char TestChar(signed char a);
@@ -58,10 +67,14 @@ EXPORT_STDCALL const char * TestHelloWorldReturn(long flag);
 
 EXPORT_STDCALL void TestHelloWorldOutParam(const char ** str);
 
+EXPORT_STDCALL void TestHelloWorldOutBuffer(char * buffer, long size);
+
 EXPORT_STDCALL void TestNullPtrOutParam(const char ** ptr);
 
 EXPORT_STDCALL uint64_t TestReturnPtrPtrPtrDoubleAsUInt64(
     const double * const * const * ptr);
+
+EXPORT_STDCALL long TestSumString(Recursive_StringSum * ptr);
 
 } // extern "C"
 
