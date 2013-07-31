@@ -8,13 +8,10 @@
 #include "jsdi_windows.h"
 #include "jni_exception.h"
 #include "jni_util.h"
-#include "java_enum.h"
 #include "global_refs.h"
-#include "test.h"
 
-#include <iostream>
 #include <cassert>
-#include <limits>
+#include <cstring>
 
 using namespace jsdi;
 
@@ -30,8 +27,66 @@ using namespace jsdi;
 
 namespace {
 
-enum { UNKNOWN_LOCATION = -1 };
 
+/**
+ * Used by the variable indirect code. This is deliberately a POD type.
+ *
+ * The reason we are not using pointers to jni_array<jbyte> within the structure
+ * is that we don't know how many arrays we will have to fetch simultaneously
+ * in order to set up for calling the __stdcall function. There could be an
+ * arbitrarily large number of arrays at once. If we keep the jbyteArray
+ * local reference for each such array around (as jni_array does), we run the
+ * risk of running over the JNI local reference limit.
+ */
+struct jbyte_array_tuple
+{
+    jbyte            *  d_elems;  // pointer to the byte array elements, OWNED
+    jbyte            ** d_pp_arr; // points to the address in the marshalled
+                                  // data array which contains the pointer to
+                                  // this byte array
+    jboolean            d_is_copy;
+};
+
+/**
+ * Used by the variable indirect code.
+ */
+struct jbyte_array_container : private non_copyable
+{
+    typedef std::vector<jbyte_array_tuple> vector_type;
+    vector_type   d_arrays;
+    JNIEnv      * d_env;
+    jobjectArray  d_object_array;
+    jbyte_array_container(size_t size, JNIEnv * env, jobjectArray object_array)
+        : d_arrays(size, { 0, 0 })
+        , d_env(env)
+        , d_object_array(object_array)
+    { }
+    ~jbyte_array_container()
+    {
+        const jsize N(d_arrays.size());
+        for (jsize k = 0; k < N; ++k)
+        {
+            if (d_arrays[k].d_elems)
+            {
+                jni_auto_local<jobject> object(
+                    d_env, d_env->GetObjectArrayElement(d_object_array, k));
+                d_env->ReleaseByteArrayElements(
+                    static_cast<jbyteArray>(static_cast<jobject>(object)),
+                    d_arrays[k].d_elems, 0);
+            }
+        }
+    }
+    void insert(size_t pos, JNIEnv * env, jbyteArray array, jbyte ** pp_array)
+    {
+        jbyte_array_tuple& tuple = d_arrays[pos];
+        assert(! tuple.d_elems || !"duplicate variable indirect pointer");
+        tuple.d_elems = env->GetByteArrayElements(array, &tuple.d_is_copy);
+        tuple.d_pp_arr = pp_array;
+        *pp_array = tuple.d_elems;
+    }
+};
+
+enum { UNKNOWN_LOCATION = -1 };
 
 /**
  * This function is very limited in capability. In particular, it cannot:
@@ -99,12 +154,89 @@ void ptrs_init(jbyte * args, const jint * ptr_array, jsize ptr_array_size)
         // the data array to point to the appropriate location.
         if (UNKNOWN_LOCATION != ptd_to_pos)
         {
-            jbyte * ptr_addr = &args[ptr_pos];
-            jbyte * ptd_to_addr = &args[ptd_to_pos];
+            jbyte ** ptr_addr = reinterpret_cast<jbyte **>(&args[ptr_pos]);
+            jbyte *  ptd_to_addr = &args[ptd_to_pos];
             // Possible alignment issue if the Java-side marshaller didn't set
             // things up so that the pointers are word-aligned. This is the
             // Java side's job, however, and we trust it was done properly.
-            reinterpret_cast<void *&>(*ptr_addr) = ptd_to_addr;
+            *ptr_addr = ptd_to_addr;
+        }
+    }
+}
+
+void ptrs_init_vi(jbyte * args, jsize args_size, const jint * ptr_array,
+                  jsize ptr_array_size, JNIEnv * env, jobjectArray vi_array_in,
+                  jbyte_array_container& vi_array_out)
+{
+    assert(0 == ptr_array_size % 2 || !"pointer array must have even size");
+    jint const * i(ptr_array), * e(ptr_array + ptr_array_size);
+    while (i < e)
+    {
+        jint ptr_pos = *i++;
+        jint ptd_to_pos = *i++;
+        if (UNKNOWN_LOCATION == ptd_to_pos) continue; // Leave a null pointer
+        assert(0 <= ptd_to_pos || !"pointer position must be a non-negative index");
+        jbyte ** ptr_addr = reinterpret_cast<jbyte **>(&args[ptr_pos]);
+        if (ptd_to_pos < args_size)
+        {
+            // Normal pointer: points back into a location within args
+            jbyte * ptd_to_addr = &args[ptd_to_pos];
+            *ptr_addr = ptd_to_addr;
+        }
+        else
+        {
+            // Variable indirect pointer: points to the start of a byte[] which
+            // is passed in from Java in vi_array_in, and marshalled into the
+            // C++ environment in vi_array_out.
+            ptd_to_pos -= args_size; // Convert to an index into vi_array
+            assert(
+                static_cast<size_t>(ptd_to_pos) < vi_array_out.d_arrays.size()
+                || !"pointer points outside of variable indirect array"
+            );
+            jni_auto_local<jobject> object(
+                env, env->GetObjectArrayElement(vi_array_in, ptd_to_pos));
+            assert(env->IsInstanceOf(object, GLOBAL_REFS->byte_ARRAY()));
+            vi_array_out.insert(
+                ptd_to_pos, env,
+                static_cast<jbyteArray>(static_cast<jobject>(object)),
+                ptr_addr
+            );
+        }
+    }
+}
+
+void ptrs_finish_vi(JNIEnv * env, jobjectArray vi_array_java,
+                    const jbyte_array_container& vi_array_cpp,
+                    const jni_array_region<jboolean>& vi_inst_array)
+{
+    const jsize N(vi_array_cpp.d_arrays.size());
+    assert(
+        N == vi_inst_array.size() || !"variable indirect array size mismatch");
+    for (jsize k = 0; k < N; ++k)
+    {
+        const jbyte_array_tuple& tuple(vi_array_cpp.d_arrays[k]);
+        if (tuple.d_elems /* Java side passed us non-null data */ &&
+            vi_inst_array[k] /* Java side expects to get a String back */)
+        {
+            if (! *tuple.d_pp_arr) // null pointer, so return a null String ref
+            {
+                env->SetObjectArrayElement(vi_array_java, k, 0);
+            }
+            else
+            {
+                const char * x = reinterpret_cast<const char *>(*tuple
+                    .d_pp_arr);
+                const size_t len = std::strlen(x);
+                std::vector<jchar> unicode_chars(len);
+                const char * y(x + len);
+                std::vector<jchar>::iterator o(unicode_chars.begin());
+                for (; x != y; ++x, ++o)
+                {
+                    *o = static_cast<jchar>(static_cast<unsigned char>(*x));
+                }
+                jni_auto_local<jstring> str(env, unicode_chars.data(), len);
+                env->SetObjectArrayElement(vi_array_java, k, str);
+            }
         }
     }
 }
@@ -207,11 +339,6 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_DllFactory_getProcAddress
     // This #include isn't strictly necessary -- the only caller of these
     // functions is the JVM. However, it is useful to have the generated code
     // around.
-
-static void todo_deleteme_Throw(const char * func_name)
-{
-    throw jni_exception(func_name, false);
-}
 
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
@@ -334,8 +461,9 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callDirectOnly
  * Method:    callIndirect
  * Signature: (JI[B[I)J
  */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callIndirect
-  (JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jbyteArray args, jintArray ptrArray)
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callIndirect(
+    JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jbyteArray args,
+    jintArray ptrArray)
 {
     jlong result;
     JNI_EXCEPTION_SAFE_BEGIN
@@ -352,12 +480,20 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callIndirect
  * Method:    callVariableIndirect
  * Signature: (JI[B[I[Ljava/lang/Object;[Z)J
  */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIndirect
-  (JNIEnv * env, jclass, jlong, jint, jbyteArray, jintArray, jobjectArray, jbooleanArray)
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIndirect(
+    JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jbyteArray args,
+    jintArray ptrArray, jobjectArray viArray, jbooleanArray viInstArray)
 {
     jlong result;
     JNI_EXCEPTION_SAFE_BEGIN
-    todo_deleteme_Throw(__FUNCTION__);
+    jni_array<jbyte> args_(env, args);
+    jni_array_region<jint> ptr_array(env, ptrArray);
+    jbyte_array_container vi_array_cpp(env->GetArrayLength(viArray), env, viArray);
+    ptrs_init_vi(&args_[0], args_.size(), &ptr_array[0], ptr_array.size(),
+                 env, viArray, vi_array_cpp);
+    result = invoke_stdcall(sizeDirect, &args_[0], funcPtr);
+    jni_array_region<jboolean> vi_inst_array(env, viInstArray);
+    ptrs_finish_vi(env, viArray, vi_array_cpp, vi_inst_array);
     JNI_EXCEPTION_SAFE_END(env);
     return result;
 }
@@ -370,6 +506,7 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIn
 
 #ifndef __TEST_H_NO_TESTS__
 
+#include "test.h"
 #include "test_exports.h"
 #include "util.h"
 
