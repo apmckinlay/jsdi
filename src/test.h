@@ -249,10 +249,10 @@ inline std::string runtime_stringify(const T& t)
 #define stringify_int(x) stringify_int_(x)
 
 #define assert_true(expr) \
-    { if (! expr) fail_assert("true", expr, #expr, stringify_int(__LINE__)) }
+    { if (! expr) fail_assert("true", #expr, stringify_int(__LINE__)); }
 
 #define assert_false(expr) \
-    { if (! expr) fail_assert("false", expr, #expr, stringify_int(__LINE__)) }
+    { if (expr) fail_assert("false", #expr, stringify_int(__LINE__)); }
 
 #define assert_equals(a, b)           \
     {                                 \
