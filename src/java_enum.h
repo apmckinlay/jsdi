@@ -22,19 +22,34 @@ namespace jsdi {
 /**
  * \brief Converts a JNI <dfn>jobject</dfn> reference to a Java enumerator into
  *        the corresponding C++ enumerator.
- * \tparam EnumType An enumeration which is defined in <dfn>java_enum.h</dfn>.
+ * \tparam EnumType An enumeration which is defined in
+ *         \link java_enum.h \endlink.
  * \param env Valid pointer to the JNI environment
  * \param clazz Reference to Java enum class (\em ie an instance of
  *        <dfn>Class<E extends Enum></dfn>)
  * \param e Enumerator to convert (reference to instance of <dfn>clazz</dfn>)
  * \throw jni_exception If an error occurs getting the ordinal value of
  *        <dfn>e</dfn> from the JNI environment
+ * \author Victor Schappert
  */
 template <typename EnumType>
 EnumType jni_enum_to_cpp(JNIEnv * env, jclass clazz, jobject e)
     throw (jni_exception);
 
-// [BEGIN:GENERATED CODE last updated Tue Jul 09 16:15:02 PDT 2013]
+/**
+ * \brief Converts an integer value to the corresponding C++ enumerator for the
+ *        given enumeration type.
+ * \tparam EnumType An enumeration which is defined in
+ *         \link java_enum.h \endlink
+ * \param e Ordinal value of the enumerator desired
+ * \throw jni_exception If the ordinal <dfn>e</dfn> does not correspond to any
+ *        members of the enumeration <dfn>EnumType</dfn>.
+ * \author Victor Schappert
+ */
+template <typename EnumType>
+EnumType ordinal_enum_to_cpp(int e) throw (jni_exception);
+
+// [BEGIN:GENERATED CODE last updated Thu Aug 01 10:05:42 PDT 2013]
 /**
  * \brief C++ enumeration corresponding to the Java enumeration <dfn>suneido.language.jsdi.type.BasicType</dfn>.
  * \author GenerateSharedEnums
@@ -56,7 +71,12 @@ enum suneido_language_jsdi_type_BasicType
 
 /** \cond internal */
 template <>
-suneido_language_jsdi_type_BasicType jni_enum_to_cpp(JNIEnv *, jclass, jobject);
+suneido_language_jsdi_type_BasicType jni_enum_to_cpp(JNIEnv *, jclass, jobject) throw(jni_exception);
+/** \endcond */
+
+/** \cond internal */
+template <>
+suneido_language_jsdi_type_BasicType ordinal_enum_to_cpp(int) throw(jni_exception);
 /** \endcond */
 
 /**
