@@ -8,10 +8,10 @@
 #include "jsdi_windows.h"
 #include "jni_exception.h"
 #include "jni_util.h"
+#include "java_enum.h"
 #include "global_refs.h"
 
 #include <cassert>
-#include <cstring>
 
 using namespace jsdi;
 
@@ -76,7 +76,8 @@ struct jbyte_array_container : private non_copyable
             }
         }
     }
-    void insert(size_t pos, JNIEnv * env, jbyteArray array, jbyte ** pp_array)
+    void put_not_null(size_t pos, JNIEnv * env, jbyteArray array,
+                      jbyte ** pp_array)
     {
         jbyte_array_tuple& tuple = d_arrays[pos];
         assert(! tuple.d_elems || !"duplicate variable indirect pointer");
@@ -84,7 +85,22 @@ struct jbyte_array_container : private non_copyable
         tuple.d_pp_arr = pp_array;
         *pp_array = tuple.d_elems;
     }
+    void put_null(size_t pos, jbyte ** pp_array)
+    {
+        jbyte_array_tuple& tuple = d_arrays[pos];
+        assert(! tuple.d_elems || !"duplicate variable indirect pointer");
+        tuple.d_pp_arr = pp_array;
+    }
 };
+
+void put_string_at_index(JNIEnv * env, jobjectArray vi_array_java, jsize index,
+                         jbyte * str_bytes)
+{
+    const std::vector<jchar> jchars(
+        widen(reinterpret_cast<const char *>(str_bytes)));
+    jni_auto_local<jstring> str(env, jchars.data(), jchars.size());
+    env->SetObjectArrayElement(vi_array_java, index, str);
+}
 
 enum { UNKNOWN_LOCATION = -1 };
 
@@ -195,19 +211,27 @@ void ptrs_init_vi(jbyte * args, jsize args_size, const jint * ptr_array,
             );
             jni_auto_local<jobject> object(
                 env, env->GetObjectArrayElement(vi_array_in, ptd_to_pos));
-            assert(env->IsInstanceOf(object, GLOBAL_REFS->byte_ARRAY()));
-            vi_array_out.insert(
-                ptd_to_pos, env,
-                static_cast<jbyteArray>(static_cast<jobject>(object)),
-                ptr_addr
-            );
+            if (! object)
+            {   // Note if this is a 'resource', the value at *ptr_addr is
+                // actually a 16-bit integer which may not be NULL
+                vi_array_out.put_null(ptd_to_pos, ptr_addr);
+            }
+            else
+            {
+                assert(env->IsInstanceOf(object, GLOBAL_REFS->byte_ARRAY()));
+                vi_array_out.put_not_null(
+                    ptd_to_pos, env,
+                    static_cast<jbyteArray>(static_cast<jobject>(object)),
+                    ptr_addr
+                );
+            }
         }
     }
 }
 
 void ptrs_finish_vi(JNIEnv * env, jobjectArray vi_array_java,
                     const jbyte_array_container& vi_array_cpp,
-                    const jni_array_region<jboolean>& vi_inst_array)
+                    const jni_array_region<jint>& vi_inst_array)
 {
     const jsize N(vi_array_cpp.d_arrays.size());
     assert(
@@ -215,28 +239,43 @@ void ptrs_finish_vi(JNIEnv * env, jobjectArray vi_array_java,
     for (jsize k = 0; k < N; ++k)
     {
         const jbyte_array_tuple& tuple(vi_array_cpp.d_arrays[k]);
-        if (tuple.d_elems /* Java side passed us non-null data */ &&
-            vi_inst_array[k] /* Java side expects to get a String back */)
+        switch (ordinal_enum_to_cpp<
+            suneido_language_jsdi_VariableIndirectInstruction>(vi_inst_array[k])
+        )
         {
-            if (! *tuple.d_pp_arr) // null pointer, so return a null String ref
-            {
-                env->SetObjectArrayElement(vi_array_java, k, 0);
-            }
-            else
-            {
-                const char * x = reinterpret_cast<const char *>(*tuple
-                    .d_pp_arr);
-                const size_t len = std::strlen(x);
-                std::vector<jchar> unicode_chars(len);
-                const char * y(x + len);
-                std::vector<jchar>::iterator o(unicode_chars.begin());
-                for (; x != y; ++x, ++o)
-                {
-                    *o = static_cast<jchar>(static_cast<unsigned char>(*x));
+            case NO_ACTION:
+                break;
+            case RETURN_JAVA_STRING:
+                if (! *tuple.d_pp_arr)
+                {   // null pointer, so return a null String ref
+                    env->SetObjectArrayElement(vi_array_java, k, 0);
                 }
-                jni_auto_local<jstring> str(env, unicode_chars.data(), len);
-                env->SetObjectArrayElement(vi_array_java, k, str);
-            }
+                else
+                {
+                    put_string_at_index(env, vi_array_java, k, *tuple.d_pp_arr);
+                }
+                break;
+            case RETURN_RESOURCE:
+                if (IS_INTRESOURCE(*tuple.d_pp_arr))
+                {   // it's an INT resource, not a string, so return an Integer
+                    jni_auto_local<jobject> int_resource(
+                        env,
+                        env->NewObject(
+                            GLOBAL_REFS->java_lang_Integer(),
+                            GLOBAL_REFS->java_lang_Integer__init(),
+                            reinterpret_cast<int>(*tuple.d_pp_arr)
+                        )
+                    );
+                    env->SetObjectArrayElement(vi_array_java, k, int_resource);
+                }
+                else
+                {
+                    put_string_at_index(env, vi_array_java, k, *tuple.d_pp_arr);
+                }
+                break;
+            default:
+                assert(!"control should never pass here");
+                break;
         }
     }
 }
@@ -478,11 +517,11 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callIndirect(
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
  * Method:    callVariableIndirect
- * Signature: (JI[B[I[Ljava/lang/Object;[Z)J
+ * Signature: (JI[B[I[Ljava/lang/Object;[I)J
  */
 JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIndirect(
     JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jbyteArray args,
-    jintArray ptrArray, jobjectArray viArray, jbooleanArray viInstArray)
+    jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
 {
     jlong result;
     JNI_EXCEPTION_SAFE_BEGIN
@@ -492,7 +531,7 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIn
     ptrs_init_vi(&args_[0], args_.size(), &ptr_array[0], ptr_array.size(),
                  env, viArray, vi_array_cpp);
     result = invoke_stdcall(sizeDirect, &args_[0], funcPtr);
-    jni_array_region<jboolean> vi_inst_array(env, viInstArray);
+    jni_array_region<jint> vi_inst_array(env, viInstArray);
     ptrs_finish_vi(env, viArray, vi_array_cpp, vi_inst_array);
     JNI_EXCEPTION_SAFE_END(env);
     return result;

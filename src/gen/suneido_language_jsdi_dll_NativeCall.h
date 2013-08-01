@@ -92,10 +92,10 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callIndirect
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
  * Method:    callVariableIndirect
- * Signature: (JI[B[I[Ljava/lang/Object;[Z)J
+ * Signature: (JI[B[I[Ljava/lang/Object;[I)J
  */
 JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIndirect
-  (JNIEnv *, jclass, jlong, jint, jbyteArray, jintArray, jobjectArray, jbooleanArray);
+  (JNIEnv *, jclass, jlong, jint, jbyteArray, jintArray, jobjectArray, jintArray);
 
 #ifdef __cplusplus
 }
