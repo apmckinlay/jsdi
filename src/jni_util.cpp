@@ -7,6 +7,8 @@
 
 #include "jni_util.h"
 
+#include <cstring>
+
 namespace jsdi {
 
 //==============================================================================
@@ -41,6 +43,24 @@ jni_utf16_output_streambuf::int_type jni_utf16_output_streambuf::overflow(
         return ch;
     }
     else return traits_type::eof();
+}
+
+//==============================================================================
+//                         string utility functions
+//==============================================================================
+
+std::vector<jchar> widen(const char * sz)
+{
+    assert(sz || !"sz cannot be NULL");
+    size_t N = std::strlen(sz);
+    std::vector<jchar> wide(N);
+    const char * end(sz + N);
+    std::vector<jchar>::iterator o(wide.begin());
+    for (; sz != end; ++sz, ++o)
+    {
+        *o = static_cast<jchar>(static_cast<unsigned char>(*sz));
+    }
+    return wide;
 }
 
 } // namespace jsdi

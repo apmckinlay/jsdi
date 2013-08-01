@@ -916,6 +916,21 @@ inline const wchar_t * jni_utf16_string_region::wstr() const
     return reinterpret_cast<wchar_t *>(d_str);
 }
 
+//==============================================================================
+//                         string utility functions
+//==============================================================================
+
+/**
+ * \brief Converts a zero-terminated string of 8-bit characters into a vector
+ *        of 16-bit Java characters.
+ * \param Non-NULL pointer to a zero-terminated string
+ * \return Vector containing the wide character equivalents of the characters
+ *         in <dfn>sz</dfn> <em>but without the zero-terminator</em>
+ * \author Victor Schappert
+ * \since 20130801
+ */
+std::vector<jchar> widen(const char * sz);
+
 } // namespace jsdi
 
 #endif // __INCLUDED_JNI_UTIL_H___
