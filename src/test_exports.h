@@ -76,6 +76,8 @@ EXPORT_STDCALL uint64_t TestReturnPtrPtrPtrDoubleAsUInt64(
 
 EXPORT_STDCALL long TestSumString(Recursive_StringSum * ptr);
 
+EXPORT_STDCALL long TestSumResource(const char * res, const char ** pres);
+
 } // extern "C"
 
 #endif // __INCLUDED_TEST_EXPORTS_H___
