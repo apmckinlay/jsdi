@@ -7,6 +7,9 @@
 
 #include "test_exports.h"
 
+#include "jsdi_windows.h"
+
+#include <cassert>
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
@@ -90,6 +93,36 @@ EXPORT_STDCALL long TestSumString(Recursive_StringSum * ptr)
     return sum;
 }
 
+EXPORT_STDCALL long TestSumResource(const char * res, const char ** pres)
+{
+    long sum(0);
+    if (IS_INTRESOURCE(res))
+        sum += reinterpret_cast<unsigned long>(res);
+    else
+    {
+        assert(res);
+        sum += std::atol(res);
+    }
+    if (pres)
+    {
+        // Finish calculating sum.
+        if (IS_INTRESOURCE(*pres))
+            sum += reinterpret_cast<unsigned long>(*pres);
+        else
+        {
+            assert(*pres);
+            sum += std::atol(*pres);
+        }
+        // If the sum fits in an INTRESOURCE, return it in *pres. Otherwise,
+        // return a string.
+        *pres = 0 <= sum && IS_INTRESOURCE(sum)
+            ? MAKEINTRESOURCE(sum)
+            : "sum is not an INTRESOURCE"
+            ;
+    }
+    return sum;
+}
+
 } // extern "C"
 
 //==============================================================================
@@ -100,6 +133,9 @@ EXPORT_STDCALL long TestSumString(Recursive_StringSum * ptr)
 
 #include "test.h"
 #include "util.h"
+
+#include <limits>
+#include <cstdint>
 
 TEST(TestSumString,
     static Recursive_StringSum rss[3]; // zeroed automatically
@@ -144,6 +180,31 @@ TEST(TestSumString,
     rss[2].len = 1;
     assert_equals(235, TestSumString(rss));
     assert_equals(std::string(), buffer[2]);
+);
+
+TEST(TestSumResource,
+    const char * ptr;
+    assert_equals(0, TestSumResource(0, 0));
+    assert_equals(5, TestSumResource(MAKEINTRESOURCE(5), 0));
+    ptr = MAKEINTRESOURCE(40000);
+    assert_equals(40005, TestSumResource(MAKEINTRESOURCE(5), &ptr));
+    assert_true(IS_INTRESOURCE(ptr));
+    assert_equals(40005, reinterpret_cast<unsigned long>(ptr));
+    assert_equals(255, TestSumResource("255", 0));
+    ptr = "-1";
+    assert_equals(255, TestSumResource("256", &ptr));
+    assert_true(IS_INTRESOURCE(ptr));
+    assert_equals(255, reinterpret_cast<unsigned long>(ptr));
+    ptr = MAKEINTRESOURCE(1);
+    assert_equals(
+        std::numeric_limits<uint16_t>::max() + 1,
+        TestSumResource(
+            MAKEINTRESOURCE(std::numeric_limits<uint16_t>::max()),
+            &ptr
+        )
+    )
+    assert_false(IS_INTRESOURCE(ptr));
+    assert_equals(std::string("sum is not an INTRESOURCE"), ptr);
 );
 
 #endif // __TEST_H_NO_TESTS__

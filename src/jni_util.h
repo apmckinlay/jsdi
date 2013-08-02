@@ -625,6 +625,8 @@ class jni_auto_local<jstring>
         jni_auto_local(JNIEnv * env, const jchar * unicode_chars,
                        const jsize size);
 
+        jni_auto_local(JNIEnv * env, jstring string);
+
         ~jni_auto_local();
 
         //
@@ -641,6 +643,11 @@ inline jni_auto_local<jstring>::jni_auto_local(JNIEnv * env,
                                                const jsize size)
     : d_env(env)
     , d_string(env->NewString(unicode_chars, size))
+{ }
+
+inline jni_auto_local<jstring>::jni_auto_local(JNIEnv * env, jstring string)
+    : d_env(env)
+    , d_string(string)
 { }
 
 inline jni_auto_local<jstring>::~jni_auto_local()

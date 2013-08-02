@@ -27,7 +27,6 @@ using namespace jsdi;
 
 namespace {
 
-
 /**
  * Used by the variable indirect code. This is deliberately a POD type.
  *
@@ -57,24 +56,17 @@ struct jbyte_array_container : private non_copyable
     JNIEnv      * d_env;
     jobjectArray  d_object_array;
     jbyte_array_container(size_t size, JNIEnv * env, jobjectArray object_array)
-        : d_arrays(size, { 0, 0 })
+        : d_arrays(size, { 0, 0, JNI_FALSE })
         , d_env(env)
         , d_object_array(object_array)
     { }
     ~jbyte_array_container()
     {
         const jsize N(d_arrays.size());
-        for (jsize k = 0; k < N; ++k)
-        {
-            if (d_arrays[k].d_elems)
-            {
-                jni_auto_local<jobject> object(
-                    d_env, d_env->GetObjectArrayElement(d_object_array, k));
-                d_env->ReleaseByteArrayElements(
-                    static_cast<jbyteArray>(static_cast<jobject>(object)),
-                    d_arrays[k].d_elems, 0);
-            }
-        }
+        try
+        { for (jsize k = 0; k < N; ++k) free_byte_array(k); }
+        catch (...)
+        { }
     }
     void put_not_null(size_t pos, JNIEnv * env, jbyteArray array,
                       jbyte ** pp_array)
@@ -91,15 +83,27 @@ struct jbyte_array_container : private non_copyable
         assert(! tuple.d_elems || !"duplicate variable indirect pointer");
         tuple.d_pp_arr = pp_array;
     }
+    void free_byte_array(size_t pos)
+    {
+        jbyte_array_tuple& tuple = d_arrays[pos];
+        if (tuple.d_elems)
+        {
+            jni_auto_local<jobject> object(
+                d_env, d_env->GetObjectArrayElement(d_object_array, pos));
+            assert(d_env->IsInstanceOf(object, GLOBAL_REFS->byte_ARRAY()));
+            d_env->ReleaseByteArrayElements(
+                static_cast<jbyteArray>(static_cast<jobject>(object)),
+                tuple.d_elems, 0);
+            tuple = { 0, 0, JNI_FALSE };
+        }
+    }
 };
 
-void put_string_at_index(JNIEnv * env, jobjectArray vi_array_java, jsize index,
-                         jbyte * str_bytes)
+jstring make_jstring(JNIEnv * env, jbyte * str_bytes)
 {
     const std::vector<jchar> jchars(
         widen(reinterpret_cast<const char *>(str_bytes)));
-    jni_auto_local<jstring> str(env, jchars.data(), jchars.size());
-    env->SetObjectArrayElement(vi_array_java, index, str);
+    return env->NewString(jchars.data(), jchars.size());
 }
 
 enum { UNKNOWN_LOCATION = -1 };
@@ -230,7 +234,7 @@ void ptrs_init_vi(jbyte * args, jsize args_size, const jint * ptr_array,
 }
 
 void ptrs_finish_vi(JNIEnv * env, jobjectArray vi_array_java,
-                    const jbyte_array_container& vi_array_cpp,
+                    jbyte_array_container& vi_array_cpp,
                     const jni_array_region<jint>& vi_inst_array)
 {
     const jsize N(vi_array_cpp.d_arrays.size());
@@ -248,11 +252,15 @@ void ptrs_finish_vi(JNIEnv * env, jobjectArray vi_array_java,
             case RETURN_JAVA_STRING:
                 if (! *tuple.d_pp_arr)
                 {   // null pointer, so return a null String ref
+                    vi_array_cpp.free_byte_array(k);
                     env->SetObjectArrayElement(vi_array_java, k, 0);
                 }
                 else
                 {
-                    put_string_at_index(env, vi_array_java, k, *tuple.d_pp_arr);
+                    jni_auto_local<jstring> str(
+                        env, make_jstring(env, *tuple.d_pp_arr));
+                    vi_array_cpp.free_byte_array(k);
+                    env->SetObjectArrayElement(vi_array_java, k, str);
                 }
                 break;
             case RETURN_RESOURCE:
@@ -266,11 +274,15 @@ void ptrs_finish_vi(JNIEnv * env, jobjectArray vi_array_java,
                             reinterpret_cast<int>(*tuple.d_pp_arr)
                         )
                     );
+                    vi_array_cpp.free_byte_array(k);
                     env->SetObjectArrayElement(vi_array_java, k, int_resource);
                 }
                 else
                 {
-                    put_string_at_index(env, vi_array_java, k, *tuple.d_pp_arr);
+                    jni_auto_local<jstring> str(
+                        env, make_jstring(env, *tuple.d_pp_arr));
+                    vi_array_cpp.free_byte_array(k);
+                    env->SetObjectArrayElement(vi_array_java, k, str);
                 }
                 break;
             default:
