@@ -5,3 +5,4 @@ recycle_bin
 bin
 obj
 .dep
+.settings/org.eclipse.cdt.core.prefs
