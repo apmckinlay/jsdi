@@ -37,6 +37,16 @@ struct Recursive_StringSum
     Recursive_StringSum *    inner;
 };
 
+typedef __stdcall long (* TestCallback_Long1)(long);
+
+typedef __stdcall long (* TestCallback_Long2)(long, long);
+
+typedef __stdcall long (*TestCallback_Packed_CharCharShortLong)(
+    Packed_CharCharShortLong);
+
+typedef __stdcall long (*TestCallback_Recursive_StringSum)(
+    Recursive_StringSum *);
+
 EXPORT_STDCALL void TestVoid();
 
 EXPORT_STDCALL signed char TestChar(signed char a);
@@ -77,6 +87,17 @@ EXPORT_STDCALL uint64_t TestReturnPtrPtrPtrDoubleAsUInt64(
 EXPORT_STDCALL long TestSumString(Recursive_StringSum * ptr);
 
 EXPORT_STDCALL long TestSumResource(const char * res, const char ** pres);
+
+EXPORT_STDCALL long TestInvokeCallback_Long1(TestCallback_Long1 f, long a);
+
+EXPORT_STDCALL long TestInvokeCallback_Long2(TestCallback_Long2 f, long a,
+                                             long b);
+
+EXPORT_STDCALL long TestInvokeCallback_Packed_CharCharShortLong(
+    TestCallback_Packed_CharCharShortLong f, Packed_CharCharShortLong a);
+
+EXPORT_STDCALL long TestInvokeCallback_Recursive_StringSum(
+    TestCallback_Recursive_StringSum f, Recursive_StringSum * ptr);
 
 } // extern "C"
 

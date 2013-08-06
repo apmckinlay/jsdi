@@ -123,13 +123,28 @@ EXPORT_STDCALL long TestSumResource(const char * res, const char ** pres)
     return sum;
 }
 
+EXPORT_STDCALL long TestInvokeCallback_Long1(TestCallback_Long1 f, long a)
+{ return f ? f(a) : 0L; }
+
+EXPORT_STDCALL long TestInvokeCallback_Long2(TestCallback_Long2 f, long a,
+                                             long b)
+{ return f ? f(a, b) : 0L; }
+
+EXPORT_STDCALL long TestInvokeCallback_Packed_CharCharShortLong(
+    TestCallback_Packed_CharCharShortLong f, Packed_CharCharShortLong a)
+{ return f ? f(a) : 0L; }
+
+EXPORT_STDCALL long TestInvokeCallback_Recursive_StringSum(
+    TestCallback_Recursive_StringSum f, Recursive_StringSum * ptr)
+{ return f ? f(ptr) : 0L; }
+
 } // extern "C"
 
 //==============================================================================
 //                                  TESTS
 //==============================================================================
 
-#ifndef __TEST_H_NO_TESTS__
+#ifndef __NOTEST__
 
 #include "test.h"
 #include "util.h"
@@ -207,4 +222,4 @@ TEST(TestSumResource,
     assert_equals(std::string("sum is not an INTRESOURCE"), ptr);
 );
 
-#endif // __TEST_H_NO_TESTS__
+#endif // __NOTEST__

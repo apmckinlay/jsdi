@@ -307,7 +307,7 @@ inline typename jni_array_region<JNIType>::const_iterator jni_array_region<
 //==============================================================================
 
 /** \cond internal */
-template<typename JNIType>
+template <typename JNIType>
 inline typename jni_traits<JNIType>::pointer jni_array_get_elements(
     JNIEnv *, typename jni_traits<JNIType>::array_type, jboolean *);
 
@@ -330,6 +330,15 @@ inline void jni_array_release_elements<jbyte>(JNIEnv * env, jbyteArray array,
 {
     env->ReleaseByteArrayElements(array, elems, mode);
 }
+
+template <typename JNIType>
+inline typename jni_traits<JNIType>::array_type jni_array_new(JNIEnv *, jsize);
+
+template<>
+inline jbyteArray jni_array_new<jbyte>(JNIEnv * env, jsize length)
+{
+    return env->NewByteArray(length);
+}
 /** \endcond */
 
 /**
@@ -351,7 +360,7 @@ inline void jni_array_release_elements<jbyte>(JNIEnv * env, jbyteArray array,
  * <em>Since the backing data of an instance of jni_array may be a
  * <strong>copy</strong> of the underlying JVM data (see #is_copy() const),
  * changes to the array may not be visible on the Java side until the instance
- * is destroyed.
+ * is destroyed.</em>
  */
 template<typename JNIType>
 class jni_array: private non_copyable
@@ -378,6 +387,8 @@ class jni_array: private non_copyable
         typedef typename jni_traits<JNIType>::const_value_type const_value_type;
         /** \brief Type of a pointer a region element. */
         typedef typename jni_traits<JNIType>::pointer pointer;
+        /** \brief Type of a pointer to a #const_value_type. */
+        typedef typename jni_traits<JNIType>::const_pointer const_pointer;
         /** \brief Type of a reference to a #value_type. */
         typedef typename jni_traits<JNIType>::reference reference;
         /** \brief Type of a reference to a #const_value_type. */
@@ -404,13 +415,22 @@ class jni_array: private non_copyable
     public:
 
         /**
-         * \brief Constructor for an array containing all of the elements of the
-         *        Java array.
+         * \brief Constructor for an array containing all of the elements of an
+         *        existing Java array.
          * \param env JNI environment
          * \param array Reference to a JNI primitive array of the correct type
          *              (\em eg <dfn>jbyteArray</dfn>)
+         * \see #jni_array(JNIEnv *, size_type)
          */
         jni_array(JNIEnv * env, array_type array);
+
+        /**
+         * \brief Constructor for a new array.
+         * \param env JNI environment
+         * \param size Number of elements in the new array
+         * \see #jni_array(JNIEnv *, array_type)
+         */
+        jni_array(JNIEnv * env, size_type size);
 
         ~jni_array();
 
@@ -421,11 +441,20 @@ class jni_array: private non_copyable
     public:
 
         /**
+         * \brief Returns the underlying JNI array reference managed by this
+         *        instance.
+         * \return Underlying JNI array
+         * \see #is_copy() const
+         */
+        array_type jarray();
+
+        /**
          * \brief Indicates whether the array data is a copy of the underlying
          * Java array.
          * \return Whether the array data is a copy of the &quot;primary&quot;
          * array held by the JVM (<dfn>true</dfn>); or whether this array
          * directly refers to the JVM data (<dfn>false</dfn>).
+         * \see #jarray()
          */
         bool is_copy() const;
 
@@ -434,6 +463,26 @@ class jni_array: private non_copyable
          * \return Number of elements in the array
          */
         size_type size() const;
+
+        /**
+         * \brief Returns a pointer to the array storage.
+         * \return Pointer to array storage
+         * \see #data() const
+         *
+         * The pointer returned is such that [data(), data() + size()] is always
+         * a valid range.
+         */
+        pointer data();
+
+        /**
+         * \brief Returns a pointer to the array storage.
+         * \return Pointer to array storage
+         * \see #data()
+         *
+         * The pointer returned is such that [data(), data() + size()] is always
+         * a valid range.
+         */
+        const_pointer data() const;
 
         /**
          * \brief Subscripts an element of the array.
@@ -481,8 +530,25 @@ inline jni_array<JNIType>::jni_array(JNIEnv * env, array_type array)
 { assert(d_array); }
 
 template <typename JNIType>
+inline jni_array<JNIType>::jni_array(JNIEnv * env, size_type size)
+    : d_array(0)
+    , d_size(size)
+    , d_env(env)
+    , d_jarray(jni_array_new<JNIType>(env, size))
+{
+    assert(0 <= size || !"array size cannot be negative");
+    assert(d_jarray);
+    d_array = jni_array_get_elements<JNIType>(env, d_jarray, &d_is_copy);
+    assert(d_array);
+}
+
+template <typename JNIType>
 inline jni_array<JNIType>::~jni_array()
 { jni_array_release_elements<JNIType>(d_env, d_jarray, d_array, 0); }
+
+template <typename JNIType>
+inline typename jni_array<JNIType>::array_type jni_array<JNIType>::jarray()
+{ return d_jarray; }
 
 template <typename JNIType>
 inline bool jni_array<JNIType>::is_copy() const
@@ -491,6 +557,14 @@ inline bool jni_array<JNIType>::is_copy() const
 template <typename JNIType>
 inline typename jni_array<JNIType>::size_type jni_array<JNIType>::size() const
 { return d_size; }
+
+template <typename JNIType>
+inline typename jni_array<JNIType>::pointer jni_array<JNIType>::data()
+{ return d_array; }
+
+template <typename JNIType>
+inline typename jni_array<JNIType>::const_pointer jni_array<JNIType>::data() const
+{ return d_array; }
 
 template <typename JNIType>
 inline typename jni_array<JNIType>::reference jni_array<JNIType>::operator[](
@@ -655,6 +729,12 @@ inline jni_auto_local<jstring>::~jni_auto_local()
 
 inline jni_auto_local<jstring>::operator jstring()
 { return d_string; }
+
+//==============================================================================
+//                           class jni_auto_global
+//==============================================================================
+
+
 
 //==============================================================================
 //                     class jni_utf16_output_streambuf
