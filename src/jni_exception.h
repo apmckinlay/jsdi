@@ -24,11 +24,19 @@ namespace jsdi {
 #define JNI_EXCEPTION_SAFE_BEGIN            \
     try {
 
-#define JNI_EXCEPTION_SAFE_END(env)         \
-    }                                       \
-    catch (const jsdi::jni_exception& e)    \
-    {                                       \
-        e.throw_jni(env);                   \
+#define JNI_EXCEPTION_SAFE_END(env)                                     \
+    }                                                                   \
+    catch (const jsdi::jni_exception& e)                                \
+    {                                                                   \
+        e.throw_jni(env);                                               \
+    }                                                                   \
+    catch (const std::exception& e)                                     \
+    {                                                                   \
+        jsdi::jni_exception(e.what(), false).throw_jni(env);            \
+    }                                                                   \
+    catch (...)                                                         \
+    {                                                                   \
+        jsdi::jni_exception("unknown exception", false).throw_jni(env); \
     }
 
 #define JNI_EXCEPTION_CHECK(env)                                    \

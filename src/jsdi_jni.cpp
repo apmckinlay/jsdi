@@ -10,6 +10,7 @@
 #include "jni_util.h"
 #include "java_enum.h"
 #include "global_refs.h"
+#include "stdcall_invoke.h"
 
 #include <cassert>
 
@@ -108,57 +109,13 @@ jstring make_jstring(JNIEnv * env, jbyte * str_bytes)
 
 enum { UNKNOWN_LOCATION = -1 };
 
-/**
- * This function is very limited in capability. In particular, it cannot:
- *     - Call stdcall functions which return floating-point values. This is
- *       because such values are returned in ST(0), the top register of the
- *       floating-point stack, not in the EAX/EDX pair, under stdcall.
- *     - Call stdcall functions which return aggregates of 5-7, or 9+ bytes in
- *       size, because these functions require the caller to pass the address
- *       of the return value as a silent parameter in EAX.
- *
- * See: http://pic.dhe.ibm.com/infocenter/ratdevz/v7r5/index.jsp?topic=
- *     %2Fcom.ibm.etools.pl1.win.doc%2Ftopics%2Fxf6700.htm
- * See also: http://stackoverflow.com/q/17912828/1911388
- */
-jlong invoke_stdcall(int args_size_bytes, const jbyte * args_ptr,
-                     void * func_ptr)
+inline jlong invoke_stdcall_basic(int args_size_bytes, const jbyte * args_ptr,
+                                  jlong func_ptr)
 {
-    uint32_t hi32, lo32;
-    assert(0 == args_size_bytes % 4 || !"Argument size must be a multiple of 4 bytes");
-#if defined(__GNUC__)
-    asm
-    (
-        /* OUTPUT PARAMS: %0 gets the high-order 32 bits of the return value */
-        /*                %1 gets the low-order 32 bits of the return value */
-        /* INPUT PARAMS:  %2 is the number of BYTES to push onto the stack, */
-        /*                   and during the copy loop it is the address of */
-        /*                   the next word to push */
-        /*                %3 is the base address of the array */
-        /*                %4 is the address of the function to call */
-            "testl %2, %2    # If zero argument bytes given, skip \n\t"
-            "je    2f        # right to the function call.        \n\t"
-            "addl  %3, %2\n"
-        "1:\n\t"
-            "subl  $4, %2    # Push arguments onto the stack in   \n\t"
-            "pushl (%2)      # reverse order. Keep looping while  \n\t"
-            "cmp   %3, %2    # addr to push (%2) > base addr (%3) \n\t"
-            "jg    1b        # Callee cleans up b/c __stdcall.    \n"
-        "2:\n\t"
-            "call  * %4"
-        : "=d" (hi32), "=a" (lo32)
-        : "0" (args_size_bytes), "1" (args_ptr), "mr" (func_ptr)
-        : "%ecx" /* eax, ecx, edx are caller-save */, "cc"
-    );
-#else
-#pragma error "Replacement for inline assembler required"
-#endif
-    uint64_t unsigned_result(static_cast<uint64_t>(hi32) << 32 | lo32);
-    return static_cast<jlong>(unsigned_result);
+    return stdcall_invoke::basic(args_size_bytes,
+                                 reinterpret_cast<const char *>(args_ptr),
+                                 reinterpret_cast<void *>(func_ptr));
 }
-
-inline jlong invoke_stdcall(int args_size_bytes, const jbyte * args_ptr, jlong func_ptr)
-{ return invoke_stdcall(args_size_bytes, args_ptr, reinterpret_cast<void *>(func_ptr)); }
 
 void ptrs_init(jbyte * args, const jint * ptr_array, jsize ptr_array_size)
 {
@@ -502,7 +459,7 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callDirectOnly
     JNI_EXCEPTION_SAFE_BEGIN
     // TODO: tracing
     jni_array_region<jbyte> args_(env, args, sizeDirect);
-    result = invoke_stdcall(sizeDirect, &args_[0], funcPtr);
+    result = invoke_stdcall_basic(sizeDirect, &args_[0], funcPtr);
     JNI_EXCEPTION_SAFE_END(env);
     return result;
 }
@@ -521,7 +478,7 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callIndirect(
     jni_array<jbyte> args_(env, args);
     jni_array_region<jint> ptr_array(env, ptrArray);
     ptrs_init(&args_[0], &ptr_array[0], ptr_array.size());
-    result = invoke_stdcall(sizeDirect, &args_[0], funcPtr);
+    result = invoke_stdcall_basic(sizeDirect, &args_[0], funcPtr);
     JNI_EXCEPTION_SAFE_END(env);
     return result;
 }
@@ -542,7 +499,7 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIn
     jbyte_array_container vi_array_cpp(env->GetArrayLength(viArray), env, viArray);
     ptrs_init_vi(&args_[0], args_.size(), &ptr_array[0], ptr_array.size(),
                  env, viArray, vi_array_cpp);
-    result = invoke_stdcall(sizeDirect, &args_[0], funcPtr);
+    result = invoke_stdcall_basic(sizeDirect, &args_[0], funcPtr);
     jni_array_region<jint> vi_inst_array(env, viInstArray);
     ptrs_finish_vi(env, viArray, vi_array_cpp, vi_inst_array);
     JNI_EXCEPTION_SAFE_END(env);
@@ -555,7 +512,7 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIn
 //                                  TESTS
 //==============================================================================
 
-#ifndef __TEST_H_NO_TESTS__
+#ifndef __NOTEST__
 
 #include "test.h"
 #include "test_exports.h"
@@ -568,7 +525,7 @@ namespace {
 template<typename FuncPtr>
 inline jlong invoke_stdcall_(FuncPtr f, int nlongs, long * args)
 {
-    return invoke_stdcall(
+    return invoke_stdcall_basic(
         nlongs * sizeof(long),
         reinterpret_cast<const jbyte *>(args),
         reinterpret_cast<jlong>(f)
@@ -577,97 +534,9 @@ inline jlong invoke_stdcall_(FuncPtr f, int nlongs, long * args)
 
 template<typename FuncPtr>
 inline jlong invoke_stdcall_(FuncPtr f, int nbytes, jbyte * args)
-{ return invoke_stdcall(nbytes, args, reinterpret_cast<jlong>(f)); }
+{ return invoke_stdcall_basic(nbytes, args, reinterpret_cast<jlong>(f)); }
 
 } // anonymous namespace
-
-TEST(assembly,
-    union
-    {
-        long a[4];
-        const char * str;
-        const char ** pstr;
-        Packed_CharCharShortLong p_ccsl;
-        int64_t int64;
-    };
-    invoke_stdcall_(TestVoid, 0, a);
-    a[0] = static_cast<long>('a');
-    assert_equals('a', static_cast<char>(invoke_stdcall_(TestChar, 1, a)));
-    a[0] = 0xf1;
-    assert_equals(0xf1, static_cast<short>(invoke_stdcall_(TestShort, 1, a)));
-    a[0] = 0x20130725;
-    assert_equals(0x20130725, static_cast<long>(invoke_stdcall_(TestLong, 1, a)));
-    int64 = std::numeric_limits<int64_t>::min();
-    assert_equals(
-        std::numeric_limits<int64_t>::min(),
-        invoke_stdcall_(TestInt64, 2, a)
-    );
-    a[0] = 0x80; // this is -128 as a char
-    a[1] = 0x7f; // this is 127 as a char
-    assert_equals(
-        static_cast<char>(0xff),
-        static_cast<char>(invoke_stdcall_(TestSumTwoChars, 2, a))
-    );
-    a[0] = 0x8000;
-    a[1] = 0x7fff;
-    assert_equals(
-        static_cast<short>(0xffff),
-        static_cast<short>(invoke_stdcall_(TestSumTwoShorts, 2, a))
-    );
-    a[0] = std::numeric_limits<long>::min() + 5;
-    a[1] = -5;
-    assert_equals(
-        std::numeric_limits<long>::min(),
-        static_cast<long>(invoke_stdcall_(TestSumTwoLongs, 2, a))
-    );
-    a[2] = std::numeric_limits<long>::max();
-    assert_equals(
-        std::numeric_limits<long>::max() + std::numeric_limits<long>::min(),
-        static_cast<long>(invoke_stdcall_(TestSumThreeLongs, 3, a))
-    );
-    a[0] = -100;
-    a[1] =   99;
-    a[2] = -200;
-    a[3] =  199;
-    assert_equals(-2, static_cast<long>(invoke_stdcall_(TestSumFourLongs, 4, a)));
-    a[0] = -1;
-    *reinterpret_cast<int64_t *>(a + 1) = std::numeric_limits<int64_t>::max() - 2;
-    assert_equals(
-        std::numeric_limits<int64_t>::max() - 3,
-        invoke_stdcall_(TestSumCharPlusInt64, 3, a)
-    );
-    p_ccsl.a = -1;
-    p_ccsl.b = -3;
-    p_ccsl.c = -129;
-    p_ccsl.d = -70000;
-    assert_equals(
-        -70133,
-        static_cast<long>(invoke_stdcall_(
-            TestSumPackedCharCharShortLong,
-            (sizeof(p_ccsl) + sizeof(long) - 1) / sizeof(long),
-            a
-        ))
-    );
-    str =
-        "From hence ye beauties, undeceived,     \n"
-        "Know, one false step is ne'er retrieved,\n"
-        "    And be with caution bold.           \n"
-        "Not all that tempts your wandering eyes \n"
-        "And heedless hearts is lawful prize;    \n"
-        "    Nor all that glitters, gold.         ";
-    assert_equals(41*6, static_cast<long>(invoke_stdcall_(TestStrLen, 1, a)));
-    a[0] = 1; // true
-    assert_equals(
-        std::string("hello world"),
-        reinterpret_cast<const char *>(invoke_stdcall_(TestHelloWorldReturn, 1, a))
-    );
-    const char * tmp_str(0);
-    pstr = &tmp_str;
-    invoke_stdcall_(TestHelloWorldOutParam, 1, a);
-    assert_equals(std::string("hello world"), tmp_str);
-    invoke_stdcall_(TestNullPtrOutParam, 1, a);
-    assert_equals(0, tmp_str);
-);
 
 TEST(ptrs_init,
     // single indirection
@@ -742,4 +611,4 @@ TEST(ptrs_init,
     }
 );
 
-#endif // __TEST_H_NO_TESTS__
+#endif // __NOTEST__

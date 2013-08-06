@@ -8,7 +8,7 @@
  * \brief Simple framework for unit testing
  */
 
-#ifndef __TEST_H_NO_TESTS__
+#ifndef __NOTEST__
 
 #include <cassert>
 #include <sstream>
@@ -279,6 +279,6 @@ jsdi::test_registrar test_ ## name ## __(new test_ ## name);     \
                                                                  \
 } /* namespace tests */
 
-#endif // #ifndef __TEST_H_NO_TESTS__
+#endif // #ifndef __NOTEST__
 
 #endif // __INCLUDED_TEST_H__
