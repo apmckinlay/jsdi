@@ -14,7 +14,7 @@ extern "C" {
 /*
  * Class:     suneido_language_jsdi_ThunkManager
  * Method:    newThunk
- * Signature: (Lsuneido/language/jsdi/type/Callback;Lsuneido/language/SuCallable;II[II[I)V
+ * Signature: (Lsuneido/language/jsdi/type/Callback;Lsuneido/SuValue;II[II[I)V
  */
 JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_newThunk
   (JNIEnv *, jclass, jobject, jobject, jint, jint, jintArray, jint, jintArray);

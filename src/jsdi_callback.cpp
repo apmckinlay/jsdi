@@ -37,9 +37,9 @@ void jsdi_callback_basic::init(JNIEnv * env, jobject suneido_callback,
     assert(suneido_callback);
     assert(suneido_sucallable);
     d_suneido_callback_global_ref = env->NewGlobalRef(suneido_callback);
-    d_suneido_sucallable_global_ref = env->NewGlobalRef(suneido_sucallable);
+    d_suneido_bound_value_global_ref = env->NewGlobalRef(suneido_sucallable);
     assert(d_suneido_callback_global_ref);
-    assert(d_suneido_sucallable_global_ref);
+    assert(d_suneido_bound_value_global_ref);
     if (0 != env->GetJavaVM(&d_jni_jvm))
     {
         assert(false || !"failed to get JVM reference");
@@ -56,12 +56,12 @@ jsdi_callback_basic::jsdi_callback_basic(JNIEnv * env,
 { init(env, suneido_callback, suneido_sucallable); }
 
 jsdi_callback_basic::jsdi_callback_basic(JNIEnv * env, jobject suneido_callback,
-                                         jobject suneido_sucallable,
+                                         jobject suneido_bound_value,
                                          int size_direct, int size_indirect,
                                          const int * ptr_array,
                                          int ptr_array_size)
     : callback(size_direct, size_indirect, ptr_array, ptr_array_size, 0)
-{ init(env, suneido_callback, suneido_sucallable); }
+{ init(env, suneido_callback, suneido_bound_value); }
 
 jsdi_callback_basic::~jsdi_callback_basic()
 {
@@ -70,7 +70,7 @@ jsdi_callback_basic::~jsdi_callback_basic()
     if (env)
     {
         env->DeleteGlobalRef(d_suneido_callback_global_ref);
-        env->DeleteGlobalRef(d_suneido_sucallable_global_ref);
+        env->DeleteGlobalRef(d_suneido_bound_value_global_ref);
     }
 }
 
@@ -82,7 +82,7 @@ long jsdi_callback_basic::call(std::unique_ptr<callback_args> args)
     auto& in_args(static_cast<jsdi_callback_args_basic&>(*args));
     JNIEnv * env(in_args.env());
     jvalue out_args[2];
-    out_args[0].l = d_suneido_sucallable_global_ref;
+    out_args[0].l = d_suneido_bound_value_global_ref;
     out_args[1].l = in_args.release_data();
     long result(0);
     result = env->CallNonvirtualIntMethodA(
@@ -136,7 +136,7 @@ long jsdi_callback_vi::call(std::unique_ptr<callback_args> args)
     auto& in_args(static_cast<jsdi_callback_args_vi&>(*args));
     JNIEnv * env(in_args.env());
     jvalue out_args[3];
-    out_args[0].l = d_suneido_sucallable_global_ref;
+    out_args[0].l = d_suneido_bound_value_global_ref;
     out_args[1].l = in_args.release_data();
     out_args[2].l = in_args.vi_array();
     long result(0);

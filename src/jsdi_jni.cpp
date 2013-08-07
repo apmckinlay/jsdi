@@ -519,10 +519,10 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIn
 /*
  * Class:     suneido_language_jsdi_ThunkManager
  * Method:    newThunk
- * Signature: (Lsuneido/language/jsdi/type/Callback;Lsuneido/language/SuCallable;II[II[I)V
+ * Signature: (Lsuneido/language/jsdi/type/Callback;Lsuneido/SuValue;II[II[I)V
  */
 JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_newThunk(
-    JNIEnv * env, jclass thunkManager, jobject callback, jobject callable,
+    JNIEnv * env, jclass thunkManager, jobject callback, jobject boundValue,
     jint sizeDirect, jint sizeIndirect, jintArray ptrArray,
     jint variableIndirectCount, jintArray outThunkAddrs)
 {
@@ -533,7 +533,7 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_newThunk(
     if (variableIndirectCount < 1)
     {
         callback_ptr.reset(
-            new jsdi_callback_basic(env, callback, callable, sizeDirect,
+            new jsdi_callback_basic(env, callback, boundValue, sizeDirect,
                                     sizeIndirect,
                                     reinterpret_cast<int *>(ptr_array.data()),
                                     ptr_array.size()));
@@ -541,7 +541,7 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_newThunk(
     else
     {
         callback_ptr.reset(
-            new jsdi_callback_vi(env, callback, callable, sizeDirect,
+            new jsdi_callback_vi(env, callback, boundValue, sizeDirect,
                                     sizeIndirect,
                                     reinterpret_cast<int *>(ptr_array.data()),
                                     ptr_array.size(), variableIndirectCount));
