@@ -1,0 +1,7 @@
+syntax: glob
+*.stackdump
+doxygen
+recycle_bin
+bin
+obj
+.dep

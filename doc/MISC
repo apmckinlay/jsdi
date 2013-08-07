@@ -1,0 +1,13 @@
+================================================================================
+A function with over 100 parameters:
+================================================================================
+
+__x = function(a; b; c; d; e; f; g; h; i; j; k; l; m; n; o; p; q; r; s; t; u; v; w; x; y; z; aa; bb; cc; dd; ee; ff; gg; hh; ii; jj; kk; ll; mm; nn; oo; pp; qq; rr; ss; tt; uu; vv; ww; xx; yy; zz; aaa; bbb; ccc; ddd; eee; fff; ggg; hhh; iii; jjj; kkk; lll; mmm; nnn; ooo; ppp; qqq; rrr; sss; ttt; uuu; vvv; www; xxx; yyy; zzz; aaaa; bbbb; cccc; dddd; eeee; ffff; gggg; hhhh; iiii; jjjj; kkkk; llll; mmmm; nnnn; oooo; pppp; qqqq; rrrr; ssss; tttt; uuuu; vvvv; wwww; xxxx; yyyy; zzzz; aaaaa; bbbbb; ccccc; ddddd; eeeee; fffff; gggggg; hhhhh; iiiii; jjjjj) { }
+
+   This is OK in both CSuneido and JSuneido.
+
+================================================================================
+A struct with over 100 members:
+================================================================================
+
+__x = struct { long a; long b; long c; long d; long e; long f; long g; long h; long i; long j; long k; long l; long m; long n; long o; long p; long q; long r; long s; long t; long u; long v; long w; long x; long y; long z; long aa; long bb; long cc; long dd; long ee; long ff; long gg; long hh; long ii; long jj; long kk; long ll; long mm; long nn; long oo; long pp; long qq; long rr; long ss; long tt; long uu; long vv; long ww; long xx; long yy; long zz; long aaa; long bbb; long ccc; long ddd; long eee; long fff; long ggg; long hhh; long iii; long jjj; long kkk; long lll; long mmm; long nnn; long ooo; long ppp; long qqq; long rrr; long sss; long ttt; long uuu; long vvv; long www; long xxx; long yyy; long zzz; long aaaa; long bbbb; long cccc; long dddd; long eeee; long ffff; long gggg; long hhhh; long iiii; long jjjj; long kkkk; long llll; long mmmm; long nnnn; long oooo; long pppp; long qqqq; long rrrr; long ssss; long tttt; long uuuu; long vvvv; long wwww }
