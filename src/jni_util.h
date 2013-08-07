@@ -146,6 +146,8 @@ class jni_array_region: private non_copyable
         typedef typename jni_traits<JNIType>::const_value_type const_value_type;
         /** \brief Type of a pointer a region element. */
         typedef typename jni_traits<JNIType>::pointer pointer;
+        /** \brief Type of a pointer to a #const_value_type. */
+        typedef typename jni_traits<JNIType>::const_pointer const_pointer;
         /** \brief Type of a reference to a #value_type. */
         typedef typename jni_traits<JNIType>::reference reference;
         /** \brief Type of a reference to a #const_value_type. */
@@ -205,6 +207,26 @@ class jni_array_region: private non_copyable
          * \return Number of elements in the region
          */
         size_type size() const;
+
+        /**
+         * \brief Returns a pointer to the region's array.
+         * \return Pointer to array
+         * \see #data() const
+         *
+         * The pointer returned is such that [data(), data() + size()] is always
+         * a valid range.
+         */
+        pointer data();
+
+        /**
+         * \brief Returns a pointer to the region's array.
+         * \return Pointer to array
+         * \see #data()
+         *
+         * The pointer returned is such that [data(), data() + size()] is always
+         * a valid range.
+         */
+        const_pointer data() const;
 
         /**
          * \brief Subscripts an element of the region.
@@ -268,10 +290,23 @@ inline jni_array_region<JNIType>::~jni_array_region()
     delete[] d_array;
 }
 
-template<typename JNIType>
+template <typename JNIType>
 inline typename jni_array_region<JNIType>::size_type jni_array_region<JNIType>::size() const
 {
     return d_size;
+}
+
+template <typename JNIType>
+inline typename jni_array_region<JNIType>::pointer jni_array_region<JNIType>::data()
+{
+    return d_array;
+}
+
+template <typename JNIType>
+inline typename jni_array_region<JNIType>::const_pointer jni_array_region<
+    JNIType>::data() const
+{
+    return d_array;
 }
 
 template<typename JNIType>
@@ -318,6 +353,13 @@ inline jbyte * jni_array_get_elements<jbyte>(JNIEnv * env, jbyteArray array,
     return env->GetByteArrayElements(array, is_copy);
 }
 
+template <>
+inline jint * jni_array_get_elements<jint>(JNIEnv * env, jintArray array,
+                                           jboolean * is_copy)
+{
+    return env->GetIntArrayElements(array, is_copy);
+}
+
 template<typename JNIType>
 inline void jni_array_release_elements(JNIEnv *,
                                        typename jni_traits<JNIType>::array_type,
@@ -329,6 +371,13 @@ inline void jni_array_release_elements<jbyte>(JNIEnv * env, jbyteArray array,
                                               jbyte * elems, jint mode)
 {
     env->ReleaseByteArrayElements(array, elems, mode);
+}
+
+template <>
+inline void jni_array_release_elements<jint>(JNIEnv * env, jintArray array,
+                                             jint * elems, jint mode)
+{
+    env->ReleaseIntArrayElements(array, elems, mode);
 }
 
 template <typename JNIType>
@@ -729,12 +778,6 @@ inline jni_auto_local<jstring>::~jni_auto_local()
 
 inline jni_auto_local<jstring>::operator jstring()
 { return d_string; }
-
-//==============================================================================
-//                           class jni_auto_global
-//==============================================================================
-
-
 
 //==============================================================================
 //                     class jni_utf16_output_streambuf

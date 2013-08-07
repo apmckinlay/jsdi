@@ -264,10 +264,10 @@ struct stdcall_invoke_basic_callback : public test_callback
                         vi_count)
         , d_func_ptr(reinterpret_cast<void *>(func_ptr))
     { }
-    virtual long call(callback_args& args)
+    virtual long call(std::unique_ptr<callback_args> args)
     {
         return static_cast<long>(
-            stdcall_invoke::basic(size_direct(), args.data(), d_func_ptr) &
+            stdcall_invoke::basic(size_direct(), args->data(), d_func_ptr) &
             0x00000000ffffffffLL
         );
     }

@@ -8,7 +8,6 @@
 #include "callback.h"
 
 #include <cstring>
-#include <memory>
 
 namespace jsdi {
 
@@ -127,6 +126,7 @@ void callback::set_unmarshall_params(int size_direct, int size_indirect,
 
 long callback::call(const char * args)
 {
+    // TODO: this should be wrapped in a JNI exception-catching block
     std::unique_ptr<callback_args> args_(alloc_args());
     char * data(args_->data());
     std::memcpy(data, args, d_size_direct);
@@ -141,7 +141,7 @@ long callback::call(const char * args)
         else                                // normal pointer
             normal_ptr(*args_, ptr_pos, ptd_to_pos, ptr_i, ptr_e);
     }
-    return call(*args_);
+    return call(std::move(args_));
 }
 
 #ifndef __NOTEST__
@@ -185,7 +185,7 @@ const test_callback_args& test_callback_args::last_value()
 callback_args * test_callback::alloc_args() const
 { return new test_callback_args(d_size_total, d_vi_count); }
 
-long test_callback::call(callback_args& args)
+long test_callback::call(std::unique_ptr<callback_args> args)
 { return 0L; }
 
 #endif // __NOTEST__

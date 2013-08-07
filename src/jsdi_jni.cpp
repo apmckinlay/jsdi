@@ -6,11 +6,14 @@
 //==============================================================================
 
 #include "jsdi_windows.h"
+
+#include "global_refs.h"
+#include "java_enum.h"
 #include "jni_exception.h"
 #include "jni_util.h"
-#include "java_enum.h"
-#include "global_refs.h"
+#include "jsdi_callback.h"
 #include "stdcall_invoke.h"
+#include "stdcall_thunk.h"
 
 #include <cassert>
 
@@ -458,6 +461,9 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callDirectOnly
     jlong result;
     JNI_EXCEPTION_SAFE_BEGIN
     // TODO: tracing
+    // TODO: here could get a critical array (env->GetByteArrayCritical) instead
+    //       of a region to possibly avoid copying, because no other JNI funcs
+    //       being called...
     jni_array_region<jbyte> args_(env, args, sizeDirect);
     result = invoke_stdcall_basic(sizeDirect, &args_[0], funcPtr);
     JNI_EXCEPTION_SAFE_END(env);
@@ -504,6 +510,70 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIn
     ptrs_finish_vi(env, viArray, vi_array_cpp, vi_inst_array);
     JNI_EXCEPTION_SAFE_END(env);
     return result;
+}
+
+//==============================================================================
+//              JAVA CLASS: suneido.language.jsdi.ThunkManager
+//==============================================================================
+
+/*
+ * Class:     suneido_language_jsdi_ThunkManager
+ * Method:    newThunk
+ * Signature: (Lsuneido/language/jsdi/type/Callback;Lsuneido/language/SuCallable;II[II[I)V
+ */
+JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_newThunk(
+    JNIEnv * env, jclass thunkManager, jobject callback, jobject callable,
+    jint sizeDirect, jint sizeIndirect, jintArray ptrArray,
+    jint variableIndirectCount, jintArray outThunkAddrs)
+{
+    JNI_EXCEPTION_SAFE_BEGIN
+    jni_array_region<jint> ptr_array(env, ptrArray);
+    jni_array<jint> out_thunk_addrs(env, outThunkAddrs);
+    std::shared_ptr<jsdi::callback> callback_ptr;
+    if (variableIndirectCount < 1)
+    {
+        callback_ptr.reset(
+            new jsdi_callback_basic(env, callback, callable, sizeDirect,
+                                    sizeIndirect,
+                                    reinterpret_cast<int *>(ptr_array.data()),
+                                    ptr_array.size()));
+    }
+    else
+    {
+        callback_ptr.reset(
+            new jsdi_callback_vi(env, callback, callable, sizeDirect,
+                                    sizeIndirect,
+                                    reinterpret_cast<int *>(ptr_array.data()),
+                                    ptr_array.size(), variableIndirectCount));
+    }
+    stdcall_thunk * thunk(new stdcall_thunk(callback_ptr));
+    void * func_addr(thunk->func_addr());
+    static_assert(sizeof(stdcall_thunk *) <= sizeof(jint), "fatal data loss");
+    static_assert(sizeof(void *) <= sizeof(jint), "fatal data loss");
+    out_thunk_addrs[env->GetStaticIntField(
+        thunkManager,
+        GLOBAL_REFS
+            ->suneido_language_jsdi_ThunkManager__f_THUNK_OBJECT_ADDR_INDEX())] =
+        reinterpret_cast<jint>(thunk);
+    out_thunk_addrs[env->GetStaticIntField(
+        thunkManager,
+        GLOBAL_REFS
+            ->suneido_language_jsdi_ThunkManager__f_THUNK_FUNC_ADDR_INDEX())] =
+        reinterpret_cast<jint>(func_addr);
+    JNI_EXCEPTION_SAFE_END(env);
+}
+
+/*
+ * Class:     suneido_language_jsdi_ThunkManager
+ * Method:    deleteThunk
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_deleteThunk
+  (JNIEnv * env, jclass, jint thunkObjectAddr)
+{
+    static_assert(sizeof(stdcall_thunk *) <= sizeof(jint), "fatal data loss");
+    auto thunk(reinterpret_cast<stdcall_thunk *>(thunkObjectAddr));
+    delete thunk;
 }
 
 } // extern "C"

@@ -26,7 +26,8 @@ class jsdi_callback_args_basic : public callback_args, private non_copyable
         //
 
         JNIEnv          * d_env;
-        jni_array<jbyte>  d_data;
+        jbyteArray        d_array;
+        jboolean          d_is_copy;
 
         //
         // CONSTRUCTORS
@@ -36,6 +37,8 @@ class jsdi_callback_args_basic : public callback_args, private non_copyable
 
         jsdi_callback_args_basic(JNIEnv * env, int data_size);
 
+        ~jsdi_callback_args_basic();
+
         //
         // ACCESSORS
         //
@@ -44,13 +47,13 @@ class jsdi_callback_args_basic : public callback_args, private non_copyable
 
         JNIEnv * env();
 
-        jni_array<jbyte>& data_as_jni_array();
-
         //
         // MUTATORS
         //
 
     public:
+
+        jbyteArray release_data();
 
         virtual void vi_string_ptr(const char * str, int vi_index);
 };
@@ -58,14 +61,32 @@ class jsdi_callback_args_basic : public callback_args, private non_copyable
 inline jsdi_callback_args_basic::jsdi_callback_args_basic(JNIEnv * env,
                                                           int data_size)
     : d_env(env)
-    , d_data(env, data_size)
-{ set_data(reinterpret_cast<char *>(d_data.data())); }
+    , d_array(env->NewByteArray(data_size))
+{
+    // NOTE: GetPrimitiveArrayCritical only has defined behaviour if you promise
+    //       not to call any other JNI function, or any other function that
+    //       causes you to block on another Java thread until you call
+    //       ReleasePrimitiveArrayCritical (done by release_array()).
+    if (! d_array) throw std::bad_alloc();
+    void * ptr = env->GetPrimitiveArrayCritical(d_array, &d_is_copy);
+    if (! ptr)
+    {
+        env->DeleteLocalRef(d_array);
+        throw std::bad_alloc();
+    }
+    set_data(reinterpret_cast<char *>(ptr));
+}
 
 inline JNIEnv * jsdi_callback_args_basic::env()
 { return d_env; }
 
-inline jni_array<jbyte>& jsdi_callback_args_basic::data_as_jni_array()
-{ return d_data; }
+inline jbyteArray jsdi_callback_args_basic::release_data()
+{
+    assert(data() || !"data() not set or has been released");
+    d_env->ReleasePrimitiveArrayCritical(d_array, data(), 0);
+    set_data(0);
+    return d_array;
+}
 
 //==============================================================================
 //                         class jsdi_callback_basic
@@ -76,6 +97,8 @@ class jsdi_callback_basic : public callback, private non_copyable
         //
         // DATA
         //
+
+    protected:
 
         jobject   d_suneido_callback_global_ref;
         jobject   d_suneido_sucallable_global_ref;
@@ -127,7 +150,7 @@ class jsdi_callback_basic : public callback, private non_copyable
 
     protected:
 
-        virtual long call(callback_args& args);
+        virtual long call(std::unique_ptr<callback_args> args);
 
         //
         // STATICS
@@ -142,13 +165,16 @@ class jsdi_callback_basic : public callback, private non_copyable
 //                        class jsdi_callback_args_vi
 //==============================================================================
 
-class jsdi_callback_args_vi : public jsdi_callback_args_basic
+class jsdi_callback_args_vi : public callback_args, private non_copyable
 {
         //
         // DATA
         //
 
+        JNIEnv     * d_env;
+        jbyteArray   d_array;
         jobjectArray d_vi_array;
+        jboolean     d_is_copy[2];
 
         //
         // CONSTRUCTORS
@@ -158,11 +184,15 @@ class jsdi_callback_args_vi : public jsdi_callback_args_basic
 
         jsdi_callback_args_vi(JNIEnv * env, int data_size, int vi_count);
 
+        ~jsdi_callback_args_vi();
+
         //
         // ACCESSORS
         //
 
     public:
+
+        JNIEnv * env();
 
         jobjectArray vi_array();
 
@@ -172,18 +202,47 @@ class jsdi_callback_args_vi : public jsdi_callback_args_basic
 
     public:
 
+        jbyteArray release_data();
+
         virtual void vi_string_ptr(const char * str, int vi_index);
 };
 
 inline jsdi_callback_args_vi::jsdi_callback_args_vi(JNIEnv * env, int data_size,
                                                     int vi_count)
-    : jsdi_callback_args_basic(env, data_size)
-    , d_vi_array(
-          env->NewObjectArray(vi_count, GLOBAL_REFS->java_lang_Object(), 0))
-{ assert(d_vi_array || !"failed to allocate variable indirect array"); }
+    : d_env(env)
+    , d_array(0)
+    , d_vi_array(0)
+{
+    d_array = env->NewByteArray(data_size);
+    if (! d_array) goto cleanup;
+    d_vi_array = env->NewObjectArray(vi_count, GLOBAL_REFS->java_lang_Object(),
+                                     0);
+    if (! d_vi_array) goto cleanup;
+    set_data(
+        reinterpret_cast<char *>(env->GetByteArrayElements(d_array,
+                                                           &d_is_copy[0])));
+    if (! data()) goto cleanup;
+    return;
+cleanup:
+    if (d_vi_array) env->DeleteLocalRef(d_vi_array);
+    if (d_array) env->DeleteLocalRef(d_array);
+    throw std::bad_alloc();
+}
+
+inline JNIEnv * jsdi_callback_args_vi::env()
+{ return d_env; }
 
 inline jobjectArray jsdi_callback_args_vi::vi_array()
 { return d_vi_array; }
+
+inline jbyteArray jsdi_callback_args_vi::release_data()
+{
+    assert(data() || !"data() not set or has been released");
+    d_env->ReleaseByteArrayElements(d_array, reinterpret_cast<jbyte *>(data()),
+                                    0);
+    set_data(0);
+    return d_array;
+}
 
 //==============================================================================
 //                          class jsdi_callback_vi
@@ -216,7 +275,7 @@ class jsdi_callback_vi : public jsdi_callback_basic
 
     protected:
 
-        virtual long call(callback_args& args);
+        virtual long call(std::unique_ptr<callback_args> args);
 };
 
 inline jsdi_callback_vi::jsdi_callback_vi(JNIEnv * env,

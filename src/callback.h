@@ -9,6 +9,7 @@
  */
 
 #include <vector>
+#include <memory>
 #include <cassert>
 
 namespace jsdi {
@@ -235,11 +236,15 @@ class callback
 
         /**
          * \brief Passes the unmarshalled arguments to the final call routine.
-         * \param args Reference to the \link callback_args\endlink returned by
+         * \param args Pointer to the \link callback_args\endlink returned by
          * #alloc_args() const during the current invocation of
          * #call(const char *)
+         *
+         * This function is responsible for freeing <dfn>args</dfn> (which
+         * indeed will be done automatically by the std::unique_ptr unless the
+         * implementation intervenes).
          */
-        virtual long call(callback_args& args) = 0;
+        virtual long call(std::unique_ptr<callback_args> args) = 0;
 };
 
 inline int callback::size_direct() const { return d_size_direct; }
@@ -364,7 +369,7 @@ class test_callback : public callback, private non_copyable
 
     protected:
 
-        virtual long call(callback_args& args);
+        virtual long call(std::unique_ptr<callback_args> args);
 };
 
 inline test_callback::test_callback(int size_direct, int size_indirect,
