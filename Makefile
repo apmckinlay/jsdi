@@ -91,7 +91,7 @@ asm: dirs $(ASMFILES)
 # dependency system in this makefile is copied from 
 # http://stackoverflow.com/a/2045668/1911388, which is a pretty good post on
 # how to set up dependencies w the gcc toolchain.
-include $(DEPENDS)
+-include $(DEPENDS)
 
 $(BINDIR)/$(TARGET_DLL): $(BINDIR)/$(EXPORTS)
 	@echo $@
