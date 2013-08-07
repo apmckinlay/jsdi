@@ -9,6 +9,7 @@
 
 #include "jsdi_windows.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cstring>
 #include <cstdlib>
@@ -121,6 +122,25 @@ EXPORT_STDCALL long TestSumResource(const char * res, const char ** pres)
             ;
     }
     return sum;
+}
+
+EXPORT_STDCALL long TestSwap(Swap_StringLongLong * ptr)
+{
+    long result(0);
+    if (ptr)
+    {
+        if (ptr->a != ptr->b)
+        {
+            ptr->str = "!=";
+            std::swap(ptr->a, ptr->b);
+        }
+        else
+        {
+            ptr->str = "=";
+            result = 1;
+        }
+    }
+    return result;
 }
 
 EXPORT_STDCALL long TestInvokeCallback_Long1(TestCallback_Long1 f, long a)

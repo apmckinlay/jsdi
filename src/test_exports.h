@@ -37,6 +37,13 @@ struct Recursive_StringSum
     Recursive_StringSum *    inner;
 };
 
+struct Swap_StringLongLong
+{
+    const char * str;
+    int          a;
+    int          b;
+};
+
 typedef __stdcall long (* TestCallback_Long1)(long);
 
 typedef __stdcall long (* TestCallback_Long2)(long, long);
@@ -87,6 +94,8 @@ EXPORT_STDCALL uint64_t TestReturnPtrPtrPtrDoubleAsUInt64(
 EXPORT_STDCALL long TestSumString(Recursive_StringSum * ptr);
 
 EXPORT_STDCALL long TestSumResource(const char * res, const char ** pres);
+
+EXPORT_STDCALL long TestSwap(Swap_StringLongLong * ptr);
 
 EXPORT_STDCALL long TestInvokeCallback_Long1(TestCallback_Long1 f, long a);
 
