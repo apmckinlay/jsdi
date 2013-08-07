@@ -101,7 +101,7 @@ class jsdi_callback_basic : public callback, private non_copyable
     protected:
 
         jobject   d_suneido_callback_global_ref;
-        jobject   d_suneido_sucallable_global_ref;
+        jobject   d_suneido_bound_value_global_ref;
         JavaVM  * d_jni_jvm;
 
         //
@@ -112,7 +112,7 @@ class jsdi_callback_basic : public callback, private non_copyable
 
         // GCC doesn't support C++11 delegating constructors yet so need init()
         void init(JNIEnv * env, jobject suneido_callback,
-                  jobject suneido_sucallable);
+                  jobject suneido_bound_value);
 
         //
         // CONSTRUCTORS
@@ -122,7 +122,7 @@ class jsdi_callback_basic : public callback, private non_copyable
 
         jsdi_callback_basic(JNIEnv * env,
                             jobject suneido_callback,
-                            jobject suneido_sucallable, int size_direct,
+                            jobject suneido_bound_value, int size_direct,
                             int size_indirect, const int * ptr_array,
                             int ptr_array_size, int vi_count);
 
@@ -130,7 +130,7 @@ class jsdi_callback_basic : public callback, private non_copyable
 
         jsdi_callback_basic(JNIEnv * env,
                             jobject suneido_callback,
-                            jobject suneido_sucallable, int size_direct,
+                            jobject suneido_bound_value, int size_direct,
                             int size_indirect, const int * ptr_array,
                             int ptr_array_size);
 
@@ -257,7 +257,7 @@ class jsdi_callback_vi : public jsdi_callback_basic
     public:
 
         jsdi_callback_vi(JNIEnv * env, jobject suneido_callback,
-                         jobject suneido_sucallable, int size_direct,
+                         jobject suneido_bound_value, int size_direct,
                          int size_indirect, const int * ptr_array,
                          int ptr_array_size, int vi_count);
 
@@ -280,11 +280,11 @@ class jsdi_callback_vi : public jsdi_callback_basic
 
 inline jsdi_callback_vi::jsdi_callback_vi(JNIEnv * env,
                                           jobject suneido_callback,
-                                          jobject suneido_sucallable,
+                                          jobject suneido_bound_value,
                                           int size_direct, int size_indirect,
                                           const int * ptr_array,
                                           int ptr_array_size, int vi_count)
-    : jsdi_callback_basic(env, suneido_callback, suneido_sucallable,
+    : jsdi_callback_basic(env, suneido_callback, suneido_bound_value,
                           size_direct, size_indirect, ptr_array,
                           ptr_array_size, vi_count)
 { }
