@@ -94,15 +94,19 @@ asm: dirs $(ASMFILES)
 include $(DEPENDS)
 
 $(BINDIR)/$(TARGET_DLL): $(BINDIR)/$(EXPORTS)
+	@echo $@
 	@$(LD_DLL) $@ $(LD_FLAGS_DLL) $(OBJECTS_DLL)
 
 $(BINDIR)/$(TARGET_EXE): $(OBJECTS_EXE)
+	@echo $@
 	@$(LD_EXE) $@ $(OBJECTS_EXE)
 
 $(BINDIR)/$(EXPORTS): $(OBJECTS_DLL)
+	@echo $@
 	@$(DLLTOOL) -e $@ -D $(TARGET_DLL) $(OBJECTS_DLL)
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
+	@echo $<
 	@$(CC) $(CC_FLAGS) -c $< -o $@
 
 $(DEPENDS): $(DEPDIR)/%.d : $(SRCDIR)/%.cpp
@@ -110,6 +114,7 @@ $(DEPENDS): $(DEPDIR)/%.d : $(SRCDIR)/%.cpp
                       -MT"$@" -MT"$(<:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)" "$<"
 
 $(ASMFILES): $(ASMDIR)/%.s : $(SRCDIR)/%.cpp
+	@echo $<
 	@$(CC) $(CC_FLAGS) -S $< -o $@
 
 .PHONY: dirs
