@@ -120,6 +120,19 @@ inline jlong invoke_stdcall_basic(int args_size_bytes, const jbyte * args_ptr,
                                  reinterpret_cast<void *>(func_ptr));
 }
 
+inline jlong invoke_stdcall_return_double(int args_size_bytes,
+                                          const jbyte * args_ptr, jlong func_ptr)
+{
+    union {
+        volatile double d;
+        volatile jlong  l;
+    };
+    d = stdcall_invoke::return_double(
+        args_size_bytes, reinterpret_cast<const char *>(args_ptr),
+        reinterpret_cast<void *>(func_ptr));
+    return l;
+}
+
 void ptrs_init(jbyte * args, const jint * ptr_array, jsize ptr_array_size)
 {
     assert(0 == ptr_array_size % 2 || !"pointer array must have even size");
@@ -252,6 +265,56 @@ void ptrs_finish_vi(JNIEnv * env, jobjectArray vi_array_java,
     }
 }
 
+template<typename InvokeFunc>
+inline jlong call_direct(JNIEnv * env, jlong funcPtr, jint sizeDirect,
+                         jbyteArray args, InvokeFunc invokeFunc)
+{
+    jlong result;
+    JNI_EXCEPTION_SAFE_BEGIN
+    // TODO: tracing
+    // TODO: here could get a critical array (env->GetByteArrayCritical) instead
+    //       of a region to possibly avoid copying, because no other JNI funcs
+    //       being called...
+    jni_array_region<jbyte> args_(env, args, sizeDirect);
+    result = invokeFunc(sizeDirect, &args_[0], funcPtr);
+    JNI_EXCEPTION_SAFE_END(env);
+    return result;
+}
+
+template<typename InvokeFunc>
+inline jlong call_indirect(JNIEnv * env, jlong funcPtr, jint sizeDirect,
+                           jbyteArray args, jintArray ptrArray,
+                           InvokeFunc invokeFunc)
+{
+    jlong result;
+    JNI_EXCEPTION_SAFE_BEGIN
+    jni_array<jbyte> args_(env, args);
+    jni_array_region<jint> ptr_array(env, ptrArray);
+    ptrs_init(&args_[0], &ptr_array[0], ptr_array.size());
+    result = invoke_stdcall_basic(sizeDirect, &args_[0], funcPtr);
+    JNI_EXCEPTION_SAFE_END(env);
+    return result;
+}
+
+template<typename InvokeFunc>
+inline jlong call_vi(JNIEnv * env, jlong funcPtr, jint sizeDirect,
+                     jbyteArray args, jintArray ptrArray, jobjectArray viArray,
+                     jintArray viInstArray, InvokeFunc invokeFunc)
+{
+    jlong result;
+    JNI_EXCEPTION_SAFE_BEGIN
+    jni_array<jbyte> args_(env, args);
+    jni_array_region<jint> ptr_array(env, ptrArray);
+    jbyte_array_container vi_array_cpp(env->GetArrayLength(viArray), env, viArray);
+    ptrs_init_vi(&args_[0], args_.size(), &ptr_array[0], ptr_array.size(),
+                 env, viArray, vi_array_cpp);
+    result = invoke_stdcall_basic(sizeDirect, &args_[0], funcPtr);
+    jni_array_region<jint> vi_inst_array(env, viInstArray);
+    ptrs_finish_vi(env, viArray, vi_array_cpp, vi_inst_array);
+    JNI_EXCEPTION_SAFE_END(env);
+    return result;
+}
+
 } // anonymous namespace
 
 extern "C" {
@@ -353,95 +416,46 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_DllFactory_getProcAddress
 
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callReturnV
- * Signature: (J)V
+ * Method:    callReturnInt64
+ * Signature: (J)J
  */
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_dll_NativeCall_callReturnV
-  (JNIEnv *, jclass, jlong funcPtr)
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callReturnInt64(
+    JNIEnv *, jclass, jlong funcPtr)
 {
     // TODO: tracing
-    reinterpret_cast<__stdcall void (*)()>(funcPtr)();
+    return reinterpret_cast<__stdcall jlong (*)()>(funcPtr)();
 }
 
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callLReturnV
- * Signature: (JI)V
+ * Method:    callLLReturnInt64
+ * Signature: (JII)J
  */
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLReturnV
-  (JNIEnv *, jclass, jlong funcPtr, jint arg0)
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLReturnInt64(
+    JNIEnv *, jclass, jlong funcPtr, jint arg0)
 {
     // TODO: tracing
-    reinterpret_cast<__stdcall void (*)(long)>(funcPtr)(arg0);
+    return reinterpret_cast<__stdcall jlong (*)(long)>(funcPtr)(arg0);
 }
 
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callLLReturnV
- * Signature: (JII)V
+ * Method:    callLLReturnInt64
+ * Signature: (JII)J
  */
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLLReturnV
-  (JNIEnv *, jclass, jlong funcPtr, jint arg0, jint arg1)
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLLReturnInt64(
+    JNIEnv *, jclass, jlong funcPtr, jint arg0, jint arg1)
 {
     // TODO: tracing
-    reinterpret_cast<__stdcall void (*)(long, long)>(funcPtr)(arg0, arg1);
+    return reinterpret_cast<__stdcall jlong (*)(long, long)>(funcPtr)(arg0, arg1);
 }
 
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callLLLReturnV
- * Signature: (JIII)V
+ * Method:    callLLLReturnInt64
+ * Signature: (JIII)J
  */
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLLLReturnV
-  (JNIEnv *, jclass, jlong funcPtr, jint arg0, jint arg1, jint arg2)
-{
-    // TODO: tracing
-    reinterpret_cast<__stdcall void (*)(long, long, long)>(funcPtr)(arg0, arg1,
-                                                                    arg2);
-}
-
-/*
- * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callReturnL
- * Signature: (J)I
- */
-JNIEXPORT jint JNICALL Java_suneido_language_jsdi_dll_NativeCall_callReturnL
-  (JNIEnv *, jclass, jlong funcPtr)
-{
-    // TODO: tracing
-    return reinterpret_cast<__stdcall long (*)()>(funcPtr)();
-}
-
-/*
- * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callLReturnL
- * Signature: (JI)I
- */
-JNIEXPORT jint JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLReturnL
-  (JNIEnv *, jclass, jlong funcPtr, jint arg0)
-{
-    // TODO: tracing
-    return reinterpret_cast<__stdcall long (*)(long)>(funcPtr)(arg0);
-}
-
-/*
- * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callLLReturnL
- * Signature: (JII)I
- */
-JNIEXPORT jint JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLLReturnL
-  (JNIEnv *, jclass, jlong funcPtr, jint arg0, jint arg1)
-{
-    // TODO: tracing
-    return reinterpret_cast<__stdcall long (*)(long, long)>(funcPtr)(arg0, arg1);
-}
-
-/*
- * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callLLLReturnL
- * Signature: (JIII)I
- */
-JNIEXPORT jint JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLLLReturnL(
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLLLReturnInt64(
     JNIEnv *, jclass, jlong funcPtr, jint arg0, jint arg1, jint arg2)
 {
     // TODO: tracing
@@ -452,64 +466,76 @@ JNIEXPORT jint JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLLLReturnL(
 
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callDirectOnly
+ * Method:    callDirectReturnInt64
  * Signature: (JI[B)J
  */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callDirectOnly
-  (JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jbyteArray args)
-{
-    jlong result;
-    JNI_EXCEPTION_SAFE_BEGIN
-    // TODO: tracing
-    // TODO: here could get a critical array (env->GetByteArrayCritical) instead
-    //       of a region to possibly avoid copying, because no other JNI funcs
-    //       being called...
-    jni_array_region<jbyte> args_(env, args, sizeDirect);
-    result = invoke_stdcall_basic(sizeDirect, &args_[0], funcPtr);
-    JNI_EXCEPTION_SAFE_END(env);
-    return result;
-}
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callDirectReturnInt64(
+    JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jbyteArray args)
+{ return call_direct(env, funcPtr, sizeDirect, args, invoke_stdcall_basic); }
 
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callIndirect
+ * Method:    callIndirectReturnInt64
  * Signature: (JI[B[I)J
  */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callIndirect(
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callIndirectReturnInt64(
     JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jbyteArray args,
     jintArray ptrArray)
 {
-    jlong result;
-    JNI_EXCEPTION_SAFE_BEGIN
-    jni_array<jbyte> args_(env, args);
-    jni_array_region<jint> ptr_array(env, ptrArray);
-    ptrs_init(&args_[0], &ptr_array[0], ptr_array.size());
-    result = invoke_stdcall_basic(sizeDirect, &args_[0], funcPtr);
-    JNI_EXCEPTION_SAFE_END(env);
-    return result;
+    return call_indirect(env, funcPtr, sizeDirect, args, ptrArray,
+                         invoke_stdcall_basic);
+}
+
+
+/*
+ * Class:     suneido_language_jsdi_dll_NativeCall
+ * Method:    callVariableIndirectReturnInt64
+ * Signature: (JI[B[I[Ljava/lang/Object;[I)J
+ */
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIndirectReturnInt64(
+    JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jbyteArray args,
+    jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
+{
+    return call_vi(env, funcPtr, sizeDirect, args, ptrArray, viArray,
+                   viInstArray, invoke_stdcall_basic);
 }
 
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callVariableIndirect
+ * Method:    callDirectReturnDouble
+ * Signature: (JI[B)J
+ */
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callDirectReturnDouble(
+    JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jbyteArray args)
+{
+    return call_direct(env, funcPtr, sizeDirect, args,
+                       invoke_stdcall_return_double);
+}
+
+/*
+ * Class:     suneido_language_jsdi_dll_NativeCall
+ * Method:    callIndirectReturnDouble
+ * Signature: (JI[B[I)J
+ */
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callIndirectReturnDouble(
+    JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jbyteArray args,
+    jintArray ptrArray)
+{
+    return call_indirect(env, funcPtr, sizeDirect, args, ptrArray,
+                         invoke_stdcall_return_double);
+}
+
+/*
+ * Class:     suneido_language_jsdi_dll_NativeCall
+ * Method:    callVariableIndirectReturnDouble
  * Signature: (JI[B[I[Ljava/lang/Object;[I)J
  */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIndirect(
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIndirectReturnDouble(
     JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jbyteArray args,
     jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
 {
-    jlong result;
-    JNI_EXCEPTION_SAFE_BEGIN
-    jni_array<jbyte> args_(env, args);
-    jni_array_region<jint> ptr_array(env, ptrArray);
-    jbyte_array_container vi_array_cpp(env->GetArrayLength(viArray), env, viArray);
-    ptrs_init_vi(&args_[0], args_.size(), &ptr_array[0], ptr_array.size(),
-                 env, viArray, vi_array_cpp);
-    result = invoke_stdcall_basic(sizeDirect, &args_[0], funcPtr);
-    jni_array_region<jint> vi_inst_array(env, viInstArray);
-    ptrs_finish_vi(env, viArray, vi_array_cpp, vi_inst_array);
-    JNI_EXCEPTION_SAFE_END(env);
-    return result;
+    return call_vi(env, funcPtr, sizeDirect, args, ptrArray, viArray,
+                   viInstArray, invoke_stdcall_return_double);
 }
 
 //==============================================================================

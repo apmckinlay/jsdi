@@ -11,90 +11,82 @@ extern "C" {
 #define suneido_language_jsdi_dll_NativeCall_MAX_FAST_MARSHALL_PARAMS 3L
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callReturnV
- * Signature: (J)V
+ * Method:    callReturnInt64
+ * Signature: (J)J
  */
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_dll_NativeCall_callReturnV
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callReturnInt64
   (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callLReturnV
- * Signature: (JI)V
+ * Method:    callLReturnInt64
+ * Signature: (JI)J
  */
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLReturnV
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLReturnInt64
   (JNIEnv *, jclass, jlong, jint);
 
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callLLReturnV
- * Signature: (JII)V
+ * Method:    callLLReturnInt64
+ * Signature: (JII)J
  */
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLLReturnV
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLLReturnInt64
   (JNIEnv *, jclass, jlong, jint, jint);
 
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callLLLReturnV
- * Signature: (JIII)V
+ * Method:    callLLLReturnInt64
+ * Signature: (JIII)J
  */
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLLLReturnV
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLLLReturnInt64
   (JNIEnv *, jclass, jlong, jint, jint, jint);
 
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callReturnL
- * Signature: (J)I
- */
-JNIEXPORT jint JNICALL Java_suneido_language_jsdi_dll_NativeCall_callReturnL
-  (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callLReturnL
- * Signature: (JI)I
- */
-JNIEXPORT jint JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLReturnL
-  (JNIEnv *, jclass, jlong, jint);
-
-/*
- * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callLLReturnL
- * Signature: (JII)I
- */
-JNIEXPORT jint JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLLReturnL
-  (JNIEnv *, jclass, jlong, jint, jint);
-
-/*
- * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callLLLReturnL
- * Signature: (JIII)I
- */
-JNIEXPORT jint JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLLLReturnL
-  (JNIEnv *, jclass, jlong, jint, jint, jint);
-
-/*
- * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callDirectOnly
+ * Method:    callDirectReturnInt64
  * Signature: (JI[B)J
  */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callDirectOnly
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callDirectReturnInt64
   (JNIEnv *, jclass, jlong, jint, jbyteArray);
 
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callIndirect
+ * Method:    callIndirectReturnInt64
  * Signature: (JI[B[I)J
  */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callIndirect
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callIndirectReturnInt64
   (JNIEnv *, jclass, jlong, jint, jbyteArray, jintArray);
 
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callVariableIndirect
+ * Method:    callVariableIndirectReturnInt64
  * Signature: (JI[B[I[Ljava/lang/Object;[I)J
  */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIndirect
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIndirectReturnInt64
+  (JNIEnv *, jclass, jlong, jint, jbyteArray, jintArray, jobjectArray, jintArray);
+
+/*
+ * Class:     suneido_language_jsdi_dll_NativeCall
+ * Method:    callDirectReturnDouble
+ * Signature: (JI[B)J
+ */
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callDirectReturnDouble
+  (JNIEnv *, jclass, jlong, jint, jbyteArray);
+
+/*
+ * Class:     suneido_language_jsdi_dll_NativeCall
+ * Method:    callIndirectReturnDouble
+ * Signature: (JI[B[I)J
+ */
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callIndirectReturnDouble
+  (JNIEnv *, jclass, jlong, jint, jbyteArray, jintArray);
+
+/*
+ * Class:     suneido_language_jsdi_dll_NativeCall
+ * Method:    callVariableIndirectReturnDouble
+ * Signature: (JI[B[I[Ljava/lang/Object;[I)J
+ */
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIndirectReturnDouble
   (JNIEnv *, jclass, jlong, jint, jbyteArray, jintArray, jobjectArray, jintArray);
 
 #ifdef __cplusplus
