@@ -13,9 +13,12 @@
 #include "test_exports.h"
 
 #include <limits>
+#include <iostream> // TODO: deleteme
+
+namespace {
 
 template<typename FuncPtr>
-inline int64_t basic_invoke(FuncPtr f, int nlongs, long * args)
+int64_t basic_invoke(FuncPtr f, int nlongs, long * args)
 {
     return static_cast<int64_t>(jsdi::stdcall_invoke::basic(
         nlongs * sizeof(long),
@@ -23,6 +26,29 @@ inline int64_t basic_invoke(FuncPtr f, int nlongs, long * args)
         reinterpret_cast<void *>(f)
     ));
 }
+
+template<typename FuncPtr, typename ArgType>
+double float_invoke(FuncPtr f, int nargs, ArgType * args)
+{
+    return jsdi::stdcall_invoke::return_double(
+        nargs * sizeof(ArgType),
+        reinterpret_cast<const char *>(args),
+        reinterpret_cast<void *>(f)
+    );
+}
+
+template<typename FuncPtr, typename ArgType>
+double double_invoke(FuncPtr f, int nargs, ArgType * args)
+{
+    return jsdi::stdcall_invoke::return_double(
+        nargs * sizeof(ArgType),
+        reinterpret_cast<const char *>(args),
+        reinterpret_cast<void *>(f)
+    );
+}
+
+
+} // anonymous namespace
 
 TEST(basic,
     union
@@ -111,5 +137,23 @@ TEST(basic,
     basic_invoke(TestNullPtrOutParam, 1, a);
     assert_equals(0, tmp_str);
 );
+
+TEST(return_double,
+    {
+        static const float args[2] = { 10.0f, -1.0f };
+        assert_equals(1.0, float_invoke(TestReturn1_0Float, 0, args));
+        assert_equals(10.0, float_invoke(TestFloat, 1, args));
+        assert_equals(-1.0, float_invoke(TestFloat, 1, args + 1));
+        assert_equals(9.0, float_invoke(TestSumTwoFloats, 2, args));
+    }
+    {
+        static const double args[2] = { -2300.5, -2.0 };
+        assert_equals(1.0, double_invoke(TestReturn1_0Double, 0, args));
+        assert_equals(-2300.5, double_invoke(TestDouble, 1, args));
+        assert_equals(-2.0, double_invoke(TestDouble, 1, args + 1));
+        assert_equals(-2302.5, double_invoke(TestSumTwoDoubles, 2, args));
+    }
+);
+
 
 #endif // __NOTEST__

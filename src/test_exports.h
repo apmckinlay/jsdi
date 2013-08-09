@@ -64,11 +64,23 @@ EXPORT_STDCALL long TestLong(long a);
 
 EXPORT_STDCALL int64_t TestInt64(int64_t a);
 
+EXPORT_STDCALL float TestReturn1_0Float();
+
+EXPORT_STDCALL double TestReturn1_0Double();
+
+EXPORT_STDCALL float TestFloat(float a);
+
+EXPORT_STDCALL double TestDouble(double a);
+
 EXPORT_STDCALL signed char TestSumTwoChars(signed char a, signed char b);
 
 EXPORT_STDCALL short TestSumTwoShorts(short a, short b);
 
 EXPORT_STDCALL long TestSumTwoLongs(long a, long b);
+
+EXPORT_STDCALL float TestSumTwoFloats(float a, float b);
+
+EXPORT_STDCALL double TestSumTwoDoubles(double a, double b);
 
 EXPORT_STDCALL long TestSumThreeLongs(long a, long b, long c);
 
