@@ -67,6 +67,11 @@ inline jsdi_callback_args_basic::jsdi_callback_args_basic(JNIEnv * env,
     //       not to call any other JNI function, or any other function that
     //       causes you to block on another Java thread until you call
     //       ReleasePrimitiveArrayCritical (done by release_array()).
+    // FIXME: Eliminate GetPrimitiveArrayCritical() calls. You can't guarantee
+    //        in the general case that you won't break their restrictions
+    //        because the callback could very well call another 'dll' function.
+    // TODO: Make a test with this call chain: Suneido:func() -> dll(..., callback)
+    //       -> Suneido:func() -> dll ...
     if (! d_array) throw std::bad_alloc();
     void * ptr = env->GetPrimitiveArrayCritical(d_array, &d_is_copy);
     if (! ptr)

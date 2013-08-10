@@ -161,6 +161,29 @@ EXPORT_STDCALL long TestSwap(Swap_StringLongLong * ptr)
     return result;
 }
 
+EXPORT_STDCALL const char * TestReturnString(const char * str)
+{ return str; }
+
+EXPORT_STDCALL const char * TestReturnPtrString(const char * const * ptr)
+{ return ptr ? *ptr : 0; }
+
+EXPORT_STDCALL char * TestReturnStringOutBuffer(const char * str,
+                                                      char * buffer, long size)
+{
+    if (! str || ! buffer || size < 1) return 0;
+    // This is more-or-less strncpy, except that we guarantee that any non-empty
+    // buffer will always be zero-terminated.
+    char * i(buffer), * e(buffer + size);
+    while (i < e - 1)
+    {
+        const char x = *str++;
+        *i++ = x;
+        if (! x) return buffer;
+    }
+    if (i < e) *i = '\0';
+    return buffer;
+}
+
 EXPORT_STDCALL long TestInvokeCallback_Long1(TestCallback_Long1 f, long a)
 { return f ? f(a) : 0L; }
 
