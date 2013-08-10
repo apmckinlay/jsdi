@@ -47,8 +47,45 @@ struct jbyte_array_tuple
     jbyte            ** d_pp_arr; // points to the address in the marshalled
                                   // data array which contains the pointer to
                                   // this byte array
+    jbyteArray          d_global; // only if the corresponding jobjectArray
+                                  // element was replaced
     jboolean            d_is_copy;
 };
+
+constexpr jbyte_array_tuple NULL_TUPLE = { 0, 0, 0, JNI_FALSE };
+
+/**
+ * Purpose of the free list (frustrating!). We need to clean up all of the
+ * variable indirect byte arrays, but we can't do it until everything has been
+ * copied out of them. Here's an example use case:
+ *
+ *     __stdcall const char * returnSameString(const char * x) { return x; }
+ *     dll string Library:returnSameString(string x)
+ *
+ * In the above example, the dll function returns a pointer to the same string
+ * that we passed into it. We thus can't destroy the argument string 'x' until
+ * the return value is done being copied out, or the return value may contain
+ * garbage. Here's another example use case:
+ *
+ *     struct X { const char * x1, const char * x2 };
+ *     __stdcall void internalPoint(X * x) { x->x1 = x->x2; }
+ *    dll void Library:internalPoint(X * x)
+ *
+ * Again, until we have copied anything that can be pointed to by 'x', we
+ * can't destroy any of the variable indirect arrays. If we do, x->x1 may point
+ * to garbage.
+ *
+ * The other issues which cause it to have the form it does are:
+ *     - To clean up the old variable indirect byte arrays, we need references
+ *       to the jarrays. But we are replacing the jarray references in the
+ *       viArray as we go, so we can't depend on the viArray to provide the
+ *       jarray references.
+ *     - So we have to keep around a separate viArray reference.
+ *     - But JNI only guarantees a very small number of local references,
+ *       while the variable indirect array may be an arbitrary length.
+ *     - So we need to create add global references to the jarrays to the free
+ *       list so we can delete them later.
+ */
 
 /**
  * Used by the variable indirect code.
@@ -56,30 +93,57 @@ struct jbyte_array_tuple
 struct jbyte_array_container : private non_copyable
 {
     typedef std::vector<jbyte_array_tuple> vector_type;
-    vector_type   d_arrays;
-    JNIEnv      * d_env;
-    jobjectArray  d_object_array;
+    vector_type    d_arrays;
+    JNIEnv      *  d_env;
+    jobjectArray   d_object_array;
     jbyte_array_container(size_t size, JNIEnv * env, jobjectArray object_array)
-        : d_arrays(size, { 0, 0, JNI_FALSE })
+        : d_arrays(size, NULL_TUPLE)
         , d_env(env)
         , d_object_array(object_array)
     { }
     ~jbyte_array_container()
     {
-        const jsize N(d_arrays.size());
         try
-        { for (jsize k = 0; k < N; ++k) free_byte_array(k); }
+        {
+            const size_t N(d_arrays.size());
+            for (size_t k = 0; k < N; ++k)
+            {
+                jbyte_array_tuple& tuple(d_arrays[k]);
+                if (! tuple.d_elems) continue;
+                if (tuple.d_global)
+                {
+                    d_env->ReleaseByteArrayElements(tuple.d_global,
+                                                    tuple.d_elems, 0);
+                    d_env->DeleteGlobalRef(tuple.d_global);
+                }
+                else
+                {
+                    jni_auto_local<jobject> object(
+                        d_env, d_env->GetObjectArrayElement(d_object_array, k));
+                    assert(d_env->IsInstanceOf(object,
+                                               GLOBAL_REFS->byte_ARRAY()));
+                    d_env->ReleaseByteArrayElements(
+                        static_cast<jbyteArray>(static_cast<jobject>(object)),
+                        tuple.d_elems, 0);
+                }
+            }
+        }
         catch (...)
         { }
     }
     void put_not_null(size_t pos, JNIEnv * env, jbyteArray array,
                       jbyte ** pp_array)
-    {
+    { // NORMAL USE (arguments)
         jbyte_array_tuple& tuple = d_arrays[pos];
         assert(! tuple.d_elems || !"duplicate variable indirect pointer");
         tuple.d_elems = env->GetByteArrayElements(array, &tuple.d_is_copy);
         tuple.d_pp_arr = pp_array;
         *pp_array = tuple.d_elems;
+    }
+    void put_return_value(size_t pos, jbyte * str)
+    { // FOR USE BY RETURN VALUE
+        jbyte_array_tuple& tuple = d_arrays[pos];
+        *tuple.d_pp_arr = str;
     }
     void put_null(size_t pos, jbyte ** pp_array)
     {
@@ -87,19 +151,22 @@ struct jbyte_array_container : private non_copyable
         assert(! tuple.d_elems || !"duplicate variable indirect pointer");
         tuple.d_pp_arr = pp_array;
     }
-    void free_byte_array(size_t pos)
+    void replace_byte_array(size_t pos, jobject new_object /* may be null */)
     {
         jbyte_array_tuple& tuple = d_arrays[pos];
+        // If an existing byte array is already fetched at this location, we
+        // need to store a global reference to the array so we can release the
+        // elements on destruction.
         if (tuple.d_elems)
         {
-            jni_auto_local<jobject> object(
+            assert(! tuple.d_global || !"element already replaced once");
+            jni_auto_local<jobject> prev_object(
                 d_env, d_env->GetObjectArrayElement(d_object_array, pos));
-            assert(d_env->IsInstanceOf(object, GLOBAL_REFS->byte_ARRAY()));
-            d_env->ReleaseByteArrayElements(
-                static_cast<jbyteArray>(static_cast<jobject>(object)),
-                tuple.d_elems, 0);
-            tuple = { 0, 0, JNI_FALSE };
+            assert(d_env->IsInstanceOf(prev_object, GLOBAL_REFS->byte_ARRAY()));
+            tuple.d_global = static_cast<jbyteArray>(
+                d_env->NewGlobalRef(prev_object));
         }
+        d_env->SetObjectArrayElement(d_object_array, pos, new_object);
     }
 };
 
@@ -225,15 +292,13 @@ void ptrs_finish_vi(JNIEnv * env, jobjectArray vi_array_java,
             case RETURN_JAVA_STRING:
                 if (! *tuple.d_pp_arr)
                 {   // null pointer, so return a null String ref
-                    vi_array_cpp.free_byte_array(k);
-                    env->SetObjectArrayElement(vi_array_java, k, 0);
+                    vi_array_cpp.replace_byte_array(k, 0);
                 }
                 else
                 {
                     jni_auto_local<jstring> str(
                         env, make_jstring(env, *tuple.d_pp_arr));
-                    vi_array_cpp.free_byte_array(k);
-                    env->SetObjectArrayElement(vi_array_java, k, str);
+                    vi_array_cpp.replace_byte_array(k, str);
                 }
                 break;
             case RETURN_RESOURCE:
@@ -247,15 +312,13 @@ void ptrs_finish_vi(JNIEnv * env, jobjectArray vi_array_java,
                             reinterpret_cast<int>(*tuple.d_pp_arr)
                         )
                     );
-                    vi_array_cpp.free_byte_array(k);
-                    env->SetObjectArrayElement(vi_array_java, k, int_resource);
+                    vi_array_cpp.replace_byte_array(k, int_resource);
                 }
                 else
                 {
                     jni_auto_local<jstring> str(
                         env, make_jstring(env, *tuple.d_pp_arr));
-                    vi_array_cpp.free_byte_array(k);
-                    env->SetObjectArrayElement(vi_array_java, k, str);
+                    vi_array_cpp.replace_byte_array(k, str);
                 }
                 break;
             default:
@@ -272,11 +335,21 @@ inline jlong call_direct(JNIEnv * env, jlong funcPtr, jint sizeDirect,
     jlong result;
     JNI_EXCEPTION_SAFE_BEGIN
     // TODO: tracing
-    // TODO: here could get a critical array (env->GetByteArrayCritical) instead
-    //       of a region to possibly avoid copying, because no other JNI funcs
-    //       being called...
+    // NOTE: I had earlier noted that you could write a critical array version
+    //       of jni_array (GetPrimitiveArrayCritical,
+    //       ReleasePrimitiveArrayCritical). However, this isn't actually
+    //       possible in the general case since a limitation of these functions
+    //       is that you can't make other JNI calls while you have a critical
+    //       array pinned. But in general it is possible for 'call_direct' to
+    //       invoke a DLL function which invokes a callback which calls back
+    //       into Java code. If this doesn't break the restriction by itself,
+    //       the callback could easily call a second DLL function itself, and
+    //       we're right back here. Bottom line, you can't use the critical
+    //       versions *unless* we introduce a further optimization by separating
+    //       invocations that might invoke a callback from those which are
+    //       guaranteed not to.
     jni_array_region<jbyte> args_(env, args, sizeDirect);
-    result = invokeFunc(sizeDirect, &args_[0], funcPtr);
+    result = invokeFunc(sizeDirect, args_.data(), funcPtr);
     JNI_EXCEPTION_SAFE_END(env);
     return result;
 }
@@ -290,13 +363,13 @@ inline jlong call_indirect(JNIEnv * env, jlong funcPtr, jint sizeDirect,
     JNI_EXCEPTION_SAFE_BEGIN
     jni_array<jbyte> args_(env, args);
     jni_array_region<jint> ptr_array(env, ptrArray);
-    ptrs_init(&args_[0], &ptr_array[0], ptr_array.size());
-    result = invoke_stdcall_basic(sizeDirect, &args_[0], funcPtr);
+    ptrs_init(args_.data(), ptr_array.data(), ptr_array.size());
+    result = invoke_stdcall_basic(sizeDirect, args_.data(), funcPtr);
     JNI_EXCEPTION_SAFE_END(env);
     return result;
 }
 
-template<typename InvokeFunc>
+template <typename InvokeFunc>
 inline jlong call_vi(JNIEnv * env, jlong funcPtr, jint sizeDirect,
                      jbyteArray args, jintArray ptrArray, jobjectArray viArray,
                      jintArray viInstArray, InvokeFunc invokeFunc)
@@ -305,10 +378,11 @@ inline jlong call_vi(JNIEnv * env, jlong funcPtr, jint sizeDirect,
     JNI_EXCEPTION_SAFE_BEGIN
     jni_array<jbyte> args_(env, args);
     jni_array_region<jint> ptr_array(env, ptrArray);
-    jbyte_array_container vi_array_cpp(env->GetArrayLength(viArray), env, viArray);
-    ptrs_init_vi(&args_[0], args_.size(), &ptr_array[0], ptr_array.size(),
+    jbyte_array_container vi_array_cpp(env->GetArrayLength(viArray), env,
+                                       viArray);
+    ptrs_init_vi(args_.data(), args_.size(), ptr_array.data(), ptr_array.size(),
                  env, viArray, vi_array_cpp);
-    result = invoke_stdcall_basic(sizeDirect, &args_[0], funcPtr);
+    result = invoke_stdcall_basic(sizeDirect, args_.data(), funcPtr);
     jni_array_region<jint> vi_inst_array(env, viInstArray);
     ptrs_finish_vi(env, viArray, vi_array_cpp, vi_inst_array);
     JNI_EXCEPTION_SAFE_END(env);
@@ -536,6 +610,34 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIn
 {
     return call_vi(env, funcPtr, sizeDirect, args, ptrArray, viArray,
                    viInstArray, invoke_stdcall_return_double);
+}
+
+/*
+ * Class:     suneido_language_jsdi_dll_NativeCall
+ * Method:    callVariableIndirectReturnVariableIndirect
+ * Signature: (JI[B[I[Ljava/lang/Object;[I)V
+ */
+JNIEXPORT void JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIndirectReturnVariableIndirect(
+    JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jbyteArray args,
+    jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
+{
+    JNI_EXCEPTION_SAFE_BEGIN
+    jni_array<jbyte> args_(env, args);
+    jni_array_region<jint> ptr_array(env, ptrArray);
+    jbyte_array_container vi_array_cpp(env->GetArrayLength(viArray), env, viArray);
+    ptrs_init_vi(args_.data(), args_.size(), ptr_array.data(), ptr_array.size(),
+                 env, viArray, vi_array_cpp);
+    jbyte * returned_str = reinterpret_cast<jbyte *>(invoke_stdcall_basic(
+        sizeDirect, args_.data(), funcPtr));
+    // Store a pointer to the return value in the last element of the
+    // variable indirect array, so that it will be properly propagated back
+    // to the Java side...
+    assert(0 < vi_array_cpp.d_arrays.size());
+    vi_array_cpp.put_return_value(vi_array_cpp.d_arrays.size() - 1,
+                                  returned_str);
+    jni_array_region<jint> vi_inst_array(env, viInstArray);
+    ptrs_finish_vi(env, viArray, vi_array_cpp, vi_inst_array);
+    JNI_EXCEPTION_SAFE_END(env);
 }
 
 //==============================================================================
