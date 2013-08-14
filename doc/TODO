@@ -10,6 +10,11 @@
             [ ] Current number of warnings: 149
         -- cppcheck
 
+OUTSTANDING
+    -- crashes on highly optimized version of JSDI (should not happen).
+    -- missing Struct.Modify
+    -- missing Buffer.Replace
+
 
 ================================================================================
 DLL INTERFACE GRAMMAR CLAMPDOWNS
@@ -25,6 +30,43 @@ DLL INTERFACE GRAMMAR CLAMPDOWNS
 3) 'float' and 'double' return values must not be permitted, because such values
    are not returned in EAX/EDX but rather at the top of the floating point
    register stack (FP0). This breaks our stdcall invocation routine.
+
+================================================================================
+IDEAS FOR PUSH-CHANGE SYSTEM
+================================================================================
+
+Go to a one-proxy model.
+
+This requires creating general-purpose Array and Pointer types.
+    Instead of RECT * rc ==> Proxy(RECT, POINTER) we want
+               RECT * rc ==> Pointer(Proxy(RECT))
+
+Now Proxy registers as an observer on the context.
+        ** REGISTER AS LINKED LIST OF WEAK REFERENCES **
+
+Marshalling TypeList containers which contain Proxies register as observers on
+   the proxy (i.e. Dll and Callback register with all the proxies they contain).
+       ** REGISTER AS LINKED LIST OF WEAK REFERENCES **
+
+When context changes, it notifies all the Proxies in sequence, and each Proxy
+does this:
+    LOCK global type hierarchy WRITER lock.
+    implement the change
+    notify all observers of the change
+    UNLOCK global type hierarchy WRITER lock
+
+So any top-level marshall/unmarshall activity needs to use the Reader lock.
+
+Now let's look at how callbacks work in this scenario.
+
+    Foreign dll calls C++ thunk instance
+    C++ thunk instance:
+        LOCK global type hierarchy READER lock
+        Unmarshall the data into a jbyte[]
+        CALL global reference to the CallbackType.invoke(SuCallable, byte[], Object[] viArray)
+            Marshall out the data from the byte[]
+        UNLOCK global type hierarchy READER lock
+
 
 ================================================================================
 OBJECT LIFETIMES
