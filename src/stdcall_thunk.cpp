@@ -199,7 +199,8 @@ stdcall_thunk_impl::stdcall_thunk_impl(
 stdcall_thunk_impl::~stdcall_thunk_impl()
 {
     // TODO: we could rewrite the instructions section to just pop stack and
-    //       return 0 to caller? or to call a different function that asserts?
+    //       return 0 to caller? or to call a different function that asserts
+    //       or sets a JNI exception flag?
     d_magic_1 = ~MAGIC1;
     d_magic_2 = ~MAGIC2;
 }
@@ -209,6 +210,7 @@ __stdcall long stdcall_thunk_impl::wrapper(stdcall_thunk_impl * impl,
 { return impl->d_callback->call(args); }
 // TODO: may need to lock here. otherwise could get deleted from Java by a
 //       concurrent thread...
+// TODO: make sure that no C++ exceptions propagate out to this point.
 
 void * stdcall_thunk_impl::operator new(size_t n)
 { return impl_heap.alloc(n); }
@@ -246,6 +248,7 @@ void stdcall_thunk::reset_callback(
 
 #include "test.h"
 #include "test_exports.h"
+#include "marshalling.h"
 #include "stdcall_invoke.h"
 
 using namespace jsdi;
@@ -253,21 +256,29 @@ using namespace jsdi;
 static const int EMPTY_PTR_ARRAY[0] = { };
 
 // callback that can invoke a stdcall func and return its value
-struct stdcall_invoke_basic_callback : public test_callback
+struct stdcall_invoke_basic_callback : public callback
 {
     void * d_func_ptr;
     template<typename FuncPtr>
     stdcall_invoke_basic_callback(FuncPtr func_ptr, int size_direct,
                                   int size_indirect, const int * ptr_array,
                                   int ptr_array_size, int vi_count)
-        : test_callback(size_direct, size_indirect, ptr_array, ptr_array_size,
-                        vi_count)
+        : callback(size_direct, size_indirect, ptr_array, ptr_array_size,
+                   vi_count)
         , d_func_ptr(reinterpret_cast<void *>(func_ptr))
     { }
-    virtual long call(std::unique_ptr<callback_args> args)
+    virtual long call(const char * args)
     {
+        std::vector<char> data(d_size_total, 0);
+        std::vector<int> vi_inst_array(
+            d_vi_count,
+            static_cast<int>(suneido_language_jsdi_VariableIndirectInstruction::RETURN_JAVA_STRING));
+        unmarshaller_vi_test u(d_size_direct, d_size_total, d_ptr_array.data(),
+                               d_ptr_array.data() + d_ptr_array.size(),
+                               d_vi_count);
+        u.unmarshall_vi(data.data(), args, 0, 0, vi_inst_array.data());
         return static_cast<long>(
-            stdcall_invoke::basic(size_direct(), args->data(), d_func_ptr) &
+            stdcall_invoke::basic(d_size_direct, data.data(), d_func_ptr) &
             0x00000000ffffffffLL
         );
     }

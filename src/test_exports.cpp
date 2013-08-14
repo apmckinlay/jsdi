@@ -8,12 +8,67 @@
 #include "test_exports.h"
 
 #include "jsdi_windows.h"
+#include "util.h"
 
 #include <algorithm>
 #include <cassert>
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+
+namespace {
+
+template <typename T, typename U>
+void assign(T& t, const U& u, T * next)
+{
+    t = u;
+    t.inner = u.inner && next ? next : 0;
+}
+
+struct Recursive_StringSum_Storage
+{
+    Recursive_StringSum rss;
+    char                buffer[32];
+};
+
+template <>
+void assign(Recursive_StringSum_Storage& t, const Recursive_StringSum& u,
+            Recursive_StringSum_Storage * next)
+{
+    std::copy(u.x, u.x + jsdi::array_length(u.x), t.rss.x);
+    if (u.str)
+    {
+        TestReturnStringOutBuffer(u.str, t.buffer, sizeof(t.buffer));
+        t.rss.str = t.buffer;
+    }
+    else t.buffer[0] = '\0';
+    if (u.buffer && 0 < u.len)
+    {
+        size_t pos = std::strlen(t.buffer) + 1;
+        assert(pos <= sizeof(t.buffer));
+        t.rss.buffer = t.buffer + pos;
+        t.rss.len = std::min(static_cast<long>(sizeof(t.buffer) - pos), u.len);
+        std::memcpy(t.rss.buffer, u.buffer, t.rss.len);
+    }
+    else
+    {
+        t.rss.buffer = 0;
+        t.rss.len = 0;
+    }
+    t.rss.inner = u.inner && next ? &next->rss : 0;
+}
+
+template <typename T, typename U, size_t N>
+void recursive_copy(const T * ptr, U(&x)[N] )
+{
+    for (size_t k = 0; ptr && k < N; ++k)
+    {
+        assign(x[k], *ptr, k < N - 1 ? &x[k + 1] : 0);
+        ptr = ptr->inner;
+    }
+}
+
+} // anonymous namespace
 
 extern "C" {
 
@@ -43,6 +98,12 @@ EXPORT_STDCALL float TestFloat(float a)
 
 EXPORT_STDCALL double TestDouble(double a)
 { return a; }
+
+EXPORT_STDCALL int64_t TestRemoveSignFromLong(long a)
+{
+    return reinterpret_cast<int64_t>(reinterpret_cast<void *>(a)) &
+           0xffffffffLL;
+}
 
 EXPORT_STDCALL signed char TestSumTwoChars(signed char a, signed char b)
 { return a + b; }
@@ -182,6 +243,31 @@ EXPORT_STDCALL char * TestReturnStringOutBuffer(const char * str,
     }
     if (i < e) *i = '\0';
     return buffer;
+}
+
+EXPORT_STDCALL const Packed_CharCharShortLong *
+TestReturnStatic_Packed_CharCharShortLong(const Packed_CharCharShortLong * ptr)
+{
+    static Packed_CharCharShortLong x;
+    if (ptr) x = *ptr;
+    return &x;
+}
+
+EXPORT_STDCALL const Recursive_CharCharShortLong *
+TestReturnStatic_Recursive_CharCharShortLong(
+    const Recursive_CharCharShortLong * ptr)
+{
+    static Recursive_CharCharShortLong x[3];
+    recursive_copy(ptr, x);
+    return x;
+}
+
+EXPORT_STDCALL const Recursive_StringSum *
+TestReturnStatic_Recursive_StringSum(const Recursive_StringSum * ptr)
+{
+    static Recursive_StringSum_Storage x[3];
+    recursive_copy(ptr, x);
+    return &x[0].rss;
 }
 
 EXPORT_STDCALL long TestInvokeCallback_Long1(TestCallback_Long1 f, long a)

@@ -10,6 +10,8 @@
 
 #include "util.h"
 
+#include "jni_exception.h"
+
 #include <jni.h>
 
 #include <cassert>
@@ -271,7 +273,10 @@ inline jni_array_region<JNIType>::jni_array_region(JNIEnv * env,
     : d_size(env->GetArrayLength(array))
     , d_array(new value_type[d_size])
 {
+    assert(env || !"JNI environment cannot be NULL");
+    assert(array || !"JNI array cannot be NULL");
     jni_array_get_region<JNIType>(env, array, 0, d_size, d_array);
+    JNI_EXCEPTION_CHECK(env);
 }
 
 template <typename JNIType>
@@ -281,7 +286,10 @@ inline jni_array_region<JNIType>::jni_array_region(JNIEnv * env,
     : d_size(size)
     , d_array(new value_type[d_size])
 {
+    assert(env || !"JNI environment cannot be NULL");
+    assert(array || !"JNI array cannot be NULL");
     jni_array_get_region<JNIType>(env, array, 0, d_size, d_array);
+    JNI_EXCEPTION_CHECK(env);
 }
 
 template<typename JNIType>
@@ -398,6 +406,7 @@ inline jbyteArray jni_array_new<jbyte>(JNIEnv * env, jsize length)
  * \tparam The JNI data type on which to specialize the array region &mdash;
  *         \em eg <dfn>jbyte</dfn>.
  * \see jni_array_region
+ * \see jni_critical_array
  *
  * The array data is retrieved from the JVM on construction using a JNI
  * <dfn>Get&lt;Type&gt;ArrayElements(...)</dfn> function and released on
@@ -479,7 +488,7 @@ class jni_array: private non_copyable
          * \param size Number of elements in the new array
          * \see #jni_array(JNIEnv *, array_type)
          */
-        jni_array(JNIEnv * env, size_type size);
+        jni_array(JNIEnv * env, array_type array, size_type size);
 
         ~jni_array();
 
@@ -576,19 +585,21 @@ inline jni_array<JNIType>::jni_array(JNIEnv * env, array_type array)
     , d_size(env->GetArrayLength(array))
     , d_env(env)
     , d_jarray(array)
-{ assert(d_array); }
+{
+    assert(d_env && d_jarray);
+    if (! d_array) throw std::bad_alloc();
+}
 
 template <typename JNIType>
-inline jni_array<JNIType>::jni_array(JNIEnv * env, size_type size)
-    : d_array(0)
+inline jni_array<JNIType>::jni_array(JNIEnv * env, array_type array, size_type size)
+    : d_array(jni_array_get_elements<JNIType>(env, array, &d_is_copy))
     , d_size(size)
     , d_env(env)
-    , d_jarray(jni_array_new<JNIType>(env, size))
+    , d_jarray(array)
 {
     assert(0 <= size || !"array size cannot be negative");
-    assert(d_jarray);
-    d_array = jni_array_get_elements<JNIType>(env, d_jarray, &d_is_copy);
-    assert(d_array);
+    assert(d_env && d_jarray);
+    if (! d_array) throw std::bad_alloc();
 }
 
 template <typename JNIType>
@@ -632,6 +643,136 @@ inline typename jni_array<JNIType>::const_iterator jni_array<JNIType>::cbegin() 
 template <typename JNIType>
 inline typename jni_array<JNIType>::const_iterator jni_array<JNIType>::cend() const
 { return d_array + d_size; }
+
+//==============================================================================
+//                         class jni_critical_array
+//==============================================================================
+
+template<typename JNIType>
+class jni_critical_array : private non_copyable
+{
+        //
+        // TYPES
+        //
+
+    public:
+
+        /** \brief Type of the underlying Java array. */
+        typedef typename jni_traits<JNIType>::array_type array_type;
+        /** \brief An signed integral type. */
+        typedef jsize size_type;
+        /** \brief Type of the region elements (a JNI primitive type, such as
+         *         <dfn>jbyte</dfn>).
+         * \see #const_value_type
+         */
+        typedef typename jni_traits<JNIType>::value_type value_type;
+        /**
+         * \brief Type of a <dfn>const</dfn> region element.
+         * \see #value_type
+         */
+        typedef typename jni_traits<JNIType>::const_value_type const_value_type;
+        /** \brief Type of a pointer a region element. */
+        typedef typename jni_traits<JNIType>::pointer pointer;
+        /** \brief Type of a pointer to a #const_value_type. */
+        typedef typename jni_traits<JNIType>::const_pointer const_pointer;
+        /** \brief Type of a reference to a #value_type. */
+        typedef typename jni_traits<JNIType>::reference reference;
+        /** \brief Type of a reference to a #const_value_type. */
+        typedef typename jni_traits<JNIType>::const_reference const_reference;
+        /** \brief Random-access iterator to a #const_value_type. */
+        typedef typename jni_traits<JNIType>::const_pointer const_iterator;
+
+        //
+        // DATA
+        //
+
+    private:
+
+        pointer      d_array;
+        size_type    d_size;
+        JNIEnv *     d_env;
+        array_type   d_jarray;
+        jboolean     d_is_copy;
+
+        //
+        // CONSTRUCTORS
+        //
+
+    public:
+
+        jni_critical_array(JNIEnv * env, array_type array);
+
+        jni_critical_array(JNIEnv * env, array_type array, size_type size);
+
+        ~jni_critical_array();
+
+        //
+        // ACCESSORS
+        //
+
+        /**
+         * \brief Returns the number of elements in the array.
+         * \return Number of elements in the array
+         */
+        size_type size() const;
+
+        /**
+         * \brief Returns a pointer to the array storage.
+         * \return Pointer to array storage
+         * \see #data() const
+         *
+         * The pointer returned is such that [data(), data() + size()] is always
+         * a valid range.
+         */
+        pointer data();
+
+        /**
+         * \brief Returns a pointer to the array storage.
+         * \return Pointer to array storage
+         * \see #data()
+         *
+         * The pointer returned is such that [data(), data() + size()] is always
+         * a valid range.
+         */
+        const_pointer data() const;
+};
+
+template <typename JNIType>
+jni_critical_array<JNIType>::jni_critical_array(JNIEnv * env, array_type array)
+    : d_array(reinterpret_cast<pointer>(
+        env->GetPrimitiveArrayCritical(array,&d_is_copy)))
+    , d_size(env->GetArrayLength(array))
+    , d_env(env)
+    , d_jarray(array)
+{ if (! d_array) throw std::bad_alloc(); }
+
+template <typename JNIType>
+jni_critical_array<JNIType>::jni_critical_array(JNIEnv * env, array_type array,
+                                                size_type size)
+    : d_array(reinterpret_cast<pointer>(
+        env->GetPrimitiveArrayCritical(array,&d_is_copy)))
+    , d_size(size)
+    , d_env(env)
+    , d_jarray(array)
+{ if (! d_array) throw std::bad_alloc(); }
+
+template <typename JNIType>
+jni_critical_array<JNIType>::~jni_critical_array()
+{ d_env->ReleasePrimitiveArrayCritical(d_jarray, d_array, 0); }
+
+template <typename JNIType>
+inline typename jni_critical_array<JNIType>::size_type jni_critical_array<
+    JNIType>::size() const
+{ return d_size; }
+
+template <typename JNIType>
+inline typename jni_critical_array<JNIType>::pointer jni_critical_array<JNIType>::data()
+{ return d_array; }
+
+template <typename JNIType>
+inline typename jni_critical_array<JNIType>::const_pointer jni_critical_array<
+    JNIType>::data() const
+{ return d_array; }
 
 //==============================================================================
 //                           class jni_auto_local
@@ -1057,9 +1198,34 @@ inline const wchar_t * jni_utf16_string_region::wstr() const
  * \return Vector containing the wide character equivalents of the characters
  *         in <dfn>sz</dfn> <em>but without the zero-terminator</em>
  * \author Victor Schappert
+ * \see make_jstring(JNIEnv *, jbyte)
  * \since 20130801
  */
 std::vector<jchar> widen(const char * sz);
+
+/**
+ * \brief Converts a zero-terminated string of 8-bit characters into a Java
+ *        string.
+ * \param env JNI environment
+ * \param str_bytes Pointer to zero-terminated string
+ * \return Reference to a Java string
+ * \author Victor Schappert
+ * \since 20130812
+ * \see widen(const char * sz)
+ *
+ * It is caller's responsibility to free the string returned.
+ */
+template<typename CharType>
+inline jstring make_jstring(JNIEnv * env, const CharType * str_bytes)
+{
+    static_assert(1 == sizeof(CharType),
+                  "make_jstring() requires 8-bit character");
+    assert(env || !"environment cannot be NULL");
+    assert(str_bytes || !"string cannot be null");
+    const std::vector<jchar> jchars(
+        widen(reinterpret_cast<const char *>(str_bytes)));
+    return env->NewString(jchars.data(), jchars.size());
+}
 
 } // namespace jsdi
 

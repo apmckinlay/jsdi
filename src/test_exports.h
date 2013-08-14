@@ -28,6 +28,12 @@ struct Packed_CharCharShortLong
     long         d;
 };
 
+struct Recursive_CharCharShortLong
+{
+    Packed_CharCharShortLong      x;
+    Recursive_CharCharShortLong * inner;
+};
+
 struct Recursive_StringSum
 {
     Packed_CharCharShortLong x[2];
@@ -72,6 +78,8 @@ EXPORT_STDCALL float TestFloat(float a);
 
 EXPORT_STDCALL double TestDouble(double a);
 
+EXPORT_STDCALL int64_t TestRemoveSignFromLong(long a);
+
 EXPORT_STDCALL signed char TestSumTwoChars(signed char a, signed char b);
 
 EXPORT_STDCALL short TestSumTwoShorts(short a, short b);
@@ -115,6 +123,16 @@ EXPORT_STDCALL const char * TestReturnPtrString(const char * const * ptr);
 
 EXPORT_STDCALL char * TestReturnStringOutBuffer(const char * str, char * buffer,
                                                 long size);
+
+EXPORT_STDCALL const Packed_CharCharShortLong *
+TestReturnStatic_Packed_CharCharShortLong(const Packed_CharCharShortLong * ptr);
+
+EXPORT_STDCALL const Recursive_CharCharShortLong *
+TestReturnStatic_Recursive_CharCharShortLong(
+    const Recursive_CharCharShortLong * ptr);
+
+EXPORT_STDCALL const Recursive_StringSum *
+TestReturnStatic_Recursive_StringSum(const Recursive_StringSum * ptr);
 
 EXPORT_STDCALL long TestInvokeCallback_Long1(TestCallback_Long1 f, long a);
 
