@@ -695,6 +695,14 @@ class jni_critical_array : private non_copyable
         jboolean     d_is_copy;
 
         //
+        // INTERNALS
+        //
+
+    private:
+
+        void init(jsize size); // No delegating c'tors yet in GCC 4.5.3/MinGW
+
+        //
         // CONSTRUCTORS
         //
 
@@ -738,26 +746,40 @@ class jni_critical_array : private non_copyable
 };
 
 template <typename JNIType>
-jni_critical_array<JNIType>::jni_critical_array(JNIEnv * env, array_type array)
-    : d_array(reinterpret_cast<pointer>(
-        env->GetPrimitiveArrayCritical(array,&d_is_copy)))
-    , d_size(env->GetArrayLength(array))
-    , d_env(env)
-    , d_jarray(array)
-{ if (! d_array) throw std::bad_alloc(); }
+inline void jni_critical_array<JNIType>::init(jsize size)
+{
+    assert(d_jarray || !"array cannot be NULL");
+    assert(0 <= size || !"size must be non-negative");
+    d_size = size;
+    d_array = reinterpret_cast<pointer>(d_env->GetPrimitiveArrayCritical(
+        d_jarray, &d_is_copy));
+    if (! d_array) throw std::bad_alloc();
+}
 
 template <typename JNIType>
-jni_critical_array<JNIType>::jni_critical_array(JNIEnv * env, array_type array,
-                                                size_type size)
-    : d_array(reinterpret_cast<pointer>(
-        env->GetPrimitiveArrayCritical(array,&d_is_copy)))
-    , d_size(size)
-    , d_env(env)
+inline jni_critical_array<JNIType>::jni_critical_array(JNIEnv * env,
+                                                       array_type array)
+    : d_env(env)
     , d_jarray(array)
-{ if (! d_array) throw std::bad_alloc(); }
+{
+    assert(env || !"JNI environment cannot be NULL");
+    assert(array || !"array cannot be NULL");
+    init(env->GetArrayLength(array));
+}
 
 template <typename JNIType>
-jni_critical_array<JNIType>::~jni_critical_array()
+inline jni_critical_array<JNIType>::jni_critical_array(JNIEnv * env,
+                                                       array_type array,
+                                                       size_type size)
+    : d_env(env)
+    , d_jarray(array)
+{
+    assert(env || !"JNI environment cannot be NULL");
+    init(size);
+}
+
+template <typename JNIType>
+inline jni_critical_array<JNIType>::~jni_critical_array()
 { d_env->ReleasePrimitiveArrayCritical(d_jarray, d_array, 0); }
 
 template <typename JNIType>
