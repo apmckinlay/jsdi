@@ -89,6 +89,14 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callIndirectRe
 JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIndirectReturnDouble
   (JNIEnv *, jclass, jlong, jint, jbyteArray, jintArray, jobjectArray, jintArray);
 
+/*
+ * Class:     suneido_language_jsdi_dll_NativeCall
+ * Method:    callVariableIndirectReturnVariableIndirect
+ * Signature: (JI[B[I[Ljava/lang/Object;[I)V
+ */
+JNIEXPORT void JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIndirectReturnVariableIndirect
+  (JNIEnv *, jclass, jlong, jint, jbyteArray, jintArray, jobjectArray, jintArray);
+
 #ifdef __cplusplus
 }
 #endif
