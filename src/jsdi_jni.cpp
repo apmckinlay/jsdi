@@ -466,8 +466,8 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_deleteThunk
  * Method:    copyOutDirect
  * Signature: (I[BI)V
  */
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutDirect
-  (JNIEnv * env, jclass, jint structAddr, jbyteArray data, jint sizeDirect)
+JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutDirect(
+    JNIEnv * env, jclass, jint structAddr, jbyteArray data, jint sizeDirect)
 {
     JNI_EXCEPTION_SAFE_BEGIN
     auto ptr(get_struct_ptr(structAddr, sizeDirect));
@@ -485,14 +485,15 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutDirect
  * Method:    copyOutIndirect
  * Signature: (I[BI[I)V
  */
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutIndirect
-  (JNIEnv * env, jclass, jint structAddr, jbyteArray data, jint sizeDirect, jintArray ptrArray)
+JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutIndirect(
+    JNIEnv * env, jclass, jint structAddr, jbyteArray data, jint sizeDirect,
+    jintArray ptrArray)
 {
     JNI_EXCEPTION_SAFE_BEGIN
     auto ptr(get_struct_ptr(structAddr, sizeDirect));
     // See note above: critical arrays safe here.
+    const jni_array_region<jint> ptr_array(env, ptrArray);
     jni_critical_array<jbyte> data_(env, data);
-    const jni_critical_array<jint> ptr_array(env, ptrArray);
     unmarshaller_indirect u(sizeDirect, data_.size(),
                             reinterpret_cast<const int *>(ptr_array.data()),
                             reinterpret_cast<const int *>(ptr_array.data() +
