@@ -7,25 +7,11 @@
 
 #include "jsdi_callback.h"
 
+#include "marshalling.h"
+
 #include <stdexcept>
 
 namespace jsdi {
-
-//==============================================================================
-//                      class jsdi_callback_args_basic
-//==============================================================================
-
-jsdi_callback_args_basic::~jsdi_callback_args_basic()
-{
-    if (data()) release_data();
-    d_env->DeleteLocalRef(d_array);
-}
-
-void jsdi_callback_args_basic::vi_string_ptr(const char * str, int vi_index)
-{
-    throw std::logic_error(
-        "jsdi_callback_args_basic does not support vi_string_ptr");
-}
 
 //==============================================================================
 //                         class jsdi_callback_basic
@@ -74,16 +60,35 @@ jsdi_callback_basic::~jsdi_callback_basic()
     }
 }
 
-callback_args * jsdi_callback_basic::alloc_args() const
-{ return new jsdi_callback_args_basic(fetch_env(), d_size_total); }
-
-long jsdi_callback_basic::call(std::unique_ptr<callback_args> args)
+long jsdi_callback_basic::call(const char * args)
 {
-    auto& in_args(static_cast<jsdi_callback_args_basic&>(*args));
-    JNIEnv * env(in_args.env());
+    JNIEnv * const env(fetch_env());
+    //
+    // SET UP
+    //
+    jni_auto_local<jobject> out_jarray(env, env->NewByteArray(d_size_total));
     jvalue out_args[2];
     out_args[0].l = d_suneido_bound_value_global_ref;
-    out_args[1].l = in_args.release_data();
+    out_args[1].l = out_jarray;
+    //
+    // UNMARSHALL
+    //
+    {
+        // The reason this code is in a sub-block is because we want the
+        // destructor of the jni_array<jbyte> to run before we invoke the
+        // callback. This is because the destructor releases the byte array
+        // elements, which is necessary to ensure that the unmarshalled data is
+        // propagated into the Java side before the callback runs.
+        jni_array<jbyte> out(
+            env, static_cast<jbyteArray>(static_cast<jobject>(out_jarray)),
+            d_size_total);
+        unmarshaller_indirect u(d_size_direct, d_size_total, d_ptr_array.data(),
+                                d_ptr_array.data() + d_ptr_array.size());
+        u.unmarshall_indirect(reinterpret_cast<char *>(out.data()), args);
+    }
+    //
+    // CALL
+    //
     long result(0);
     result = env->CallNonvirtualIntMethodA(
         d_suneido_callback_global_ref,
@@ -105,40 +110,45 @@ JNIEnv * jsdi_callback_basic::fetch_env() const
 }
 
 //==============================================================================
-//                        class jsdi_callback_args_vi
-//==============================================================================
-
-jsdi_callback_args_vi::~jsdi_callback_args_vi()
-{
-    if (data()) release_data();
-    d_env->DeleteLocalRef(d_array);
-    d_env->DeleteLocalRef(d_vi_array);
-}
-
-void jsdi_callback_args_vi::vi_string_ptr(const char * str, int vi_index)
-{
-    assert(str || !"str cannot be NULL");
-    std::vector<jchar> chars(widen(str));
-    jni_auto_local<jstring> jstr(d_env, chars.data(), chars.size());
-    d_env->SetObjectArrayElement(d_vi_array, vi_index,
-                                 static_cast<jobject>(jstr));
-}
-
-//==============================================================================
 //                            class jsdi_callback_vi
 //==============================================================================
 
-callback_args * jsdi_callback_vi::alloc_args() const
-{ return new jsdi_callback_args_vi(fetch_env(), d_size_total, d_vi_count); }
-
-long jsdi_callback_vi::call(std::unique_ptr<callback_args> args)
+long jsdi_callback_vi::call(const char * args)
 {
-    auto& in_args(static_cast<jsdi_callback_args_vi&>(*args));
-    JNIEnv * env(in_args.env());
+    JNIEnv * const env(fetch_env());
+    //
+    // SET UP
+    //
+    jni_auto_local<jobject> out_data_jarray(env, env->NewByteArray(d_size_total));
+    jni_auto_local<jobject> out_vi_jarray(
+        env,
+        env->NewObjectArray(d_vi_count, GLOBAL_REFS->java_lang_Object(), 0));
     jvalue out_args[3];
     out_args[0].l = d_suneido_bound_value_global_ref;
-    out_args[1].l = in_args.release_data();
-    out_args[2].l = in_args.vi_array();
+    out_args[1].l = out_data_jarray;
+    out_args[2].l = out_vi_jarray;
+    //
+    // UNMARSHALL
+    //
+    {
+        // The reason this code is in a sub-block is because we want the
+        // destructor of the jni_array<jbyte> to run before we invoke the
+        // callback. This is because the destructor releases the byte array
+        // elements, which is necessary to ensure that the unmarshalled data is
+        // propagated into the Java side before the callback runs.
+        jni_array<jbyte> out(
+            env, static_cast<jbyteArray>(static_cast<jobject>(out_data_jarray)),
+            d_size_total);
+        unmarshaller_vi u(d_size_direct, d_size_total, d_ptr_array.data(),
+                          d_ptr_array.data() + d_ptr_array.size(), d_vi_count);
+        u.unmarshall_vi(
+            reinterpret_cast<char *>(out.data()), args, env,
+            static_cast<jobjectArray>(static_cast<jobject>(out_vi_jarray)),
+            d_vi_inst_array.data());
+    }
+    //
+    // CALL
+    //
     long result(0);
     result = env->CallNonvirtualIntMethodA(
         d_suneido_callback_global_ref,
