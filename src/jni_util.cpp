@@ -63,4 +63,18 @@ std::vector<jchar> widen(const char * sz)
     return wide;
 }
 
+jstring make_jstring(JNIEnv * env, const char * sz)
+{
+    assert(env || !"environment cannot be NULL");
+    assert(sz || !"string cannot be null");
+    const std::vector<jchar> jchars(widen(sz));
+    jstring result = env->NewString(jchars.data(), jchars.size());
+    // According to the NewString docs, it can either:
+    //   -- return NULL (if the string "cannot be constructed"); or
+    //   -- throw OutOfMemoryError if JVM runs out of memory
+    JNI_EXCEPTION_CHECK(env);
+    if (! result) throw jni_bad_alloc("NewString", __FUNCTION__);
+    return result;
+}
+
 } // namespace jsdi

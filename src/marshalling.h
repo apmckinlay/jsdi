@@ -159,10 +159,12 @@ inline void marshalling_vi_container::replace_byte_array(
         assert(! t.d_global || !"element already replaced once");
         jni_auto_local<jobject> prev_object(
             d_env, d_env->GetObjectArrayElement(d_object_array, pos));
+        JNI_EXCEPTION_CHECK(d_env);
         assert(d_env->IsInstanceOf(prev_object, GLOBAL_REFS->byte_ARRAY()));
         t.d_global = static_cast<jbyteArray>(d_env->NewGlobalRef(prev_object));
     }
     d_env->SetObjectArrayElement(d_object_array, pos, new_object);
+    JNI_EXCEPTION_CHECK(d_env);
 }
 
 //==============================================================================

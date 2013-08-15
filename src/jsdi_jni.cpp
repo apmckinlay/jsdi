@@ -30,16 +30,19 @@ using namespace jsdi;
 
 namespace {
 
-inline jlong invoke_stdcall_basic(int args_size_bytes, const jbyte * args_ptr,
-                                  jlong func_ptr)
+inline jlong invoke_stdcall_basic(JNIEnv * env, int args_size_bytes,
+                                  const jbyte * args_ptr, jlong func_ptr)
 {
-    return stdcall_invoke::basic(args_size_bytes,
-                                 reinterpret_cast<const char *>(args_ptr),
-                                 reinterpret_cast<void *>(func_ptr));
+    jlong result = stdcall_invoke::basic(
+        args_size_bytes, reinterpret_cast<const char *>(args_ptr),
+        reinterpret_cast<void *>(func_ptr));
+    JNI_EXCEPTION_CHECK(env); // In case callback triggered exception...
+    return result;
 }
 
-inline jlong invoke_stdcall_return_double(int args_size_bytes,
-                                          const jbyte * args_ptr, jlong func_ptr)
+inline jlong invoke_stdcall_return_double(JNIEnv * env, int args_size_bytes,
+                                          const jbyte * args_ptr,
+                                          jlong func_ptr)
 {
     union {
         volatile double d;
@@ -48,6 +51,7 @@ inline jlong invoke_stdcall_return_double(int args_size_bytes,
     d = stdcall_invoke::return_double(
         args_size_bytes, reinterpret_cast<const char *>(args_ptr),
         reinterpret_cast<void *>(func_ptr));
+    JNI_EXCEPTION_CHECK(env); // In case callback triggered exception...
     return l;
 }
 
@@ -72,7 +76,7 @@ inline jlong call_direct(JNIEnv * env, jlong funcPtr, jint sizeDirect,
     //       invocations that might invoke a callback from those which are
     //       guaranteed not to.
     jni_array_region<jbyte> args_(env, args, sizeDirect);
-    result = invokeFunc(sizeDirect, args_.data(), funcPtr);
+    result = invokeFunc(env, sizeDirect, args_.data(), funcPtr);
     JNI_EXCEPTION_SAFE_END(env);
     return result;
 }
@@ -87,7 +91,7 @@ inline jlong call_indirect(JNIEnv * env, jlong funcPtr, jint sizeDirect,
     jni_array<jbyte> args_(env, args);
     jni_array_region<jint> ptr_array(env, ptrArray);
     marshalling_roundtrip::ptrs_init(args_.data(), ptr_array.data(), ptr_array.size());
-    result = invoke_stdcall_basic(sizeDirect, args_.data(), funcPtr);
+    result = invokeFunc(env, sizeDirect, args_.data(), funcPtr);
     JNI_EXCEPTION_SAFE_END(env);
     return result;
 }
@@ -106,7 +110,7 @@ inline jlong call_vi(JNIEnv * env, jlong funcPtr, jint sizeDirect,
     marshalling_roundtrip::ptrs_init_vi(args_.data(), args_.size(),
                                         ptr_array.data(), ptr_array.size(),
                                         env, viArray, vi_array_cpp);
-    result = invoke_stdcall_basic(sizeDirect, args_.data(), funcPtr);
+    result = invokeFunc(env, sizeDirect, args_.data(), funcPtr);
     jni_array_region<jint> vi_inst_array(env, viInstArray);
     marshalling_roundtrip::ptrs_finish_vi(env, viArray, vi_array_cpp,
                                           vi_inst_array);
@@ -367,7 +371,7 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableInd
                                         ptr_array.data(), ptr_array.size(),
                                         env, viArray, vi_array_cpp);
     jbyte * returned_str = reinterpret_cast<jbyte *>(invoke_stdcall_basic(
-        sizeDirect, args_.data(), funcPtr));
+        env, sizeDirect, args_.data(), funcPtr));
     // Store a pointer to the return value in the last element of the
     // variable indirect array, so that it will be properly propagated back
     // to the Java side...

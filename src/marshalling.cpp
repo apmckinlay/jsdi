@@ -32,6 +32,7 @@ marshalling_vi_container::~marshalling_vi_container()
             {
                 jni_auto_local<jobject> object(
                     d_env, d_env->GetObjectArrayElement(d_object_array, k));
+                JNI_EXCEPTION_CHECK(d_env);
                 assert(d_env->IsInstanceOf(object, GLOBAL_REFS->byte_ARRAY()));
                 d_env->ReleaseByteArrayElements(
                     static_cast<jbyteArray>(static_cast<jobject>(object)),
@@ -80,6 +81,7 @@ void marshalling_roundtrip::ptrs_init_vi(jbyte * args, jsize args_size,
             );
             jni_auto_local<jobject> object(
                 env, env->GetObjectArrayElement(vi_array_in, ptd_to_pos));
+            JNI_EXCEPTION_CHECK(env);
             if (! object)
             {   // Note if this is a 'resource', the value at *ptr_addr is
                 // actually a 16-bit integer which may not be NULL
@@ -138,6 +140,9 @@ void marshalling_roundtrip::ptrs_finish_vi(
                             reinterpret_cast<int>(*tuple.d_pp_arr)
                         )
                     );
+                    JNI_EXCEPTION_CHECK(env);
+                    if (! int_resource)
+                        throw jni_bad_alloc("NewObject", __FUNCTION__);
                     vi_array_cpp.replace_byte_array(k, int_resource);
                 }
                 else
@@ -311,7 +316,11 @@ void unmarshaller_vi::vi_string_ptr(const char * str, int vi_index,
                         reinterpret_cast<int>(str)
                     )
                 );
+                JNI_EXCEPTION_CHECK(env);
+                if (! int_resource)
+                    throw jni_bad_alloc("NewObject", __FUNCTION__);
                 env->SetObjectArrayElement(vi_array, vi_index, int_resource);
+                JNI_EXCEPTION_CHECK(env);
                 break;
             }
             // Deliberately fall through if not IS_INTRESOURCE, because if it's
@@ -321,6 +330,7 @@ void unmarshaller_vi::vi_string_ptr(const char * str, int vi_index,
             {
                 jni_auto_local<jstring> jstr(env, make_jstring(env, str));
                 env->SetObjectArrayElement(vi_array, vi_index, jstr);
+                JNI_EXCEPTION_CHECK(env);
             }
             break;
         default:

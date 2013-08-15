@@ -53,9 +53,23 @@ void jni_exception::throw_jni(JNIEnv * env) const
         if (! env->ThrowNew(clazz, what()))
         {
             // TODO: do something here
+            // TODO: use env->FatalError(const char * msg)
             // TODO: should write to a log file and then blow up spectacularly
         }
     }
+}
+
+//==============================================================================
+//                           class jni_bad_alloc
+//==============================================================================
+
+std::string jni_bad_alloc::make_what(const char * jni_function,
+                                     const char * throwing_function)
+{
+    std::ostringstream o;
+    o << "JNI function " << jni_function << " returned NULL in "
+      << throwing_function << std::endl;
+    return o.str(); // OK to return value because of C++11 RValue references
 }
 
 } // namespace jsdi

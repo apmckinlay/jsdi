@@ -587,7 +587,7 @@ inline jni_array<JNIType>::jni_array(JNIEnv * env, array_type array)
     , d_jarray(array)
 {
     assert(d_env && d_jarray);
-    if (! d_array) throw std::bad_alloc();
+    if (! d_array) throw jni_bad_alloc("Get*ArrayElements", __FUNCTION__);
 }
 
 template <typename JNIType>
@@ -599,7 +599,7 @@ inline jni_array<JNIType>::jni_array(JNIEnv * env, array_type array, size_type s
 {
     assert(0 <= size || !"array size cannot be negative");
     assert(d_env && d_jarray);
-    if (! d_array) throw std::bad_alloc();
+    if (! d_array) throw jni_bad_alloc("Get*ArrayElements", __FUNCTION__);
 }
 
 template <typename JNIType>
@@ -753,7 +753,8 @@ inline void jni_critical_array<JNIType>::init(jsize size)
     d_size = size;
     d_array = reinterpret_cast<pointer>(d_env->GetPrimitiveArrayCritical(
         d_jarray, &d_is_copy));
-    if (! d_array) throw std::bad_alloc();
+    if (!d_array)
+        throw jni_bad_alloc("GetPrimitiveArrayCritical", __FUNCTION__);
 }
 
 template <typename JNIType>
@@ -1225,28 +1226,30 @@ inline const wchar_t * jni_utf16_string_region::wstr() const
  */
 std::vector<jchar> widen(const char * sz);
 
+/**\cond internal */
+jstring make_jstring(JNIEnv * env, const char * sz);
+/**\endcond internal */
+
 /**
  * \brief Converts a zero-terminated string of 8-bit characters into a Java
  *        string.
  * \param env JNI environment
- * \param str_bytes Pointer to zero-terminated string
+ * \param sz Pointer to zero-terminated string
  * \return Reference to a Java string
  * \author Victor Schappert
  * \since 20130812
+ * \throws jni_bad_alloc If the string cannot be constructed
+ * \throws jni_exception If the JVM throws an OutOfMemoryError
  * \see widen(const char * sz)
  *
  * It is caller's responsibility to free the string returned.
  */
 template<typename CharType>
-inline jstring make_jstring(JNIEnv * env, const CharType * str_bytes)
+inline jstring make_jstring(JNIEnv * env, const CharType * sz)
 {
     static_assert(1 == sizeof(CharType),
                   "make_jstring() requires 8-bit character");
-    assert(env || !"environment cannot be NULL");
-    assert(str_bytes || !"string cannot be null");
-    const std::vector<jchar> jchars(
-        widen(reinterpret_cast<const char *>(str_bytes)));
-    return env->NewString(jchars.data(), jchars.size());
+    return make_jstring(env, reinterpret_cast<const char *>(sz));
 }
 
 } // namespace jsdi
