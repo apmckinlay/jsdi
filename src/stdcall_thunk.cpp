@@ -11,11 +11,13 @@
 #include "callback.h"
 
 #include <stdexcept>
+#include <iostream>
 #include <sstream>
 #include <vector>
 #include <limits>
 #include <cassert>
 #include <cstring>
+#include <cstdlib>
 
 namespace jsdi {
 
@@ -207,10 +209,24 @@ stdcall_thunk_impl::~stdcall_thunk_impl()
 
 __stdcall long stdcall_thunk_impl::wrapper(stdcall_thunk_impl * impl,
                                            const char * args)
-{ return impl->d_callback->call(args); }
+{
+    // NOTE: It is [C++] callback's responsibility to ensure that no C++
+    //       exceptions propagate out to this level. Furthermore, C++ callback
+    //       is responsible for stopping execution and returning the moment a
+    //       JNI exception occurs.
+    try
+    { return impl->d_callback->call(args); }
+    catch (...)
+    {
+        std::cerr << "FATAL ERROR: exception caught in " << __FUNCTION__
+                  << "( " << __FILE__ << " at line " << __LINE__ << ')'
+                  << std::endl;
+        std::abort();
+        return 0L; // To shut up the compiler warning
+    }
+}
 // TODO: may need to lock here. otherwise could get deleted from Java by a
 //       concurrent thread...
-// TODO: make sure that no C++ exceptions propagate out to this point.
 
 void * stdcall_thunk_impl::operator new(size_t n)
 { return impl_heap.alloc(n); }

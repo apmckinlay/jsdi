@@ -76,7 +76,37 @@ class jni_exception: public std::runtime_error
         bool jni_except_pending() const;
 
         void throw_jni(JNIEnv * env) const;
+
 };
+
+//==============================================================================
+//                           class jni_bad_alloc
+//==============================================================================
+
+// TODO: docs -- since 20130815
+class jni_bad_alloc : public jni_exception
+{
+        //
+        // INTERNALS
+        //
+
+        static std::string make_what(const char *, const char *);
+
+        //
+        // CONSTRUCTORS
+        //
+
+    public:
+
+        jni_bad_alloc(const char * jni_function_name,
+                      const char * throwing_function);
+};
+
+inline jni_bad_alloc::jni_bad_alloc(const char * jni_function_name,
+                                    const char * throwing_function)
+    : jni_exception(make_what(jni_function_name, throwing_function), false)
+{ }
+
 
 } // namespace jsdi
 

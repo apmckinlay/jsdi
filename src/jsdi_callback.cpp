@@ -62,11 +62,15 @@ jsdi_callback_basic::~jsdi_callback_basic()
 
 long jsdi_callback_basic::call(const char * args)
 {
+    long result(0);
     JNIEnv * const env(fetch_env());
+    JNI_EXCEPTION_SAFE_BEGIN
     //
     // SET UP
     //
     jni_auto_local<jobject> out_jarray(env, env->NewByteArray(d_size_total));
+    JNI_EXCEPTION_CHECK(env);
+    if (! out_jarray) throw jni_bad_alloc("NewByteArray", __FUNCTION__);
     jvalue out_args[2];
     out_args[0].l = d_suneido_bound_value_global_ref;
     out_args[1].l = out_jarray;
@@ -89,14 +93,14 @@ long jsdi_callback_basic::call(const char * args)
     //
     // CALL
     //
-    long result(0);
     result = env->CallNonvirtualIntMethodA(
         d_suneido_callback_global_ref,
         GLOBAL_REFS->suneido_language_jsdi_type_Callback(),
         GLOBAL_REFS->suneido_language_jsdi_type_Callback__m_invoke(),
         out_args
     );
-    // TODO: check for JNI exception here??
+    JNI_EXCEPTION_CHECK(env);
+    JNI_EXCEPTION_SAFE_END(env);
     return result;
 }
 
@@ -115,14 +119,21 @@ JNIEnv * jsdi_callback_basic::fetch_env() const
 
 long jsdi_callback_vi::call(const char * args)
 {
+    long result(0);
     JNIEnv * const env(fetch_env());
+    JNI_EXCEPTION_SAFE_BEGIN
     //
     // SET UP
     //
-    jni_auto_local<jobject> out_data_jarray(env, env->NewByteArray(d_size_total));
+    jni_auto_local<jobject> out_data_jarray(
+        env, env->NewByteArray(d_size_total));
+    JNI_EXCEPTION_CHECK(env);
+    if (! out_data_jarray) throw jni_bad_alloc("NewByteArray", __FUNCTION__);
     jni_auto_local<jobject> out_vi_jarray(
         env,
         env->NewObjectArray(d_vi_count, GLOBAL_REFS->java_lang_Object(), 0));
+    JNI_EXCEPTION_CHECK(env);
+    if (! out_vi_jarray) throw jni_bad_alloc("NewObjectArray", __FUNCTION__);
     jvalue out_args[3];
     out_args[0].l = d_suneido_bound_value_global_ref;
     out_args[1].l = out_data_jarray;
@@ -149,14 +160,14 @@ long jsdi_callback_vi::call(const char * args)
     //
     // CALL
     //
-    long result(0);
     result = env->CallNonvirtualIntMethodA(
         d_suneido_callback_global_ref,
         GLOBAL_REFS->suneido_language_jsdi_type_Callback(),
         GLOBAL_REFS->suneido_language_jsdi_type_Callback__m_invokeVariableIndirect(),
         out_args
     );
-    // TODO: check for JNI exception here??
+    JNI_EXCEPTION_CHECK(env);
+    JNI_EXCEPTION_SAFE_END(env);
     return result;
 }
 
