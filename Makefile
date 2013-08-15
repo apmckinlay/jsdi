@@ -17,15 +17,17 @@ BINDIR  :=bin/$(CONFIG)
 DEPDIR  :=.dep
 DOCDIR  :=doc
 ASMDIR  :=.asm/$(CONFIG)
+PPDIR   :=.pp/$(CONFIG)
 
 EXPORTS     :=jsdi.exp
 TARGET_DLL  :=jsdi.dll
 TARGET_EXE  :=jsdi.exe
 SOURCES     :=$(wildcard $(SRCDIR)/*.cpp)
-OBJECTS     =$(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
-OBJECTS_DLL =$(filter-out $(OBJDIR)/main_exe.o, $(OBJECTS))
-OBJECTS_EXE =$(filter-out $(OBJDIR)/main_dll.o, $(OBJECTS))
-ASMFILES    =$(SOURCES:$(SRCDIR)/%.cpp=$(ASMDIR)/%.s)
+OBJECTS     :=$(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
+OBJECTS_DLL :=$(filter-out $(OBJDIR)/main_exe.o, $(OBJECTS))
+OBJECTS_EXE :=$(filter-out $(OBJDIR)/main_dll.o, $(OBJECTS))
+ASMFILES    :=$(SOURCES:$(SRCDIR)/%.cpp=$(ASMDIR)/%.s)
+PPFILES     :=$(SOURCES:$(SRCDIR)/%.cpp=$(PPDIR)/%.cpp)
 DEPENDS     :=$(SOURCES:$(SRCDIR)/%.cpp=$(DEPDIR)/%.d)
 DOXYFILE    :=$(DOCDIR)/Doxyfile
 
@@ -85,6 +87,9 @@ exe: dirs $(BINDIR)/$(TARGET_EXE)
 .PHONY: asm
 asm: dirs $(ASMFILES)
 
+.PHONY: pp
+pp: dirs $(PPFILES)
+
 # Including DEPENDS will trigger dependency generation if the dependency files
 # don't yet exist. You have to include it after the default target, though, or
 # make will assume that the first dependency file *is* the default target! The
@@ -117,8 +122,12 @@ $(ASMFILES): $(ASMDIR)/%.s : $(SRCDIR)/%.cpp
 	@echo $<
 	@$(CC) $(CC_FLAGS) -S $< -o $@
 
+$(PPFILES): $(PPDIR)/%.cpp : $(SRCDIR)/%.cpp
+	@echo $<
+	@$(CC) $(CC_FLAGS) -E $< -o $@
+
 .PHONY: dirs
-dirs: $(OBJDIR) $(BINDIR) $(DEPDIR) $(ASMDIR)
+dirs: $(OBJDIR) $(BINDIR) $(DEPDIR) $(ASMDIR) $(PPDIR)
 
 $(OBJDIR):
 	@mkdir -p $(OBJDIR)
@@ -132,9 +141,12 @@ $(DEPDIR):
 $(ASMDIR):
 	@mkdir -p $(ASMDIR)
 
+$(PPDIR):
+	@mkdir -p $(PPDIR)
+
 .PHONY: clean
 clean:
-	@rm -f $(OBJDIR)/* $(BINDIR)/* $(DEPDIR)/* $(ASMDIR)/*
+	@rm -f $(OBJDIR)/* $(BINDIR)/* $(DEPDIR)/* $(ASMDIR)/* $(PPDIR)/*
 
 .PHONY: rebuild
 rebuild: clean build
