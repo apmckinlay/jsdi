@@ -59,7 +59,7 @@ template<typename InvokeFunc>
 inline jlong call_direct(JNIEnv * env, jlong funcPtr, jint sizeDirect,
                          jbyteArray args, InvokeFunc invokeFunc)
 {
-    jlong result;
+    jlong result(0);
     JNI_EXCEPTION_SAFE_BEGIN
     // TODO: tracing
     // NOTE: I had earlier noted that you could write a critical array version
@@ -86,7 +86,7 @@ inline jlong call_indirect(JNIEnv * env, jlong funcPtr, jint sizeDirect,
                            jbyteArray args, jintArray ptrArray,
                            InvokeFunc invokeFunc)
 {
-    jlong result;
+    jlong result(0);
     JNI_EXCEPTION_SAFE_BEGIN
     jni_array<jbyte> args_(env, args);
     jni_array_region<jint> ptr_array(env, ptrArray);
@@ -101,7 +101,7 @@ inline jlong call_vi(JNIEnv * env, jlong funcPtr, jint sizeDirect,
                      jbyteArray args, jintArray ptrArray, jobjectArray viArray,
                      jintArray viInstArray, InvokeFunc invokeFunc)
 {
-    jlong result;
+    jlong result(0);
     JNI_EXCEPTION_SAFE_BEGIN
     jni_array<jbyte> args_(env, args);
     jni_array_region<jint> ptr_array(env, ptrArray);
