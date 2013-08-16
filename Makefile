@@ -73,6 +73,7 @@ FLAG_G:=$(shell echo $(CONFIG) | grep -o g)
 FLAG_NDEBUG:=$(shell echo $(CONFIG) | grep -o NDEBUG)
 ifeq ($(FLAG_G),g)
 DEBUGOPTION:=-g
+LD_FLAGS_DLL+= $(DEBUGOPTION)
 else
 LD_FLAGS_DLL+= -s
 endif
