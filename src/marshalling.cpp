@@ -361,7 +361,7 @@ template<typename FuncPtr>
 inline jlong invoke_stdcall_(FuncPtr f, int nlongs, long * args)
 {
     return stdcall_invoke::basic(nlongs * sizeof(long),
-                                 reinterpret_cast<const char *>(args),
+                                 reinterpret_cast<char *>(args),
                                  reinterpret_cast<void *>(f));
 }
 
@@ -369,7 +369,7 @@ template<typename FuncPtr>
 inline jlong invoke_stdcall_(FuncPtr f, int nbytes, jbyte * args)
 {
     return stdcall_invoke::basic(nbytes,
-                                 reinterpret_cast<const char *>(args),
+                                 reinterpret_cast<char *>(args),
                                  reinterpret_cast<void *>(f));
 }
 

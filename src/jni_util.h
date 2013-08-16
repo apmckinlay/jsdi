@@ -250,6 +250,7 @@ class jni_array_region: private non_copyable
          *        array region.
          * \return A #const_iterator to the beginning of the array region
          * \see #cend() const
+         * \see #begin() const
          *
          * If the array region is empty, the returned iterator shall not be
          * dereferenced.
@@ -260,11 +261,35 @@ class jni_array_region: private non_copyable
          * \brief Returns a #const_iterator pointing to the \em past-the-end
          *        element of the array region.
          * \return A #const_iterator to the end of the array region
-         * \see #cend() const
+         * \see #cbegin() const
+         * \see #end() const
          *
          * The returned iterator shall not be dereferenced.
          */
         const_iterator cend() const;
+
+        /**
+         * \brief Returns a #const_iterator pointing to the first element of the
+         *        array region.
+         * \return A #const_iterator to the beginning of the array region
+         * \see #end() const
+         * \see #cbegin() const
+         *
+         * If the array region is empty, the returned iterator shall not be
+         * dereferenced.
+         */
+        const_iterator begin() const;
+
+        /**
+         * \brief Returns a #const_iterator pointing to the \em past-the-end
+         *        element of the array region.
+         * \return A #const_iterator to the end of the array region
+         * \see #begin() const
+         * \see #cend() const
+         *
+         * The returned iterator shall not be dereferenced.
+         */
+        const_iterator end() const;
 };
 
 template <typename JNIType>
@@ -343,6 +368,20 @@ inline typename jni_array_region<JNIType>::const_iterator jni_array_region<
     JNIType>::cend() const
 {
     return d_array + d_size;
+}
+
+template<typename JNIType>
+inline typename jni_array_region<JNIType>::const_iterator jni_array_region<
+    JNIType>::begin() const
+{
+    return cbegin();
+}
+
+template<typename JNIType>
+inline typename jni_array_region<JNIType>::const_iterator jni_array_region<
+    JNIType>::end() const
+{
+    return cend();
 }
 
 //==============================================================================
