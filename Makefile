@@ -67,6 +67,18 @@ else ifeq ($(CONFIG),release)
 OPTLEVEL:=3
 DEBUGOPTION:=-DNDEBUG
 LD_FLAGS_DLL+= -s
+else ifeq ($(shell echo $(CONFIG) | grep '^[0-3]g\?\(NDEBUG\)\?$$'),$(CONFIG))
+OPTLEVEL:=$(shell echo $(CONFIG) | grep -o '^[0-3]')
+FLAG_G:=$(shell echo $(CONFIG) | grep -o g)
+FLAG_NDEBUG:=$(shell echo $(CONFIG) | grep -o NDEBUG)
+ifeq ($(FLAG_G),g)
+DEBUGOPTION:=-g
+else
+LD_FLAGS_DLL+= -s
+endif
+ifeq ($(FLAG_NDEBUG),NDEBUG)
+DEBUGOPTION+= -DNDEBUG
+endif
 else
 $(error Unsupported CONFIG value: '$(CONFIG)')
 endif
