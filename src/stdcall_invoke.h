@@ -51,7 +51,7 @@ struct stdcall_invoke
          * See <a href="http://pic.dhe.ibm.com/infocenter/ratdevz/v7r5/index.jsp?topic=%2Fcom.ibm.etools.pl1.win.doc%2Ftopics%2Fxf6700.htm">here</a>
          * and <a href="http://stackoverflow.com/q/17912828/1911388">here</a>.
          */
-        static uint64_t basic(int args_size_bytes, const char * args_ptr,
+        static uint64_t basic(int args_size_bytes, char * args_ptr,
                               void * func_ptr);
 
         /**
@@ -73,12 +73,12 @@ struct stdcall_invoke
          * precision than either <dfn>float</dfn> or <dfn>double</dfn>), we
          * might as well take the <dfn>double</dfn> option.
          */
-        static double return_double(int arg_size_bytes, const char * args_ptr,
+        static double return_double(int arg_size_bytes, char * args_ptr,
                                     void * func_ptr);
 };
 
-inline uint64_t stdcall_invoke::basic(int args_size_bytes,
-                                      const char * args_ptr, void * func_ptr)
+inline uint64_t stdcall_invoke::basic(int args_size_bytes, char * args_ptr,
+                                      void * func_ptr)
 {
     uint64_t result;
     assert(
@@ -104,7 +104,7 @@ inline uint64_t stdcall_invoke::basic(int args_size_bytes,
         "2:\n\t"
             "call  * %3"
         : "=A" (result)
-        : "r" (args_size_bytes), "r" (args_ptr), "mr" (func_ptr)
+        : "r" (args_size_bytes), "r" (args_ptr), "r" (func_ptr)
         : "%ecx" /* eax, ecx, edx are caller-save */, "cc", "memory"
     );
 #else
@@ -114,8 +114,7 @@ inline uint64_t stdcall_invoke::basic(int args_size_bytes,
 }
 
 inline double stdcall_invoke::return_double(int args_size_bytes,
-                                            const char * args_ptr,
-                                            void * func_ptr)
+                                            char * args_ptr, void * func_ptr)
 {
     double result;
     assert(
@@ -141,7 +140,7 @@ inline double stdcall_invoke::return_double(int args_size_bytes,
         "2:\n\t"
             "call  * %3      # Callee will leave result in ST0"
         : "=t" (result)
-        : "r" (args_size_bytes), "r" (args_ptr), "mr" (func_ptr)
+        : "r" (args_size_bytes), "r" (args_ptr), "r" (func_ptr)
         : "%eax", "%edx", "%ecx" /* eax, ecx, edx are caller-save */, "cc",
           "memory"
     );

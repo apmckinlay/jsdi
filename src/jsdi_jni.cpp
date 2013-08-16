@@ -31,17 +31,17 @@ using namespace jsdi;
 namespace {
 
 inline jlong invoke_stdcall_basic(JNIEnv * env, int args_size_bytes,
-                                  const jbyte * args_ptr, jlong func_ptr)
+                                  jbyte * args_ptr, jlong func_ptr)
 {
     jlong result = stdcall_invoke::basic(
-        args_size_bytes, reinterpret_cast<const char *>(args_ptr),
+        args_size_bytes, reinterpret_cast<char *>(args_ptr),
         reinterpret_cast<void *>(func_ptr));
     JNI_EXCEPTION_CHECK(env); // In case callback triggered exception...
     return result;
 }
 
 inline jlong invoke_stdcall_return_double(JNIEnv * env, int args_size_bytes,
-                                          const jbyte * args_ptr,
+                                          jbyte * args_ptr,
                                           jlong func_ptr)
 {
     union {
@@ -49,7 +49,7 @@ inline jlong invoke_stdcall_return_double(JNIEnv * env, int args_size_bytes,
         volatile jlong  l;
     };
     d = stdcall_invoke::return_double(
-        args_size_bytes, reinterpret_cast<const char *>(args_ptr),
+        args_size_bytes, reinterpret_cast<char *>(args_ptr),
         reinterpret_cast<void *>(func_ptr));
     JNI_EXCEPTION_CHECK(env); // In case callback triggered exception...
     return l;

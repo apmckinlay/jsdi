@@ -21,7 +21,7 @@ int64_t basic_invoke(FuncPtr f, int nlongs, long * args)
 {
     return static_cast<int64_t>(jsdi::stdcall_invoke::basic(
         nlongs * sizeof(long),
-        reinterpret_cast<const char *>(args),
+        reinterpret_cast<char *>(args),
         reinterpret_cast<void *>(f)
     ));
 }
@@ -31,7 +31,7 @@ double float_invoke(FuncPtr f, int nargs, ArgType * args)
 {
     return jsdi::stdcall_invoke::return_double(
         nargs * sizeof(ArgType),
-        reinterpret_cast<const char *>(args),
+        reinterpret_cast<char *>(args),
         reinterpret_cast<void *>(f)
     );
 }
@@ -41,7 +41,7 @@ double double_invoke(FuncPtr f, int nargs, ArgType * args)
 {
     return jsdi::stdcall_invoke::return_double(
         nargs * sizeof(ArgType),
-        reinterpret_cast<const char *>(args),
+        reinterpret_cast<char *>(args),
         reinterpret_cast<void *>(f)
     );
 }
@@ -139,14 +139,14 @@ TEST(basic,
 
 TEST(return_double,
     {
-        static const float args[2] = { 10.0f, -1.0f };
+        static float args[2] = { 10.0f, -1.0f };
         assert_equals(1.0, float_invoke(TestReturn1_0Float, 0, args));
         assert_equals(10.0, float_invoke(TestFloat, 1, args));
         assert_equals(-1.0, float_invoke(TestFloat, 1, args + 1));
         assert_equals(9.0, float_invoke(TestSumTwoFloats, 2, args));
     }
     {
-        static const double args[2] = { -2300.5, -2.0 };
+        static double args[2] = { -2300.5, -2.0 };
         assert_equals(1.0, double_invoke(TestReturn1_0Double, 0, args));
         assert_equals(-2300.5, double_invoke(TestDouble, 1, args));
         assert_equals(-2.0, double_invoke(TestDouble, 1, args + 1));
