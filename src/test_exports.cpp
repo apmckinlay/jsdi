@@ -238,10 +238,12 @@ EXPORT_STDCALL char * TestReturnStringOutBuffer(const char * str,
     while (i < e - 1)
     {
         const char x = *str++;
-        *i++ = x;
+        *i = x;
         if (! x) return buffer;
+        ++i;
     }
-    if (i < e) *i = '\0';
+    assert(i < e);
+    *i = '\0';
     return buffer;
 }
 
