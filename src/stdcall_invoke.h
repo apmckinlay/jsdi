@@ -85,7 +85,7 @@ inline uint64_t stdcall_invoke::basic(int args_size_bytes,
         0 == args_size_bytes % 4
             || !"argument size must be a multiple of 4 bytes");
 #if defined(__GNUC__)
-    asm
+    asm volatile
     (
         /* OUTPUT PARAMS: %0 gets the 64-bit value EDX << 32 | EAX */
         /* INPUT PARAMS:  %1 is the number of BYTES to push onto the stack, */
@@ -105,7 +105,7 @@ inline uint64_t stdcall_invoke::basic(int args_size_bytes,
             "call  * %3"
         : "=A" (result)
         : "r" (args_size_bytes), "r" (args_ptr), "mr" (func_ptr)
-        : "%ecx" /* eax, ecx, edx are caller-save */, "cc"
+        : "%ecx" /* eax, ecx, edx are caller-save */, "cc", "memory"
     );
 #else
 #pragma error "Replacement for inline assembler required"
@@ -122,7 +122,7 @@ inline double stdcall_invoke::return_double(int args_size_bytes,
         0 == args_size_bytes % 4
             || !"argument size must be a multiple of 4 bytes");
 #if defined(__GNUC__)
-    asm
+    asm volatile
     (
         /* INPUT PARAMS:  %0 is the variable where ST0 should be stored
          *                %1 is the number of BYTES to push onto the stack, */
@@ -142,7 +142,8 @@ inline double stdcall_invoke::return_double(int args_size_bytes,
             "call  * %3      # Callee will leave result in ST0"
         : "=t" (result)
         : "r" (args_size_bytes), "r" (args_ptr), "mr" (func_ptr)
-        : "%eax", "%edx", "%ecx" /* eax, ecx, edx are caller-save */, "cc"
+        : "%eax", "%edx", "%ecx" /* eax, ecx, edx are caller-save */, "cc",
+          "memory"
     );
 #else
 #pragma error "Replacement for inline assembler required"
