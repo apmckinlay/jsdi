@@ -68,7 +68,10 @@ long jsdi_callback_basic::call(const char * args)
     //
     // SET UP
     //
-    jni_auto_local<jobject> out_jarray(env, env->NewByteArray(d_size_total));
+//    jni_auto_local<jobject> out_jarray(env, env->NewByteArray(d_size_total));
+jbyteArray x = env->NewByteArray(d_size_total);
+jbyteArray out_jarray = (jbyteArray)env->NewGlobalRef(x);
+env->DeleteLocalRef(x);
     JNI_EXCEPTION_CHECK(env);
     if (! out_jarray) throw jni_bad_alloc("NewByteArray", __FUNCTION__);
     jvalue out_args[2];
@@ -100,6 +103,7 @@ long jsdi_callback_basic::call(const char * args)
         out_args
     );
     JNI_EXCEPTION_CHECK(env);
+env->DeleteGlobalRef(out_jarray);
     JNI_EXCEPTION_SAFE_END(env);
     return result;
 }
@@ -125,13 +129,19 @@ long jsdi_callback_vi::call(const char * args)
     //
     // SET UP
     //
-    jni_auto_local<jobject> out_data_jarray(
-        env, env->NewByteArray(d_size_total));
+//    jni_auto_local<jobject> out_data_jarray(
+//        env, env->NewByteArray(d_size_total));
     JNI_EXCEPTION_CHECK(env);
+jbyteArray x = env->NewByteArray(d_size_total);
+jbyteArray out_data_jarray = (jbyteArray)env->NewGlobalRef(x);
+env->DeleteLocalRef(x);
     if (! out_data_jarray) throw jni_bad_alloc("NewByteArray", __FUNCTION__);
-    jni_auto_local<jobject> out_vi_jarray(
-        env,
-        env->NewObjectArray(d_vi_count, GLOBAL_REFS->java_lang_Object(), 0));
+//    jni_auto_local<jobject> out_vi_jarray(
+//        env,
+//        env->NewObjectArray(d_vi_count, GLOBAL_REFS->java_lang_Object(), 0));
+jobjectArray y = env->NewObjectArray(d_vi_count, GLOBAL_REFS->java_lang_Object(), 0);
+jobjectArray out_vi_jarray = (jobjectArray)env->NewGlobalRef(y);
+env->DeleteLocalRef(y);
     JNI_EXCEPTION_CHECK(env);
     if (! out_vi_jarray) throw jni_bad_alloc("NewObjectArray", __FUNCTION__);
     jvalue out_args[3];
@@ -167,6 +177,8 @@ long jsdi_callback_vi::call(const char * args)
         out_args
     );
     JNI_EXCEPTION_CHECK(env);
+env->DeleteGlobalRef(out_data_jarray);
+env->DeleteGlobalRef(out_vi_jarray);
     JNI_EXCEPTION_SAFE_END(env);
     return result;
 }

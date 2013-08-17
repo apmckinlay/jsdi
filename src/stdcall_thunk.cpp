@@ -210,6 +210,8 @@ stdcall_thunk_impl::~stdcall_thunk_impl()
 __stdcall long stdcall_thunk_impl::wrapper(stdcall_thunk_impl * impl,
                                            const char * args)
 {
+    assert(MAGIC1 == impl->d_magic_1);
+    assert(MAGIC2 == impl->d_magic_2);
     // NOTE: It is [C++] callback's responsibility to ensure that no C++
     //       exceptions propagate out to this level. Furthermore, C++ callback
     //       is responsible for stopping execution and returning the moment a
