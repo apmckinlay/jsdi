@@ -8,6 +8,8 @@
 #include "jni_exception.h"
 
 #include <cassert>
+#include <cstdlib>
+#include <iostream>
 
 namespace jsdi {
 
@@ -44,17 +46,18 @@ void jni_exception::throw_jni(JNIEnv * env) const
     {
         jclass clazz(0);
         // Try to get access to the JSDI exception class;
-        clazz = env->FindClass("Lsuneido/language/jsdi/JSDIException;");
+        clazz = env->FindClass("suneido/language/jsdi/JSDIException");
         if (! clazz)
         {
-            clazz = env->FindClass("Ljava/lang/RuntimeException;");
+            clazz = env->FindClass("java/lang/RuntimeException");
         }
         assert(clazz || !"Failed to locate any JNI exception to throw");
-        if (! env->ThrowNew(clazz, what()))
+        if (0 != env->ThrowNew(clazz, what()))
         {
-            // TODO: do something here
-            // TODO: use env->FatalError(const char * msg)
-            // TODO: should write to a log file and then blow up spectacularly
+            std::cerr << "Failed to throw a Java exception from JNI in "
+                      << __FILE__ << " at line " << __LINE__ << std::endl;
+            env->FatalError("Failed to throw a Java exception from JNI");
+            std::abort();
         }
     }
 }
