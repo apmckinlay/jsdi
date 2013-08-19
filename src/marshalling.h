@@ -52,8 +52,7 @@ class marshalling_vi_container : private non_copyable
                 jbyte **   d_pp_arr;    // points to the addr in the marshalled
                                         // data array which contains the pointer
                                         // to the byte array
-                jbyteArray d_global;    // only non-NULL if the corresponding
-                                        // jobjectArray element was replaced
+                jbyteArray d_global;    // non-NULL iff d_elems not NULL
                 jboolean   d_is_copy;
         };
 
@@ -123,17 +122,6 @@ inline marshalling_vi_container::marshalling_vi_container(
 inline size_t marshalling_vi_container::size() const
 { return d_arrays.size(); }
 
-inline void marshalling_vi_container::put_not_null(size_t pos, jbyteArray array,
-                                                   jbyte ** pp_array)
-{ // NORMAL USE (arguments)
-    tuple& t = d_arrays[pos];
-    assert(! t.d_elems || !"duplicate variable indirect pointer");
-    t.d_elems = d_env->GetByteArrayElements(array, &t.d_is_copy);
-    t.d_pp_arr = pp_array;
-    *pp_array = t.d_elems;
-
-}
-
 inline void marshalling_vi_container::put_return_value(size_t pos, jbyte * str)
 { // FOR USE BY RETURN VALUE
     tuple& t = d_arrays[pos];
@@ -151,18 +139,15 @@ inline void marshalling_vi_container::replace_byte_array(
     size_t pos, jobject new_object /* may be null */)
 {
     tuple& t = d_arrays[pos];
-    // If an existing byte array is already fetched at this location, we need
-    // to store a global reference to the array so we can release the elements
-    // on destruction.
+#ifndef NDEBUG
     if (t.d_elems)
     {
-        assert(! t.d_global || !"element already replaced once");
+        assert(t.d_global || !"no global reference allocated");
         jni_auto_local<jobject> prev_object(
             d_env, d_env->GetObjectArrayElement(d_object_array, pos));
-        JNI_EXCEPTION_CHECK(d_env);
         assert(d_env->IsInstanceOf(prev_object, GLOBAL_REFS->byte_ARRAY()));
-        t.d_global = static_cast<jbyteArray>(d_env->NewGlobalRef(prev_object));
     }
+#endif
     d_env->SetObjectArrayElement(d_object_array, pos, new_object);
     JNI_EXCEPTION_CHECK(d_env);
 }
