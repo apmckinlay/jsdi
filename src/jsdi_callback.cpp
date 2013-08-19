@@ -68,10 +68,7 @@ long jsdi_callback_basic::call(const char * args)
     //
     // SET UP
     //
-//    jni_auto_local<jobject> out_jarray(env, env->NewByteArray(d_size_total));
-jbyteArray x = env->NewByteArray(d_size_total);
-jbyteArray out_jarray = (jbyteArray)env->NewGlobalRef(x);
-env->DeleteLocalRef(x);
+    jni_auto_local<jobject> out_jarray(env, env->NewByteArray(d_size_total));
     JNI_EXCEPTION_CHECK(env);
     if (! out_jarray) throw jni_bad_alloc("NewByteArray", __FUNCTION__);
     jvalue out_args[2];
@@ -82,11 +79,11 @@ env->DeleteLocalRef(x);
     //
     {
         // The reason this code is in a sub-block is because we want the
-        // destructor of the jni_array<jbyte> to run before we invoke the
-        // callback. This is because the destructor releases the byte array
-        // elements, which is necessary to ensure that the unmarshalled data is
-        // propagated into the Java side before the callback runs.
-        jni_array<jbyte> out(
+        // destructor of the jni_critical_array<jbyte> to run before we invoke
+        // the callback. This is because the destructor releases the critical
+        // array and the changes to the array aren't guaranteed to propagate
+        // back to the Java side until that moment.
+        jni_critical_array<jbyte> out(
             env, static_cast<jbyteArray>(static_cast<jobject>(out_jarray)),
             d_size_total);
         unmarshaller_indirect u(d_size_direct, d_size_total, d_ptr_array.data(),
@@ -103,7 +100,6 @@ env->DeleteLocalRef(x);
         out_args
     );
     JNI_EXCEPTION_CHECK(env);
-env->DeleteGlobalRef(out_jarray);
     JNI_EXCEPTION_SAFE_END(env);
     return result;
 }
@@ -129,19 +125,13 @@ long jsdi_callback_vi::call(const char * args)
     //
     // SET UP
     //
-//    jni_auto_local<jobject> out_data_jarray(
-//        env, env->NewByteArray(d_size_total));
+    jni_auto_local<jobject> out_data_jarray(
+        env, env->NewByteArray(d_size_total));
     JNI_EXCEPTION_CHECK(env);
-jbyteArray x = env->NewByteArray(d_size_total);
-jbyteArray out_data_jarray = (jbyteArray)env->NewGlobalRef(x);
-env->DeleteLocalRef(x);
     if (! out_data_jarray) throw jni_bad_alloc("NewByteArray", __FUNCTION__);
-//    jni_auto_local<jobject> out_vi_jarray(
-//        env,
-//        env->NewObjectArray(d_vi_count, GLOBAL_REFS->java_lang_Object(), 0));
-jobjectArray y = env->NewObjectArray(d_vi_count, GLOBAL_REFS->java_lang_Object(), 0);
-jobjectArray out_vi_jarray = (jobjectArray)env->NewGlobalRef(y);
-env->DeleteLocalRef(y);
+    jni_auto_local<jobject> out_vi_jarray(
+        env,
+        env->NewObjectArray(d_vi_count, GLOBAL_REFS->java_lang_Object(), 0));
     JNI_EXCEPTION_CHECK(env);
     if (! out_vi_jarray) throw jni_bad_alloc("NewObjectArray", __FUNCTION__);
     jvalue out_args[3];
@@ -177,8 +167,6 @@ env->DeleteLocalRef(y);
         out_args
     );
     JNI_EXCEPTION_CHECK(env);
-env->DeleteGlobalRef(out_data_jarray);
-env->DeleteGlobalRef(out_vi_jarray);
     JNI_EXCEPTION_SAFE_END(env);
     return result;
 }
