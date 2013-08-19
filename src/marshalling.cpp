@@ -32,7 +32,7 @@ marshalling_vi_container::~marshalling_vi_container()
             {
                 jni_auto_local<jobject> object(
                     d_env, d_env->GetObjectArrayElement(d_object_array, k));
-                JNI_EXCEPTION_CHECK(d_env);
+                JNI_EXCEPTION_CHECK(d_env); // FIXME: You can't do this -- you are throwing an exception in the destructor!!!
                 assert(d_env->IsInstanceOf(object, GLOBAL_REFS->byte_ARRAY()));
                 d_env->ReleaseByteArrayElements(
                     static_cast<jbyteArray>(static_cast<jobject>(object)),
