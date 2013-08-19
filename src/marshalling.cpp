@@ -16,6 +16,11 @@ namespace jsdi {
 
 marshalling_vi_container::~marshalling_vi_container()
 {
+    // NOTE: This destructor may be invoked in the context  of a C++ catch block
+    //       cleanup operation triggered by a JNI_EXCEPTION_CHECK. So it may run
+    //       when there is a JNI exception pending. Ergo, you can't call any JNI
+    //       functions which do anything other than legitimate cleanup from
+    //       within this destructor.
     try
     {
         const size_t N(d_arrays.size());
@@ -28,20 +33,31 @@ marshalling_vi_container::~marshalling_vi_container()
                 d_env->ReleaseByteArrayElements(t.d_global, t.d_elems, 0);
                 d_env->DeleteGlobalRef(t.d_global);
             }
-            else
-            {
-                jni_auto_local<jobject> object(
-                    d_env, d_env->GetObjectArrayElement(d_object_array, k));
-                JNI_EXCEPTION_CHECK(d_env); // FIXME: You can't do this -- you are throwing an exception in the destructor!!!
-                assert(d_env->IsInstanceOf(object, GLOBAL_REFS->byte_ARRAY()));
-                d_env->ReleaseByteArrayElements(
-                    static_cast<jbyteArray>(static_cast<jobject>(object)),
-                    t.d_elems, 0);
-            }
         }
     }
     catch (...)
     { }
+}
+
+inline void marshalling_vi_container::put_not_null(size_t pos, jbyteArray array,
+                                                   jbyte ** pp_array)
+{ // NORMAL USE (arguments)
+    tuple& t = d_arrays[pos];
+    assert(! t.d_elems || !"duplicate variable indirect pointer");
+    t.d_elems = d_env->GetByteArrayElements(array, &t.d_is_copy);
+    JNI_EXCEPTION_CHECK(d_env);
+    if (! t.d_elems) throw jni_bad_alloc("GetByteArrayElements", __FUNCTION__);
+    assert(! t.d_global);
+    // Save a global reference to the array. This allows us to call
+    // ReleaseByteArrayElements from the destructor (A) regardless of whether
+    // this array is subsequently replaced by a different value; and (B) without
+    // having to call GetObjectArrayElement(), which isn't permitted if a JNI
+    // exception has been flagged.
+    t.d_global = static_cast<jbyteArray>(d_env->NewGlobalRef(array));
+    JNI_EXCEPTION_CHECK(d_env);
+    t.d_pp_arr = pp_array;
+    *pp_array = t.d_elems;
+
 }
 
 //==============================================================================
@@ -84,7 +100,7 @@ void marshalling_roundtrip::ptrs_init_vi(jbyte * args, jsize args_size,
             JNI_EXCEPTION_CHECK(env);
             if (! object)
             {   // Note if this is a 'resource', the value at *ptr_addr is
-                // actually a 16-bit integer which may not be NULL
+                // actually a 16-bit integer which might not be NULL
                 vi_array_out.put_null(ptd_to_pos, ptr_addr);
             }
             else
