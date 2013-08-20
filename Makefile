@@ -61,8 +61,8 @@ LD_FLAGS_DLL=-shared
 
 ifeq ($(CONFIG),debug)
 OPTLEVEL:=0
-DEBUGOPTION:=-g
-LD_FLAGS_DLL+= $(DEBUGOPTION)
+DEBUGOPTION:=-g -fstack-check
+LD_FLAGS_DLL+= -g
 else ifeq ($(CONFIG),release)
 OPTLEVEL:=3
 DEBUGOPTION:=-DNDEBUG
