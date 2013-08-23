@@ -47,7 +47,7 @@ CC_FLAGS=-O$(OPTLEVEL) $(DEBUGOPTION) $(CC_STDFLAGS) -Wall -fmessage-length=0 \
 
 LD_DLL:=g++ $(BINDIR)/$(EXPORTS) -o
 LD_EXE:=g++ -o
-LD_FLAGS_DLL=-shared
+LD_FLAGS_DLL=-shared -static-libstdc++
 
 #=============================================================================
 # CONFIGURATION-SPECIFIC FLAGS
