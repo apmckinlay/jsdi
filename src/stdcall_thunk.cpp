@@ -216,16 +216,20 @@ __stdcall long stdcall_thunk_impl::wrapper(stdcall_thunk_impl * impl,
     //       exceptions propagate out to this level. Furthermore, C++ callback
     //       is responsible for stopping execution and returning the moment a
     //       JNI exception occurs.
+    long result;
     try
-    { return impl->d_callback->call(args); }
+    { result = impl->d_callback->call(args); }
     catch (...)
     {
         std::cerr << "FATAL ERROR: exception caught in " << __FUNCTION__
                   << "( " << __FILE__ << " at line " << __LINE__ << ')'
                   << std::endl;
         std::abort();
-        return 0L; // To shut up the compiler warning
+        result = 0L; // To shut up the compiler warning
     }
+    assert(MAGIC1 == impl->d_magic_1);
+    assert(MAGIC2 == impl->d_magic_2);
+    return result;
 }
 // TODO: may need to lock here. otherwise could get deleted from Java by a
 //       concurrent thread...
