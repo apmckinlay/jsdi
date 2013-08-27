@@ -125,22 +125,6 @@ stub_code::stub_code(stdcall_thunk_impl * impl_addr, wrapper_func thunk_wrapper,
 } // anonymous namespace
 
 //==============================================================================
-//                          struct unmarshall_info
-//==============================================================================
-
-namespace {
-
-struct unmarshall_info
-{
-    std::vector<int> d_ptr_array;
-    size_t           d_size_direct;
-    size_t           d_size_indirect;
-    size_t           d_vi_count;
-};
-
-} // anonymous namespace
-
-//==============================================================================
 //                         struct stdcall_thunk_impl
 //==============================================================================
 
