@@ -5,6 +5,7 @@
 // desc: JVM's interface, via JNI, into the JSDI DLL
 //==============================================================================
 
+#include "concurrent.h"
 #include "jni_exception.h"
 #include "jni_util.h"
 #include "jsdi_callback.h"
@@ -13,6 +14,7 @@
 #include "stdcall_invoke.h"
 #include "stdcall_thunk.h"
 
+#include <deque>
 #include <cassert>
 #include <cstring>
 
@@ -25,7 +27,7 @@ using namespace jsdi;
 /* TODO: do we need to be able to handle Win32 exceptions? If so, we'll want
  *       to wrap things in SEH code *at some level*. But do we want that
  *       overhead around every DLL call, regardless of whether it is expected
- *       to throw an exception?
+ *       to throw an exception? [See NOTES A-D in jsdi_callback.cpp]
  */
 
 namespace {
@@ -123,6 +125,42 @@ inline const char * get_struct_ptr(jint struct_addr, jint size_direct)
     assert(struct_addr || !"can't copy out a NULL pointer");
     assert(0 < size_direct || !"structure must have positive size");
     return reinterpret_cast<const char *>(struct_addr);
+}
+
+constexpr size_t CLEARED_LIST_DELETE_THRESHOLD = 10;
+critical_section callback_list_lock;
+std::deque<stdcall_thunk *> callback_clearing_list;
+std::deque<stdcall_thunk *> callback_cleared_list;
+
+void clear_callback(stdcall_thunk * thunk)
+{
+    lock_guard<critical_section> lock(&callback_list_lock);
+    switch (thunk->clear())
+    {
+        case stdcall_thunk_state::CLEARED:
+            callback_cleared_list.push_back(thunk);
+            break;
+        case stdcall_thunk_state::CLEARING:
+            callback_clearing_list.push_back(thunk);
+            break;
+        default:
+            assert(!"invalid callback state");
+            break;
+    }
+    // Don't let the cleared list grow indefinitely
+    if (CLEARED_LIST_DELETE_THRESHOLD < callback_cleared_list.size())
+    {
+        assert(thunk != callback_cleared_list.front());
+        delete callback_cleared_list.front();
+        callback_cleared_list.pop_front();
+    }
+    // Don't let the clearing list grow indefinitely
+    if (1 < callback_clearing_list.size() &&
+        stdcall_thunk_state::CLEARED == callback_clearing_list.front()->state())
+    {
+        callback_cleared_list.push_back(callback_clearing_list.front());
+        callback_clearing_list.pop_front();
+    }
 }
 
 } // anonymous namespace
@@ -451,7 +489,7 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_deleteThunk
 {
     static_assert(sizeof(stdcall_thunk *) <= sizeof(jint), "fatal data loss");
     auto thunk(reinterpret_cast<stdcall_thunk *>(thunkObjectAddr));
-    delete thunk;
+    clear_callback(thunk);
 }
 
 //==============================================================================
