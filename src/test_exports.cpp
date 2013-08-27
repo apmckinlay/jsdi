@@ -275,6 +275,15 @@ TestReturnStatic_Recursive_StringSum(const Recursive_StringSum * ptr)
 EXPORT_STDCALL long TestInvokeCallback_Long1(TestCallback_Long1 f, long a)
 { return f ? f(a) : 0L; }
 
+EXPORT_STDCALL long TestInvokeCallback_Long1_2(TestCallback_Long1 f, long a,
+                                               TestCallback_Long1 g, long b)
+{
+    int count(0);
+    if (f) f(a), ++count;
+    if (g) g(b), ++count;
+    return count;
+}
+
 EXPORT_STDCALL long TestInvokeCallback_Long2(TestCallback_Long2 f, long a,
                                              long b)
 { return f ? f(a, b) : 0L; }
