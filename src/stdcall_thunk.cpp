@@ -7,8 +7,9 @@
 
 #include "stdcall_thunk.h"
 
-#include "heap.h"
 #include "callback.h"
+#include "concurrent.h"
+#include "heap.h"
 
 #include <stdexcept>
 #include <iostream>
@@ -146,6 +147,9 @@ struct stdcall_thunk_impl
     int                         d_magic_1;
     stub_code                   d_code;
     std::shared_ptr<callback>   d_callback;
+    critical_section            d_critical_section;
+    int                         d_num_ongoing_calls;
+    stdcall_thunk_state         d_state;
     int                         d_magic_2;
 
     //
@@ -179,14 +183,21 @@ stdcall_thunk_impl::stdcall_thunk_impl(
     : d_magic_1(MAGIC1)
     , d_code(this, wrapper, callback_ptr->size_direct())
     , d_callback(callback_ptr)
+    , d_num_ongoing_calls(0)
+    , d_state(READY)
     , d_magic_2(MAGIC2)
 { assert(callback_ptr || "callback pointer may not be null"); }
 
 stdcall_thunk_impl::~stdcall_thunk_impl()
 {
-    // TODO: we could rewrite the instructions section to just pop stack and
-    //       return 0 to caller? or to call a different function that asserts
-    //       or sets a JNI exception flag?
+#ifndef NDEBUG
+    {
+        lock_guard<critical_section> lock(&d_critical_section);
+        assert(CLEARED == d_state);
+        assert(0 == d_num_ongoing_calls);
+    }
+#endif
+    d_state = DELETED;
     d_magic_1 = ~MAGIC1;
     d_magic_2 = ~MAGIC2;
 }
@@ -194,13 +205,22 @@ stdcall_thunk_impl::~stdcall_thunk_impl()
 __stdcall long stdcall_thunk_impl::wrapper(stdcall_thunk_impl * impl,
                                            const char * args)
 {
+    long result;
     assert(MAGIC1 == impl->d_magic_1);
     assert(MAGIC2 == impl->d_magic_2);
+    // SETUP
+    {
+        lock_guard<critical_section> lock(&impl->d_critical_section);
+        assert(READY == impl->d_state || !"callback already cleared");
+        ++impl->d_num_ongoing_calls; // No RAII guard is OK b/c of catch (...)
+    }
+    //
+    // CALL
+    //
     // NOTE: It is [C++] callback's responsibility to ensure that no C++
     //       exceptions propagate out to this level. Furthermore, C++ callback
     //       is responsible for stopping execution and returning the moment a
     //       JNI exception occurs.
-    long result;
     try
     { result = impl->d_callback->call(args); }
     catch (...)
@@ -211,12 +231,23 @@ __stdcall long stdcall_thunk_impl::wrapper(stdcall_thunk_impl * impl,
         std::abort();
         result = 0L; // To shut up the compiler warning
     }
-    assert(MAGIC1 == impl->d_magic_1);
-    assert(MAGIC2 == impl->d_magic_2);
+    //
+    // TEARDOWN
+    //
+    {
+        lock_guard<critical_section> lock(&impl->d_critical_section);
+        --impl->d_num_ongoing_calls;
+        assert(MAGIC1 == impl->d_magic_1);
+        assert(MAGIC2 == impl->d_magic_2);
+        assert(READY == impl->d_state || CLEARING == impl->d_state);
+        if (CLEARING == impl->d_state && ! impl->d_num_ongoing_calls)
+            impl->d_state = CLEARED;
+    }
+    //
+    // RETURN CALLBACK RESULT
+    //
     return result;
 }
-// TODO: may need to lock here. otherwise could get deleted from Java by a
-//       concurrent thread...
 
 void * stdcall_thunk_impl::operator new(size_t n)
 { return impl_heap.alloc(n); }
@@ -237,11 +268,16 @@ stdcall_thunk::~stdcall_thunk() { delete d_impl; }
 void * stdcall_thunk::func_addr()
 { return d_impl->d_code.d_instructions; }
 
-void stdcall_thunk::reset_callback(
-    const std::shared_ptr<callback>& callback_ptr)
+stdcall_thunk_state stdcall_thunk::state() const
+{ return d_impl->d_state; }
+
+stdcall_thunk_state stdcall_thunk::clear()
 {
-    assert(callback_ptr || "callback pointer may not be null");
-    d_impl->d_callback = callback_ptr;
+    lock_guard<critical_section> lock(&d_impl->d_critical_section);
+    assert(READY == d_impl->d_state);
+    assert(0 <= d_impl->d_num_ongoing_calls);
+    d_impl->d_state = 0 == d_impl->d_num_ongoing_calls ? CLEARED : CLEARING;
+    return d_impl->d_state;
 }
 
 } // namespace jsdi

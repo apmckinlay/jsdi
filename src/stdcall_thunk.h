@@ -20,10 +20,28 @@ class callback;
 struct stdcall_thunk_impl;
 
 /**
+ * \brief Enumerates the possible states in which a thunk can be.
+ * \author Victor Schappert
+ * \since 20130826
+ * \see stdcall_thunk#state() const
+ */
+enum stdcall_thunk_state
+{
+    READY       /**< The only state in which a thunk may validly be called */,
+    CLEARING    /**< The thunk is in the process of being cleared. It is an
+                 *   error to attempt to call it. */,
+    CLEARED     /**< The thunk has been cleared and is ready to delete. It is
+                 *   an error to attempt to call it. */,
+    DELETED     /**< The thunk has been deleted. No live pointer or reference
+                 *   to a thunk should ever have this state. */
+};
+
+/**
  * \brief TODO
  * \author Victor Schappert
  * \since 20130802
  * \see stdcall_invoke
+ * \see stdcall_thunk_state
  */
 class stdcall_thunk : private non_copyable
 {
@@ -51,13 +69,15 @@ class stdcall_thunk : private non_copyable
 
         void * func_addr();
 
+        stdcall_thunk_state state() const;
+
         //
         // MUTATORS
         //
 
     public:
 
-        void reset_callback(const std::shared_ptr<callback>& callback_ptr);
+        stdcall_thunk_state clear();
 };
 
 } // namespace jsdi
