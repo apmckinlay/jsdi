@@ -65,6 +65,48 @@ long jsdi_callback_basic::call(const char * args)
     long result(0);
     JNIEnv * const env(fetch_env());
     JNI_EXCEPTION_SAFE_BEGIN
+    /* NOTE A: The reason for the exception check immediately below is to ensure
+     *         that this callback doesn't execute at all if a JNI exception was
+     *         raised before this callback is called.
+     *
+     *         How could that possibly happen?????
+     *
+     *         At the moment, it can happen if the same invocation of a 'dll'
+     *         function calls multiple callbacks. Recall that a 'dll' function
+     *         is a black box, usually a Win32 API function written in plain
+     *         C and/or assembly language. The 'dll' has no idea whether or not
+     *         a callback raised a JNI exception or not. So imagine a 'dll'
+     *         function implemented like this:
+     *
+     *             __stdcall void dll_func(callback1_ptr f, calblack2_ptr g)
+     *             {
+     *                 ...  // do some stuff
+     *                 f(); // call first callback
+     *                 ...  // do some more stuff
+     *                 g(); // call second callback
+     *             }
+     *
+     *        Now if f() causes a Java/JNI exception to be raised, JNI will be
+     *        in an exception state when g() is called. this exception check
+     *        at least ensure that g() will not run.
+     *
+     *        THIS IS A STOPGAP SOLUTION! The appropriate solution is to:
+     *            1) Wrap the callback invocation in a Win32 SEH __try/__except
+     *               block.
+     *            2) Ensure that any callback which raises a JNI exception
+     *                   (i)  cleans up after itself; and then
+     *                   (ii) raises an SEH exception which should cause SEH to
+     *                        immediately unwind out to the next SEH __except
+     *                        block.
+     *            3) Wrap stdcall_invoke calls in SEH as well.
+     *
+     *        However, because Microsoft's cl.exe is the only compiler package
+     *        which supports SEH, we will need to build exclusively in VS to
+     *        take that step.
+     *
+     *        See also NOTEs (B), (C), and (D) below.
+     */
+    JNI_EXCEPTION_CHECK(env);
     //
     // SET UP
     //
@@ -99,7 +141,12 @@ long jsdi_callback_basic::call(const char * args)
         GLOBAL_REFS->suneido_language_jsdi_type_Callback__m_invoke(),
         out_args
     );
-    JNI_EXCEPTION_CHECK(env);
+    /* NOTE B: The above JNI call need not be followed by a JNI_EXCEPTION_CHECK
+     *         as long as it is the the last non-exception-handling code in the
+     *         function. However, as explained in NOTE A, the JNI call should
+     *         really be surrounded by a SEH __try/__catch pair in case a
+     *         nested callback throws.
+     */
     JNI_EXCEPTION_SAFE_END(env);
     return result;
 }
@@ -122,6 +169,8 @@ long jsdi_callback_vi::call(const char * args)
     long result(0);
     JNIEnv * const env(fetch_env());
     JNI_EXCEPTION_SAFE_BEGIN
+    /** NOTE C: See NOTE A, above. The same argument applies verbatim. */
+    JNI_EXCEPTION_CHECK(env);
     //
     // SET UP
     //
@@ -166,7 +215,7 @@ long jsdi_callback_vi::call(const char * args)
         GLOBAL_REFS->suneido_language_jsdi_type_Callback__m_invokeVariableIndirect(),
         out_args
     );
-    JNI_EXCEPTION_CHECK(env);
+    /** NOTE D: See NOTE B, above. The same argument applies verbatim. */
     JNI_EXCEPTION_SAFE_END(env);
     return result;
 }

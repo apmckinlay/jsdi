@@ -136,6 +136,9 @@ TestReturnStatic_Recursive_StringSum(const Recursive_StringSum * ptr);
 
 EXPORT_STDCALL long TestInvokeCallback_Long1(TestCallback_Long1 f, long a);
 
+EXPORT_STDCALL long TestInvokeCallback_Long1_2(TestCallback_Long1 f, long a,
+                                               TestCallback_Long1 g, long b);
+
 EXPORT_STDCALL long TestInvokeCallback_Long2(TestCallback_Long2 f, long a,
                                              long b);
 
