@@ -1,0 +1,28 @@
+================================================================================
+file: res/README
+auth: Victor Schappert
+date: 20130830
+================================================================================
+
+The res/ directory contains resource files expected by Suneido stdlib code
+because it is available in the cSuneido executable.
+
+Ideally, these files would not be contained in jsdi.dll because they are not
+part of the DLL interface per se. The best solution would be to implement a
+Suneido-language system for loading resources from the _Suneido_ _database_.
+The annoying part is that Windows can only 'load' a resource either from a
+loaded module or from file (in general, no obvious easy way to create an
+HCURSOR, e.g., from an array of bytes). But we already have a Suneido function
+which gets around this by using temp files. See LoadImageFrom().
+
+To bring the resources up-to-date with cSuneido:
+    1) suneido.rc:
+           (A) Copy suneido.rc from the cSuneido project -> res/suneido.rc
+           (B) Delete references to irrelevant resources (ie
+               suneido.exe.manifest)
+    2) resource.h:
+           Copy resource.h from the cSuneido project -> res/resource.h
+    3) Individual resource files
+           (A) Copy resource files from the cSuneido project -> res/res/*
+           (B) Delete irrelevant resources (ie suneido.exe.manifest)
+    4) Update the version info block

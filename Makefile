@@ -32,6 +32,13 @@ DEPENDS     :=$(SOURCES:$(SRCDIR)/%.cpp=$(DEPDIR)/%.d)
 DOXYFILE    :=$(DOCDIR)/Doxyfile
 
 #=============================================================================
+# RESOURCE COMPILING
+#=============================================================================
+
+RESDIR      :=res
+RES_OBJECT  :=$(OBJDIR)/resource.o
+
+#=============================================================================
 # TOOLS AND BASIC FLAGS
 #=============================================================================
 
@@ -111,32 +118,36 @@ pp: dirs $(PPFILES)
 # how to set up dependencies w the gcc toolchain.
 -include $(DEPENDS)
 
-$(BINDIR)/$(TARGET_DLL): $(BINDIR)/$(EXPORTS)
+$(BINDIR)/$(TARGET_DLL): $(BINDIR)/$(EXPORTS) $(RES_OBJECT)
 	@echo $@
-	@$(LD_DLL) $@ $(LD_FLAGS_DLL) $(OBJECTS_DLL)
+	@$(LD_DLL) $@ $(LD_FLAGS_DLL) $(OBJECTS_DLL) $(RES_OBJECT)
 
-$(BINDIR)/$(TARGET_EXE): $(OBJECTS_EXE)
+$(BINDIR)/$(TARGET_EXE): $(OBJECTS_EXE) $(RES_OBJECT)
 	@echo $@
-	@$(LD_EXE) $@ $(OBJECTS_EXE)
+	@$(LD_EXE) $@ $(OBJECTS_EXE) $(RES_OBJECT)
 
 $(BINDIR)/$(EXPORTS): $(OBJECTS_DLL)
 	@echo $@
 	@$(DLLTOOL) -e $@ -D $(TARGET_DLL) $(OBJECTS_DLL)
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
-	@echo $<
+	@echo $@
 	@$(CC) $(CC_FLAGS) -c $< -o $@
+
+$(RES_OBJECT):
+	@echo $@
+	@cd $(RESDIR) && $(MAKE) OBJDIR=../$(OBJDIR)
 
 $(DEPENDS): $(DEPDIR)/%.d : $(SRCDIR)/%.cpp
 	@$(CC) $(CC_FLAGS) -MF"$@" -MG -MM -MP \
                       -MT"$@" -MT"$(<:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)" "$<"
 
 $(ASMFILES): $(ASMDIR)/%.s : $(SRCDIR)/%.cpp
-	@echo $<
+	@echo $@
 	@$(CC) $(CC_FLAGS) -S $< -o $@
 
 $(PPFILES): $(PPDIR)/%.cpp : $(SRCDIR)/%.cpp
-	@echo $<
+	@echo $@
 	@$(CC) $(CC_FLAGS) -E $< -o $@
 
 .PHONY: dirs
