@@ -1,3 +1,7 @@
+/* Copyright 2013 (c) Suneido Software Corp. All rights reserved.
+ * Licensed under GPLv2.
+ */
+
 //==============================================================================
 // file: jni_exception.cpp
 // auth: Victor Schappert

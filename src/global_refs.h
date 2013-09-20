@@ -1,3 +1,7 @@
+/* Copyright 2013 (c) Suneido Software Corp. All rights reserved.
+ * Licensed under GPLv2.
+ */
+
 #ifndef __INCLUDED_GLOBAL_REFS_H__
 #define __INCLUDED_GLOBAL_REFS_H__
 

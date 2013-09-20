@@ -1,5 +1,9 @@
+/* Copyright 2013 (c) Suneido Software Corp. All rights reserved.
+ * Licensed under GPLv2.
+ */
+
 //==============================================================================
-// file: main.cpp
+// file: main_dll.cpp
 // auth: Victor Schappert
 // date: 20130618
 // desc: DLL entry-point for JSuneido DLL interface
