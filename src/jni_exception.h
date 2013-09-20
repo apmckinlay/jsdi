@@ -2,15 +2,15 @@
  * Licensed under GPLv2.
  */
 
-//==============================================================================
-// file: jni_exception.h
-// auth: Victor Schappert
-// date: 20130624
-// desc: Facility for throwing exceptions into JNI (interface)
-//==============================================================================
-
 #ifndef __INCLUDED_JNI_EXCEPTION_H__
 #define __INCLUDED_JNI_EXCEPTION_H__
+
+/**
+ * \file jni_exception.h
+ * \author Victor Schappert
+ * \since 20130624
+ * \brief C++ code useful for handling JNI exceptions
+ */
 
 #include "util.h"
 

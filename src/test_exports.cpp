@@ -3,7 +3,7 @@
  */
 
 //==============================================================================
-// file: test.cpp
+// file: test_exports.cpp
 // auth: Victor Schappert
 // date: 20130709
 // desc: Exports functions which can be used to test dll functionality
