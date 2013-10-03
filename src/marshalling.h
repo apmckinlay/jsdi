@@ -142,8 +142,8 @@ inline void marshalling_vi_container::put_null(size_t pos, jbyte ** pp_array)
 inline void marshalling_vi_container::replace_byte_array(
     size_t pos, jobject new_object /* may be null */)
 {
-    tuple& t = d_arrays[pos];
 #ifndef NDEBUG
+    tuple& t = d_arrays[pos];
     if (t.d_elems)
     {
         assert(t.d_global || !"no global reference allocated");
