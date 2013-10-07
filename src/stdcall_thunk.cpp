@@ -362,6 +362,7 @@ TEST(one_long,
                                           EMPTY_PTR_ARRAY, 0, 0));
     stdcall_thunk thunk(cb);
     long result = Func<long, void>::call(TestInvokeCallback_Long1, thunk, 10);
+    thunk.clear();
     assert_equals(10, result);
 );
 
@@ -373,6 +374,7 @@ TEST(sum_two_longs,
     long result = Func<long, long>::call(
         TestInvokeCallback_Long2, thunk, std::numeric_limits<long>::min() + 3,
         -2);
+    thunk.clear();
     assert_equals(std::numeric_limits<long>::min() + 1, result);
 );
 
@@ -385,6 +387,7 @@ TEST(sum_packed,
     stdcall_thunk thunk(cb);
     long result = Func<Packed_CharCharShortLong, void>::call(
         TestInvokeCallback_Packed_CharCharShortLong, thunk, p_ccsl);
+    thunk.clear();
     assert_equals(54422, result);
 );
 
@@ -426,6 +429,7 @@ TEST(sum_string,
     stdcall_thunk thunk(cb);
     long result = Func<Recursive_StringSum *, void>::call(
         TestInvokeCallback_Recursive_StringSum, thunk, r_ss);
+    thunk.clear();
     assert_equals(0+1+2+3+4+5+6+7+8+9+10+11+12+13+14+15+16+17, result);
 );
 
