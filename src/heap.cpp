@@ -62,7 +62,10 @@ heap::heap(const char * name, bool is_executable) throw(std::bad_alloc)
 heap::~heap()
 {
     assert(d_impl && d_impl->d_hheap);
-    BOOL success = HeapDestroy(d_impl->d_hheap);
+#ifndef NDEBUG
+    BOOL success =
+#endif
+    HeapDestroy(d_impl->d_hheap);
     delete d_impl;
     assert(success || !"failed to destroy Win32 heap");
 }
@@ -81,7 +84,10 @@ void * heap::alloc(size_t n) throw(std::bad_alloc)
 void heap::free(void * ptr) noexcept
 {
     assert(d_impl && d_impl->d_hheap);
-    BOOL success = HeapFree(d_impl->d_hheap, 0, ptr);
+#ifndef NDEBUG
+    BOOL success =
+#endif
+    HeapFree(d_impl->d_hheap, 0, ptr);
     assert(success || !"failed to free heap memory");
 }
 
