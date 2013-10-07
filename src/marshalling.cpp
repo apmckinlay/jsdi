@@ -398,27 +398,38 @@ inline jlong invoke_stdcall_(FuncPtr f, int nbytes, jbyte * args)
 TEST(ptrs_init,
     // single indirection
     {
-        jbyte args[sizeof(long *) + sizeof(long)];
+        union u_
+        {
+            struct
+            {
+                long * ptr;
+                long   value;
+            } x;
+            jbyte args[sizeof(x)];
+        } u;
         jint ptr_array[] = { 0, sizeof(long *) };
-        long *& ptr = reinterpret_cast<long *&>(args);
-        long const & ptd_to = reinterpret_cast<long const &>(*(args + sizeof(long *)));
-        marshalling_roundtrip::ptrs_init(args, ptr_array,
+        marshalling_roundtrip::ptrs_init(u.args, ptr_array,
                                          array_length(ptr_array));
-        *ptr = 0x19820207;
-        assert_equals(ptd_to, 0x19820207);
+        *u.x.ptr = 0x19820207;
+        assert_equals(u.x.value, 0x19820207);
     }
     // double indirection
     {
-        jbyte args[sizeof(long **) + sizeof(long *) + sizeof(long)];
+        union u_
+        {
+            struct
+            {
+                long ** ptr_ptr;
+                long *  ptr;
+                long    value;
+            } x;
+            jbyte args[sizeof(x)];
+        } u;
         jint ptr_array[] = { 0, sizeof(long **), sizeof(long **), sizeof(long **) + sizeof(long *) };
-        long **& ptr_ptr = reinterpret_cast<long **&>(args);
-        long const & ptd_to = reinterpret_cast<long const &>(
-            *(args + sizeof(long **) + sizeof(long *))
-        );
-        marshalling_roundtrip::ptrs_init(args, ptr_array,
+        marshalling_roundtrip::ptrs_init(u.args, ptr_array,
                                          array_length(ptr_array));
-        **ptr_ptr = 0x19900606;
-        assert_equals(0x19900606, ptd_to);
+        **u.x.ptr_ptr = 0x19900606;
+        assert_equals(0x19900606, u.x.value);
     }
     // triple indirection
     {
@@ -546,7 +557,7 @@ TEST(unmarshall_level_one_simple,
 
 TEST(unmarshall_level_one_complex,
      static const struct S { double d; char c; int64_t i; } s1 = { 2.5, 'C',
-	(int64_t) 0xfffffffffffffffeLL }, s2 = { -2.5, 'D', 50LL }, szero { 0, 0, 0LL };
+         0xfffffffffffffffeLL }, s2 = { -2.5, 'D', 50LL }, szero { 0, 0, 0LL };
      static const S * ARGS[] { 0, &s1, 0, &s1, &s2, 0, &s1 };
      static const int PTR_ARRAY[] =
      {
