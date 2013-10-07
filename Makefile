@@ -75,7 +75,7 @@ DEBUGOPTION:=-g -fstack-check
 LD_FLAGS_DLL+= -g
 else ifeq ($(CONFIG),release)
 OPTLEVEL:=3
-DEBUGOPTION:=-DNDEBUG
+DEBUGOPTION:=
 LD_FLAGS_DLL+= -s
 else ifeq ($(shell echo $(CONFIG) | grep '^[0-3]g\?\(NDEBUG\)\?$$'),$(CONFIG))
 OPTLEVEL:=$(shell echo $(CONFIG) | grep -o '^[0-3]')
