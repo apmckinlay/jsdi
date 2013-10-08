@@ -556,8 +556,10 @@ TEST(unmarshall_level_one_simple,
 );
 
 TEST(unmarshall_level_one_complex,
-     static const struct S { double d; char c; int64_t i; } s1 = { 2.5, 'C',
-         0xfffffffffffffffeLL }, s2 = { -2.5, 'D', 50LL }, szero { 0, 0, 0LL };
+     static const struct S { double d; char c; int64_t i; }
+         s1 = { 2.5, 'C', static_cast<int64_t>(0xfffffffffffffffeLL) },
+         s2 = { -2.5, 'D', 50LL },
+         szero { 0, 0, 0LL };
      static const S * ARGS[] { 0, &s1, 0, &s1, &s2, 0, &s1 };
      static const int PTR_ARRAY[] =
      {
