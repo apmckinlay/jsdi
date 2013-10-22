@@ -11,7 +11,7 @@
 CONFIG  ?=debug
 
 #===============================================================================
-# DIRECTORIES AND TARGETS
+# DIRECTORIES AND FILES
 #===============================================================================
 
 SRCDIR  :=src
@@ -38,8 +38,16 @@ DOXYFILE    :=$(DOCDIR)/Doxyfile
 # RESOURCE COMPILING
 #===============================================================================
 
-RESDIR      :=res
+RESDIR      :=$(SRCDIR)/res
 RES_OBJECT  :=$(OBJDIR)/resource.o
+
+#===============================================================================
+# COM TEST OBJECT COMPILING
+#===============================================================================
+
+COMTESTDIR      :=$(SRCDIR)/test_com
+COMTEST_ARCHIVE :=$(OBJDIR)/test_com.a
+COMTEST_LIBS    :=-loleaut32 -luuid
 
 #===============================================================================
 # TOOLS AND BASIC FLAGS
@@ -52,12 +60,15 @@ DLLTOOL:=dlltool --add-stdcall-underscore
 CC:=g++
 CC_STDFLAGS:=-std=gnu++0x -D__GXX_EXPERIMENTAL_CXX0X__
 CC_INCLUDE_DIRS:="-I$(JAVA_HOME)/include" "-I$(JAVA_HOME)/include/win32"
+CC_INCLUDE_DIRS:=$(subst \,/,$(CC_INCLUDE_DIRS))
 CC_FLAGS=-O$(OPTLEVEL) $(DEBUGOPTION) $(CC_STDFLAGS) -Wall -fmessage-length=0 \
          $(CC_INCLUDE_DIRS)
 
 LD_DLL:=g++ $(BINDIR)/$(EXPORTS) -o
 LD_EXE:=g++ -o
-LD_FLAGS_DLL=-shared -static-libstdc++ -static-libgcc
+LD_FLAGS_EXE:=
+LD_FLAGS_DLL:=-shared -static-libstdc++ -static-libgcc
+LD_LIBS:=$(COMTEST_LIBS)
 
 #===============================================================================
 # CONFIGURATION-SPECIFIC FLAGS
@@ -66,7 +77,7 @@ LD_FLAGS_DLL=-shared -static-libstdc++ -static-libgcc
 # Note that because conditionals are parsed immediately (in make's first pass),
 # you can't make file-scope conditionals depend on target-specific variables.
 # So to get different configurations, you have to set the CONFIG variable before
-# make is invoked. For examplem, from the shell: '$ make CONFIG=release'. See
+# make is invoked. For example, from the shell: '$ make CONFIG=release'. See
 # section 3.7 of the GNU Make manual.
 
 ifeq ($(CONFIG),debug)
@@ -93,6 +104,8 @@ endif
 else
 $(error Unsupported CONFIG value: '$(CONFIG)')
 endif
+
+export CC CC_FLAGS
 
 #===============================================================================
 # TARGETS
@@ -121,25 +134,31 @@ pp: dirs $(PPFILES)
 # how to set up dependencies w the gcc toolchain.
 -include $(DEPENDS)
 
-$(BINDIR)/$(TARGET_DLL): $(BINDIR)/$(EXPORTS) $(RES_OBJECT)
+$(BINDIR)/$(TARGET_DLL): $(BINDIR)/$(EXPORTS) $(RES_OBJECT) $(COMTEST_ARCHIVE)
 	@echo $@
-	@$(LD_DLL) $@ $(LD_FLAGS_DLL) $(OBJECTS_DLL) $(RES_OBJECT)
+	@$(LD_DLL) $@ $(LD_FLAGS_DLL) $(OBJECTS_DLL) $(RES_OBJECT) $(COMTEST_ARCHIVE) $(LD_LIBS)
 
-$(BINDIR)/$(TARGET_EXE): $(OBJECTS_EXE) $(RES_OBJECT)
+$(BINDIR)/$(TARGET_EXE): $(OBJECTS_EXE) $(RES_OBJECT) $(COMTEST_ARCHIVE)
 	@echo $@
-	@$(LD_EXE) $@ $(OBJECTS_EXE) $(RES_OBJECT)
+	@$(LD_EXE) $@ $(LD_FLAGS_EXE) $(OBJECTS_EXE) $(RES_OBJECT) $(COMTEST_ARCHIVE) $(LD_LIBS)
 
-$(BINDIR)/$(EXPORTS): $(OBJECTS_DLL)
+$(BINDIR)/$(EXPORTS): $(OBJECTS_DLL) $(COMTEST_ARCHIVE)
 	@echo $@
-	@$(DLLTOOL) -e $@ -D $(TARGET_DLL) $(OBJECTS_DLL)
+	@$(DLLTOOL) -e $@ -D $(TARGET_DLL) $(OBJECTS_DLL) $(COMTEST_ARCHIVE)
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
 	@echo $@
 	@$(CC) $(CC_FLAGS) -c $< -o $@
 
-$(RES_OBJECT):
+.PHONY: $(RES_OBJECT)
+$(RES_OBJECT): $(COMTEST_ARCHIVE)
 	@echo $@
-	@cd $(RESDIR) && $(MAKE) OBJDIR=../$(OBJDIR)
+	@cd $(RESDIR) && $(MAKE) OBJDIR=../../$(OBJDIR)
+
+.PHONY: $(COMTEST_ARCHIVE)
+$(COMTEST_ARCHIVE):
+	@echo $@
+	@cd $(COMTESTDIR) && $(MAKE) OBJDIR=../../$(OBJDIR)
 
 $(DEPENDS): $(DEPDIR)/%.d : $(SRCDIR)/%.cpp
 	@$(CC) $(CC_FLAGS) -MF"$@" -MG -MM -MP \
