@@ -19,7 +19,7 @@
 #include <sstream>
 #include <string>
 #include <cassert>
-#include <cstdio> // TODO: delete me
+#include <cstdio>  // TODO: remove this when we have better logging
 
 #define ERROR_STR(str) (__FILE__ ": " str)
 #define THROW_ERROR(str) { throw std::runtime_error(ERROR_STR(str)); }
@@ -405,9 +405,14 @@ EXPORT_STDCALL ITestJSDICom * TestCreateComObject()
     }
     catch (const std::runtime_error& e)
     {
-        FILE * x = std::fopen("x.txt", "w");
-        std::fprintf(x, e.what());
-        std::fclose(x);
+        // TODO: jsdi should have some kind of unified logging system for this
+        //       type of issue.
+        FILE * x = std::fopen(__FILE__ "_error.log", "w");
+        if (x)
+        {
+            std::fprintf(x, e.what());
+            std::fclose(x);
+        }
     }
     return result;
 }
