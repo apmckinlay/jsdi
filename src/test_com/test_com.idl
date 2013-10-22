@@ -1,0 +1,62 @@
+/* Copyright 2013 (c) Suneido Software Corp. All rights reserved.
+ * Licensed under GPLv2.
+ */
+
+import "Oaidl.idl";
+
+//==============================================================================
+// file: test_com.idl
+// auth: Victor Schappert
+// date: 20131016
+// desc: Declares a COM interface called ITestJSDICom implementing IDispatch
+//==============================================================================
+
+// For a decent step-by-step guide on implementing IDispatch, see
+// http://www.thrysoee.dk/InsideCOM+/ch05c.htm
+
+[uuid(FC9F170D-76AC-49B6-B247-B6E1623D2948), version(0.1)]
+library TestJSDICom
+{
+    importlib("stdole2.tlb");
+
+    // The reason the interface is *defined* inside the library definition is
+    // because this prevents midl from generating anything but the TLB file. We
+    // don't want anything but the TLB file because this is a trivial test
+    // interface only intended to be available in the local process' address
+    // space.
+    // See comments at: http://stackoverflow.com/q/19484065/1911388
+    [object, uuid(357279B0-C03A-414A-8869-A3E515252C06), dual, local]
+    interface ITestJSDICom : IDispatch
+    {
+        [id( 1), propget] HRESULT RefCount([out, retval] unsigned __int32 * value);
+
+        [id( 2), propget] HRESULT BoolValue([out, retval] bool * value);
+        [id( 2), propput] HRESULT BoolValue(bool newvalue);
+
+        [id( 3), propget] HRESULT Int32Value([out, retval] signed __int32 * value);
+        [id( 3), propput] HRESULT Int32Value(signed __int32 newvalue);
+
+        [id( 4), propget] HRESULT Int64Value([out, retval] signed __int64 * value);
+        [id( 4), propput] HRESULT Int64Value(signed __int64 newvalue);
+
+        [id( 5), propget] HRESULT DoubleValue([out, retval] double * value);
+        [id( 5), propput] HRESULT DoubleValue(double newvalue);
+
+        [id( 6), propget] HRESULT StringValue([out, string, retval] BSTR * value);
+        [id( 6), propput] HRESULT StringValue([in, string] BSTR newvalue);
+
+        [id( 7), propget] HRESULT DateValue([out, retval] DATE * value);
+        [id( 7), propput] HRESULT DateValue(DATE newvalue);
+
+        [id( 8), propget] HRESULT IUnkValue([out, retval] IUnknown ** value);
+
+        [id( 9), propget] HRESULT IDispValue([out, retval] IDispatch ** value);
+
+        [id(10)] HRESULT Sum2Ints(signed __int32 x, signed __int32 y,
+                                  [out, retval] signed __int64 * result);
+        [id(11)] HRESULT Sum2Doubles(double x, double y,
+                                     [out, retval] double * result);
+        [id(12)] HRESULT SumProperties([out, retval] double * result);
+    }; // interface ITestJSDICom
+
+}; // library TestJSDICom

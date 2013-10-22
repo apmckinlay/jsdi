@@ -467,3 +467,17 @@ IDC_SPLITTOP            CURSOR  DISCARDABLE     "res\\cur00001.cur"
 IDC_SPLITBOTTOM         CURSOR  DISCARDABLE     "res\\cur00003.cur"
 IDC_ARROWSTACK          CURSOR  DISCARDABLE     "res\\cur00004.cur"
 /////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Type Library
+//
+
+// This type library is used by the COM test code. Unfortunately, MinGW cannot
+// link more than one object containing resources into a final exe/dll image,
+// so we can't have the COM test sub-project generate its own resource object
+// and we have to include it here. If/when we move the project to compile on
+// Visual Studio, should build the type library into a separate .res object in
+// the correct sub-project.
+9999 TYPELIB "../test_com/midl.tlb"
