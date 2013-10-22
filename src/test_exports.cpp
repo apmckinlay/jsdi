@@ -173,7 +173,7 @@ EXPORT_STDCALL long TestSumString(Recursive_StringSum * ptr)
                TestSumPackedCharCharShortLong(ptr->x[1]);
     if (ptr->str) sum += std::atol(ptr->str);
     sum += TestSumString(ptr->inner);
-    if (ptr->buffer) std::snprintf(ptr->buffer, ptr->len, "%ld", sum);
+    if (ptr->buffer) snprintf(ptr->buffer, ptr->len, "%ld", sum);
     return sum;
 }
 
