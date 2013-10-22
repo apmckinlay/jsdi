@@ -53,11 +53,11 @@ $(GEN_HEADER) $(GEN_TLB_FILE) $(GEN_IID_FILE): $(IDL_FILE)
 #       get internal linkage as C++ symbols. 
 $(IID_OBJECT): $(GEN_IID_FILE)
 	@echo $@
-	$(CC) -x c -O3 -DNDEBUG -c $(GEN_IID_FILE) -o $@
+	@$(CC) -x c -O3 -DNDEBUG -c $(GEN_IID_FILE) -Wno-endif-labels -o $@
 
 $(IMPL_OBJECT): $(GEN_HEADER) $(IMPL_HEADER) $(IMPL_SRC)
 	@echo $@
-	@$(CC) $(CC_FLAGS) -c $(IMPL_SRC) -o $@
+	@$(CC) $(CC_FLAGS) -Wno-unknown-pragmas -c $(IMPL_SRC) -o $@
 
 # NOTE: The TLB file is currently being built by the 'res' sub-project, not
 #       this sub-project because of a limitation of MinGW which prevents it
