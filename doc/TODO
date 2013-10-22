@@ -10,11 +10,12 @@
             [ ] Current number of warnings: 149
         -- cppcheck
 
-OUTSTANDING
-    -- crashes on highly optimized version of JSDI (should not happen).
-    -- missing Struct.Modify
-    -- missing Buffer.Replace
+NEXT STEPS on COM:
+    -- Make a README for test_com/ subfolder
+    -- Commit JSDI COM testing changes
 
+    -- Write JSDI COM code
+ 
 
 ================================================================================
 DLL INTERFACE GRAMMAR CLAMPDOWNS
