@@ -68,7 +68,8 @@ com_managed_bstr jstr_to_bstr(jstring jstr, JNIEnv * env)
 void throw_com_exception(JNIEnv * env, const char * message)
 {
     assert(env);
-    if (! env->ThrowNew(GLOBAL_REFS->suneido_language_jsdi_com_COMException(), message))
+    if (!env->ThrowNew(GLOBAL_REFS->suneido_language_jsdi_com_COMException(),
+                       message))
         throw jni_exception(message, true /* pending */);
     else
         throw std::runtime_error("failed to throw COMException");
