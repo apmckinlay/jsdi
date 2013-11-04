@@ -491,9 +491,9 @@ static const int EMPTY_PTR_ARRAY[0] = { };
 
 static const int ZEROED_VI_INST_ARRAY[10] = { };
 
-constexpr JNIEnv * NULL_JNI_ENV = 0;
+constexpr JNIEnv * NULL_JNI_ENV = nullptr;
 
-constexpr jobjectArray NULL_JOBJ_ARR = 0;
+constexpr jobjectArray NULL_JOBJ_ARR = nullptr;
 
 template<typename T>
 inline void vector_append(std::vector<char>& dest, const T& ref)
