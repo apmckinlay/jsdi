@@ -6,7 +6,7 @@
 
 
  /* File created by MIDL compiler version 8.00.0595 */
-/* at Sun Nov 03 17:15:34 2013
+/* at Sun Nov 03 21:28:23 2013
  */
 /* Compiler settings for test_com.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 8.00.0595 
