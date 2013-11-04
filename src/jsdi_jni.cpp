@@ -9,6 +9,7 @@
 // desc: JVM's interface, via JNI, into the JSDI DLL
 //==============================================================================
 
+#include "com.h"
 #include "concurrent.h"
 #include "jni_exception.h"
 #include "jni_util.h"
@@ -166,6 +167,19 @@ void clear_callback(stdcall_thunk * thunk)
         callback_clearing_list.pop_front();
     }
 }
+
+void check_array_atleast(jsize size, const char * array_name, JNIEnv * env,
+                         jarray array)
+{
+    if (env->GetArrayLength(array) < size)
+    {
+        std::ostringstream() << array_name << " must have length at least "
+                             << size << throw_cpp<std::runtime_error>();
+    }
+}
+
+void check_array_atleast_1(const char * array_name, JNIEnv * env, jarray array)
+{ check_array_atleast(1, array_name, env, array); }
 
 } // anonymous namespace
 
@@ -497,7 +511,7 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_deleteThunk
 }
 
 //==============================================================================
-//                JAVA CLASS: suneido.language.jsdi.Structure
+//             JAVA CLASS: suneido.language.jsdi.type.Structure
 //==============================================================================
 
 #include "gen/suneido_language_jsdi_type_Structure.h"
@@ -573,6 +587,193 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutVariable
                     viArray,
                     reinterpret_cast<const int *>(vi_inst_array.data()));
     JNI_EXCEPTION_SAFE_END(env);
+}
+
+//==============================================================================
+//             JAVA CLASS: suneido.language.jsdi.com.COMobject
+//==============================================================================
+
+#include "gen/suneido_language_jsdi_com_COMobject.h"
+    // This #include isn't strictly necessary -- the only caller of these
+    // functions is the JVM. However, it is useful to have the generated code
+    // around. Also, because you can only have one extern "C" symbol with the
+    // same name, including the header allows the compiler to find prototype
+    // declaration/definition conflicts.
+
+/*
+ * Class:     suneido_language_jsdi_com_COMobject
+ * Method:    queryIDispatchAndProgId
+ * Signature: (J[Ljava/lang/String;)J
+ */
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_com_COMobject_queryIDispatchAndProgId(
+    JNIEnv * env, jclass, jlong ptrToIUnknown,
+    jobjectArray /* String[] */ progid)
+{
+    IUnknown * iunk(reinterpret_cast<IUnknown *>(ptrToIUnknown));
+    IDispatch * idisp(0);
+    JNI_EXCEPTION_SAFE_BEGIN
+    check_array_atleast_1("progid", env, progid); // check first, as may throw
+    idisp = com::query_for_dispatch(iunk);
+    if (idisp)
+    {
+        jni_auto_local<jstring> progid_jstr(env, com::get_progid(idisp, env));
+        env->SetObjectArrayElement(progid, 0,
+                                   static_cast<jstring>(progid_jstr));
+    }
+    JNI_EXCEPTION_SAFE_END(env);
+    return reinterpret_cast<jlong>(idisp);
+}
+
+/*
+ * Class:     suneido_language_jsdi_com_COMobject
+ * Method:    coCreateFromProgId
+ * Signature: (Ljava/lang/String;[J)Z
+ */
+JNIEXPORT jboolean JNICALL Java_suneido_language_jsdi_com_COMobject_coCreateFromProgId(
+    JNIEnv * env, jclass, jstring progid, jlongArray ptrPair)
+{
+    jboolean did_create_object(false);
+    JNI_EXCEPTION_SAFE_BEGIN
+    IUnknown * iunk(0);
+    IDispatch * idisp(0);
+    check_array_atleast(2, "ptrPair", env, ptrPair); // check before creating
+    if (com::create_from_progid(env, progid, iunk, idisp))
+    {
+        assert(iunk || idisp);
+        const jlong ptrs[2] =
+        {
+            reinterpret_cast<jlong>(iunk),
+            reinterpret_cast<jlong>(idisp),
+        };
+        env->SetLongArrayRegion(ptrPair, 0, 2, ptrs);
+        did_create_object = true;
+    }
+    JNI_EXCEPTION_SAFE_END(env);
+    return did_create_object;
+}
+
+/*
+ * Class:     suneido_language_jsdi_com_COMobject
+ * Method:    release
+ * Signature: (JJ)V
+ */
+JNIEXPORT void JNICALL Java_suneido_language_jsdi_com_COMobject_release
+ (JNIEnv * env, jclass, jlong ptrToIDispatch, jlong ptrToIUnknown)
+{
+    JNI_EXCEPTION_SAFE_BEGIN
+    if (ptrToIDispatch)
+        reinterpret_cast<IDispatch *>(ptrToIDispatch)->Release();
+    if (ptrToIUnknown)
+        reinterpret_cast<IUnknown *>(ptrToIUnknown)->Release();
+    JNI_EXCEPTION_SAFE_END(env);
+}
+
+/*
+ * Class:     suneido_language_jsdi_com_COMobject
+ * Method:    getPropertyByName
+ * Signature: (JLjava/lang/String;[I)Ljava/lang/Object;
+ */
+JNIEXPORT jobject JNICALL Java_suneido_language_jsdi_com_COMobject_getPropertyByName(
+    JNIEnv * env, jclass, jlong ptrToIDispatch, jstring name, jintArray dispid)
+{
+    jobject result(0);
+    JNI_EXCEPTION_SAFE_BEGIN
+    IDispatch * idisp(reinterpret_cast<IDispatch *>(ptrToIDispatch));
+    DISPID dispid_(com::get_dispid_of_name(idisp, env, name));
+    // Check the dispid array before getting the property so that we don't throw
+    // an exception while we have a local reference to be freed...
+    check_array_atleast_1("dispid", env, dispid);
+    env->SetIntArrayRegion(dispid, 0, 1,
+                           reinterpret_cast<const jint *>(&dispid_));
+    result = com::property_get(idisp, dispid_, env);
+    JNI_EXCEPTION_SAFE_END(env);
+    return result;
+}
+
+/*
+ * Class:     suneido_language_jsdi_com_COMobject
+ * Method:    getPropertyByDispId
+ * Signature: (JI)Ljava/lang/Object;
+ */
+JNIEXPORT jobject JNICALL Java_suneido_language_jsdi_com_COMobject_getPropertyByDispId(
+    JNIEnv * env, jclass, jlong ptrToIDispatch, jint dispid)
+{
+    jobject result(0);
+    JNI_EXCEPTION_SAFE_BEGIN
+    IDispatch * idisp(reinterpret_cast<IDispatch *>(ptrToIDispatch));
+    result = com::property_get(idisp, static_cast<DISPID>(dispid), env);
+    JNI_EXCEPTION_SAFE_END(env);
+    return result;
+}
+
+/*
+ * Class:     suneido_language_jsdi_com_COMobject
+ * Method:    putPropertyByName
+ * Signature: (JLjava/lang/String;Ljava/lang/Object;)I
+ */
+JNIEXPORT jint JNICALL Java_suneido_language_jsdi_com_COMobject_putPropertyByName(
+    JNIEnv * env, jclass, jlong ptrToIDispatch, jstring name, jobject value)
+{
+    DISPID dispid(0);
+    JNI_EXCEPTION_SAFE_BEGIN
+    IDispatch * idisp(reinterpret_cast<IDispatch *>(ptrToIDispatch));
+    dispid = com::get_dispid_of_name(idisp, env, name);
+    com::property_put(idisp, dispid, env, value);
+    JNI_EXCEPTION_SAFE_END(env);
+    return dispid;
+}
+
+/*
+ * Class:     suneido_language_jsdi_com_COMobject
+ * Method:    putPropertyByDispId
+ * Signature: (JILjava/lang/Object;)V
+ */
+JNIEXPORT void JNICALL Java_suneido_language_jsdi_com_COMobject_putPropertyByDispId(
+    JNIEnv * env, jclass, jlong ptrToIDispatch, jint dispid, jobject value)
+{
+    JNI_EXCEPTION_SAFE_BEGIN
+    IDispatch * idisp(reinterpret_cast<IDispatch *>(ptrToIDispatch));
+    com::property_put(idisp, static_cast<DISPID>(dispid), env, value);
+    JNI_EXCEPTION_SAFE_END(env);
+}
+
+/*
+ * Class:     suneido_language_jsdi_com_COMobject
+ * Method:    callMethodByName
+ * Signature: (JLjava/lang/String;[Ljava/lang/Object;[I)Ljava/lang/Object;
+ */
+JNIEXPORT jobject JNICALL Java_suneido_language_jsdi_com_COMobject_callMethodByName(
+    JNIEnv * env, jclass, jlong ptrToIDispatch, jstring name, jobjectArray args,
+    jintArray dispid)
+{
+    jobject result(0);
+    JNI_EXCEPTION_SAFE_BEGIN
+    IDispatch * idisp(reinterpret_cast<IDispatch *>(ptrToIDispatch));
+    DISPID dispid_(com::get_dispid_of_name(idisp, env, name));
+    // Check the dispid array before calling the method so that we don't throw
+    // an exception while we have a local reference to be freed...
+    check_array_atleast_1("dispid", env, dispid);
+    env->SetIntArrayRegion(dispid, 0, 1,
+                           reinterpret_cast<const jint *>(&dispid_));
+    result = com::call_method(idisp, dispid_, env, args);
+    JNI_EXCEPTION_SAFE_END(env);
+    return result;
+}
+
+/*
+ * Class:     suneido_language_jsdi_com_COMobject
+ * Method:    callMethodByDispId
+ * Signature: (JI[Ljava/lang/Object;)Ljava/lang/Object;
+ */
+JNIEXPORT jobject JNICALL Java_suneido_language_jsdi_com_COMobject_callMethodByDispId(
+    JNIEnv * env, jclass, jlong ptrToIDispatch, jint dispid, jobjectArray args)
+{
+    jobject result(0);
+    JNI_EXCEPTION_SAFE_BEGIN
+    IDispatch * idisp(reinterpret_cast<IDispatch *>(ptrToIDispatch));
+    result = com::call_method(idisp, static_cast<DISPID>(dispid), env, args);
+    JNI_EXCEPTION_SAFE_END(env);
+    return result;
 }
 
 } // extern "C"

@@ -67,6 +67,36 @@ static jmethodID get_method_id(JNIEnv * env, jclass clazz,
     return method_id;
 }
 
+static jmethodID get_static_method_id(JNIEnv * env, jclass clazz,
+                                      const char * method_name,
+                                      const char * signature)
+{
+    jmethodID method_id = env->GetStaticMethodID(clazz, method_name, signature);
+    if (! method_id)
+    {
+        std::ostringstream() << __FUNCTION__ << "() failed to get a static "
+                                " method ID for class " << clazz << ", method "
+                                "name '" << method_name << "', signature="
+                             << signature
+                             << throw_cpp<jni_exception, JNIEnv *>(env);
+    }
+    return method_id;
+}
+
+static jfieldID get_field_id(JNIEnv * env, jclass clazz,
+                             const char * field_name, const char * signature)
+{
+    jfieldID field_id = env->GetFieldID(clazz, field_name, signature);
+    if (! field_id)
+    {
+        std::ostringstream() << __FUNCTION__ << "() failed to get a field ID "
+                                "for class " << clazz << ", field name '"
+                             << field_name << "', signature=" << signature
+                             << throw_cpp<jni_exception, JNIEnv *>(env);
+    }
+    return field_id;
+}
+
 static jfieldID get_static_field_id(JNIEnv * env, jclass clazz,
                                     const char * field_name,
                                     const char * signature)
@@ -118,31 +148,66 @@ void global_refs::init(JNIEnv * env) throw(jni_exception)
 
     global_refs * g = &global_refs_;
 
-    // [BEGIN:GENERATED CODE last updated Wed Aug 07 15:37:00 PDT 2013]
+    // [BEGIN:GENERATED CODE last updated Sat Nov 02 18:54:08 PDT 2013]
     g->java_lang_Object_ = get_global_class_ref(env, "java/lang/Object");
+    g->java_lang_Object__m_toString_ = get_method_id(env, g->java_lang_Object_, "toString", "()Ljava/lang/String;");
     g->java_lang_Boolean_ = get_global_class_ref(env, "java/lang/Boolean");
+    g->java_lang_Boolean__m_booleanValue_ = get_method_id(env, g->java_lang_Boolean_, "booleanValue", "()Z");
     g->java_lang_Boolean__f_TRUE_ = get_static_field_id(env, g->java_lang_Boolean_, "TRUE", "Ljava/lang/Boolean;");
     g->java_lang_Boolean__f_FALSE_ = get_static_field_id(env, g->java_lang_Boolean_, "FALSE", "Ljava/lang/Boolean;");
+    g->java_lang_Number_ = get_global_class_ref(env, "java/lang/Number");
     g->java_lang_Integer_ = get_global_class_ref(env, "java/lang/Integer");
     g->java_lang_Integer__init_ = get_method_id(env, g->java_lang_Integer_, "<init>", "(I)V");
     g->java_lang_Integer__m_intValue_ = get_method_id(env, g->java_lang_Integer_, "intValue", "()I");
+    g->java_lang_Long_ = get_global_class_ref(env, "java/lang/Long");
+    g->java_lang_Long__init_ = get_method_id(env, g->java_lang_Long_, "<init>", "(J)V");
+    g->java_lang_Long__m_longValue_ = get_method_id(env, g->java_lang_Long_, "longValue", "()J");
+    g->java_math_BigDecimal_ = get_global_class_ref(env, "java/math/BigDecimal");
+    g->java_math_BigDecimal__init_ = get_method_id(env, g->java_math_BigDecimal_, "<init>", "(DLjava/math/MathContext;)V");
+    g->java_math_BigDecimal__init1_ = get_method_id(env, g->java_math_BigDecimal_, "<init>", "(Ljava/lang/String;Ljava/math/MathContext;)V");
+    g->java_math_BigDecimal__m_doubleValue_ = get_method_id(env, g->java_math_BigDecimal_, "doubleValue", "()D");
+    g->java_lang_CharSequence_ = get_global_class_ref(env, "java/lang/CharSequence");
     g->java_lang_Enum_ = get_global_class_ref(env, "java/lang/Enum");
     g->java_lang_Enum__m_ordinal_ = get_method_id(env, g->java_lang_Enum_, "ordinal", "()I");
     g->byte_ARRAY_ = get_global_class_ref(env, "[B");
+    g->java_util_Date_ = get_global_class_ref(env, "java/util/Date");
+    g->java_util_Date__init_ = get_method_id(env, g->java_util_Date_, "<init>", "(J)V");
+    g->java_util_Date__m_getTime_ = get_method_id(env, g->java_util_Date_, "getTime", "()J");
     g->suneido_language_jsdi_ThunkManager_ = get_global_class_ref(env, "suneido/language/jsdi/ThunkManager");
     g->suneido_language_jsdi_ThunkManager__f_THUNK_FUNC_ADDR_INDEX_ = get_static_field_id(env, g->suneido_language_jsdi_ThunkManager_, "THUNK_FUNC_ADDR_INDEX", "I");
     g->suneido_language_jsdi_ThunkManager__f_THUNK_OBJECT_ADDR_INDEX_ = get_static_field_id(env, g->suneido_language_jsdi_ThunkManager_, "THUNK_OBJECT_ADDR_INDEX", "I");
     g->suneido_language_jsdi_type_Callback_ = get_global_class_ref(env, "suneido/language/jsdi/type/Callback");
     g->suneido_language_jsdi_type_Callback__m_invoke_ = get_method_id(env, g->suneido_language_jsdi_type_Callback_, "invoke", "(Lsuneido/SuValue;[B)I");
     g->suneido_language_jsdi_type_Callback__m_invokeVariableIndirect_ = get_method_id(env, g->suneido_language_jsdi_type_Callback_, "invokeVariableIndirect", "(Lsuneido/SuValue;[B[Ljava/lang/Object;)I");
+    g->suneido_language_jsdi_com_COMobject_ = get_global_class_ref(env, "suneido/language/jsdi/com/COMobject");
+    g->suneido_language_jsdi_com_COMobject__init_ = get_method_id(env, g->suneido_language_jsdi_com_COMobject_, "<init>", "(Ljava/lang/String;JJ)V");
+    g->suneido_language_jsdi_com_COMobject__m_verifyNotReleased_ = get_method_id(env, g->suneido_language_jsdi_com_COMobject_, "verifyNotReleased", "()V");
+    g->suneido_language_jsdi_com_COMobject__f_ptrToIUnknown_ = get_field_id(env, g->suneido_language_jsdi_com_COMobject_, "ptrToIUnknown", "J");
+    g->suneido_language_jsdi_com_COMobject__f_ptrToIDispatch_ = get_field_id(env, g->suneido_language_jsdi_com_COMobject_, "ptrToIDispatch", "J");
+    g->suneido_language_jsdi_com_COMException_ = get_global_class_ref(env, "suneido/language/jsdi/com/COMException");
+    g->suneido_language_jsdi_com_COMException__init_ = get_method_id(env, g->suneido_language_jsdi_com_COMException_, "<init>", "(Ljava/lang/String;)V");
+    g->suneido_language_Numbers_ = get_global_class_ref(env, "suneido/language/Numbers");
+    g->suneido_language_Numbers__m_narrow_ = get_static_method_id(env, g->suneido_language_Numbers_, "narrow", "(Ljava/lang/Number;)Ljava/lang/Number;");
+    g->suneido_language_Numbers__f_MC_ = get_static_field_id(env, g->suneido_language_Numbers_, "MC", "Ljava/math/MathContext;");
     // [END:GENERATED CODE]
 
     g->TRUE_object_ = get_static_field_value_object(
         env, g->java_lang_Boolean_, g->java_lang_Boolean__f_TRUE_, "TRUE");
     g->FALSE_object_ = get_static_field_value_object(
         env, g->java_lang_Boolean_, g->java_lang_Boolean__f_FALSE_, "FALSE");
-    jni_auto_local<jobject> zero(env, env->NewObject(g->java_lang_Integer_, g->java_lang_Integer__init_, 0));
+    // TODO: The zero object should be a Long and all numbers passed over JNI
+    //       between Java and C++ should also be Longs/longs in order to
+    //       simplify (A) the jSuneido number system and (B) the C++ code, by
+    //       reducing the number of global references required -- i.e. we can
+    //       get rid of java_lang_Integer.
+    jni_auto_local<jobject> zero(
+        env,
+        env->NewObject(g->java_lang_Integer_, g->java_lang_Integer__init_, 0));
     g->ZERO_object_ = globalize(env, zero, "zero");
+    const jchar empty_chars[1] = { 0 };
+    jni_auto_local<jstring> empty(env, empty_chars, 0);
+    g->EMPTY_STRING_object_ = static_cast<jstring>(globalize(
+        env, static_cast<jstring>(empty), "empty string"));
 }
 
 } // namespace jsdi

@@ -29,24 +29,71 @@ jni_utf16_output_streambuf::jni_utf16_output_streambuf(JNIEnv * env,
     setp(base, base + d_buf.size());
 }
 
+jstring jni_utf16_output_streambuf::jstr() const
+{
+    jstring result = d_env->NewString(reinterpret_cast<jchar *>(pbase()),
+                                      pptr() - pbase());
+    JNI_EXCEPTION_CHECK(d_env);
+    if (! result) throw jni_bad_alloc("NewString", __FUNCTION__);
+    return result;
+}
+
 jni_utf16_output_streambuf::int_type jni_utf16_output_streambuf::overflow(
     int_type ch)
 {
     if (traits_type::eof() != ch)
     {
-        if (epptr() <= pptr())
-        {
-            size_t size = d_buf.size();
-            d_buf.resize(2 * size);
-            char16_t * base = &d_buf.front();
-            setp(base, base + size - 1);
-            pbump(size);
-        }
+        assert(epptr() <= pptr());
+        size_t size = d_buf.size();
+        d_buf.resize(2 * size);
+        char16_t * base = &d_buf.front();
+        setp(base + size, base + d_buf.size());
         *pptr() = traits_type::to_char_type(ch);
         pbump(1);
-        return ch;
     }
-    else return traits_type::eof();
+    return ch;
+}
+
+//==============================================================================
+//                            class utf16_ostream
+//==============================================================================
+
+utf16_ostream& operator<<(utf16_ostream& o, jstring jstr) throw(std::bad_cast)
+{
+    auto& o2(dynamic_cast<jni_utf16_ostream&>(o)); // may throw std::bad_cast
+    return o2 << jstr;
+}
+
+utf16_ostream& operator<<(utf16_ostream& o, const char * str)
+{
+    if (! str) o << reinterpret_cast<void *>(0);
+    else do
+    {
+        const char c = *str;
+        if (! c) break;
+        o << static_cast<char16_t>(c);
+        ++str;
+    }
+    while (true);
+    return o;
+}
+
+utf16_ostream& operator<<(utf16_ostream& o, const jni_utf16_string_region& str)
+{
+    jni_utf16_string_region::const_iterator i = str.begin(), e = str.end();
+    for (; i != e; ++i) o << *i;
+    return o;
+}
+
+//==============================================================================
+//                          class jni_utf16_ostream
+//==============================================================================
+
+jni_utf16_ostream& operator<<(jni_utf16_ostream& o, jstring jstr)
+{
+    jni_utf16_string_region str(o.d_buf.env(), jstr);
+    o << str;
+    return o;
 }
 
 //==============================================================================

@@ -30,8 +30,11 @@ library TestJSDICom
     {
         [id( 1), propget] HRESULT RefCount([out, retval] unsigned __int32 * value);
 
-        [id( 2), propget] HRESULT BoolValue([out, retval] bool * value);
-        [id( 2), propput] HRESULT BoolValue(bool newvalue);
+        [id( 2), propget] HRESULT BoolValue([out, retval] VARIANT_BOOL * value);
+        [id( 2), propput] HRESULT BoolValue(VARIANT_BOOL newvalue);
+            // If you want the TLB file to map to VT_BOOL instead of an integer
+            // type, you have to use VARIANT_BOOL in the IDL file:
+            // http://msdn.microsoft.com/en-us/library/windows/desktop/ms221617.aspx
 
         [id( 3), propget] HRESULT Int32Value([out, retval] signed __int32 * value);
         [id( 3), propput] HRESULT Int32Value(signed __int32 newvalue);
@@ -57,6 +60,11 @@ library TestJSDICom
         [id(11)] HRESULT Sum2Doubles(double x, double y,
                                      [out, retval] double * result);
         [id(12)] HRESULT SumProperties([out, retval] double * result);
+
+        [id(13)] HRESULT IncrementProperties();
+
+        [id(14)] HRESULT NoopIUnk(IUnknown * value);
+        [id(15)] HRESULT NoopIDisp(IDispatch * value);
     }; // interface ITestJSDICom
 
 }; // library TestJSDICom

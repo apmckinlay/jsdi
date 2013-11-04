@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 8.00.0595 */
-/* at Tue Oct 22 10:14:42 2013
+/* at Sun Nov 03 17:15:34 2013
  */
 /* Compiler settings for test_com.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 8.00.0595 
@@ -85,10 +85,10 @@ EXTERN_C const IID IID_ITestJSDICom;
             /* [retval][out] */ unsigned __int32 *value) = 0;
         
         virtual /* [propget][id] */ HRESULT STDMETHODCALLTYPE get_BoolValue( 
-            /* [retval][out] */ BOOL *value) = 0;
+            /* [retval][out] */ VARIANT_BOOL *value) = 0;
         
         virtual /* [propput][id] */ HRESULT STDMETHODCALLTYPE put_BoolValue( 
-            BOOL newvalue) = 0;
+            VARIANT_BOOL newvalue) = 0;
         
         virtual /* [propget][id] */ HRESULT STDMETHODCALLTYPE get_Int32Value( 
             /* [retval][out] */ __int32 *value) = 0;
@@ -138,6 +138,14 @@ EXTERN_C const IID IID_ITestJSDICom;
         
         virtual /* [id] */ HRESULT STDMETHODCALLTYPE SumProperties( 
             /* [retval][out] */ double *result) = 0;
+        
+        virtual /* [id] */ HRESULT STDMETHODCALLTYPE IncrementProperties( void) = 0;
+        
+        virtual /* [id] */ HRESULT STDMETHODCALLTYPE NoopIUnk( 
+            IUnknown *value) = 0;
+        
+        virtual /* [id] */ HRESULT STDMETHODCALLTYPE NoopIDisp( 
+            IDispatch *value) = 0;
         
     };
     
@@ -203,11 +211,11 @@ EXTERN_C const IID IID_ITestJSDICom;
         
         /* [propget][id] */ HRESULT ( STDMETHODCALLTYPE *get_BoolValue )( 
             ITestJSDICom * This,
-            /* [retval][out] */ BOOL *value);
+            /* [retval][out] */ VARIANT_BOOL *value);
         
         /* [propput][id] */ HRESULT ( STDMETHODCALLTYPE *put_BoolValue )( 
             ITestJSDICom * This,
-            BOOL newvalue);
+            VARIANT_BOOL newvalue);
         
         /* [propget][id] */ HRESULT ( STDMETHODCALLTYPE *get_Int32Value )( 
             ITestJSDICom * This,
@@ -272,6 +280,17 @@ EXTERN_C const IID IID_ITestJSDICom;
         /* [id] */ HRESULT ( STDMETHODCALLTYPE *SumProperties )( 
             ITestJSDICom * This,
             /* [retval][out] */ double *result);
+        
+        /* [id] */ HRESULT ( STDMETHODCALLTYPE *IncrementProperties )( 
+            ITestJSDICom * This);
+        
+        /* [id] */ HRESULT ( STDMETHODCALLTYPE *NoopIUnk )( 
+            ITestJSDICom * This,
+            IUnknown *value);
+        
+        /* [id] */ HRESULT ( STDMETHODCALLTYPE *NoopIDisp )( 
+            ITestJSDICom * This,
+            IDispatch *value);
         
         END_INTERFACE
     } ITestJSDIComVtbl;
@@ -362,6 +381,15 @@ EXTERN_C const IID IID_ITestJSDICom;
 
 #define ITestJSDICom_SumProperties(This,result)	\
     ( (This)->lpVtbl -> SumProperties(This,result) ) 
+
+#define ITestJSDICom_IncrementProperties(This)	\
+    ( (This)->lpVtbl -> IncrementProperties(This) ) 
+
+#define ITestJSDICom_NoopIUnk(This,value)	\
+    ( (This)->lpVtbl -> NoopIUnk(This,value) ) 
+
+#define ITestJSDICom_NoopIDisp(This,value)	\
+    ( (This)->lpVtbl -> NoopIDisp(This,value) ) 
 
 #endif /* COBJMACROS */
 

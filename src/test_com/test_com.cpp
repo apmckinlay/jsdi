@@ -12,6 +12,7 @@
 
 #include "test_com.h"
 
+#include "../com_util.h"
 #include "../concurrent.h"
 #include "../util.h"
 
@@ -36,16 +37,16 @@ struct TestJSDIComImpl : public ITestJSDICom
         // DATA
         //
 
-        unsigned __int32           d_ref_count;
-        ITypeInfo                * d_type_info;
-        critical_section           d_critical_section;
+        unsigned __int32                                d_ref_count;
+        com_managed_interface<ITypeInfo>                d_type_info;
+        critical_section                                d_critical_section;
 
-        BOOL                       d_bool_value;
-        signed __int32             d_int32_value;
-        signed __int64             d_int64_value;
-        double                     d_double_value;
-        std::basic_string<OLECHAR> d_string_value;
-        DATE                       d_date_value;
+        VARIANT_BOOL                                    d_bool_value;
+        signed __int32                                  d_int32_value;
+        signed __int64                                  d_int64_value;
+        double                                          d_double_value;
+        std::basic_string<OLECHAR>                      d_string_value;
+        DATE                                            d_date_value;
 
         //
         // CONSTRUCTORS
@@ -89,8 +90,8 @@ struct TestJSDIComImpl : public ITestJSDICom
 
         HRESULT __stdcall get_RefCount(unsigned __int32 * value);
 
-        HRESULT __stdcall get_BoolValue(BOOL * value);
-        HRESULT __stdcall put_BoolValue(BOOL newvalue);
+        HRESULT __stdcall get_BoolValue(VARIANT_BOOL * value);
+        HRESULT __stdcall put_BoolValue(VARIANT_BOOL newvalue);
 
         HRESULT __stdcall get_Int32Value(signed __int32 * value);
         HRESULT __stdcall put_Int32Value(signed __int32 newvalue);
@@ -115,6 +116,11 @@ struct TestJSDIComImpl : public ITestJSDICom
                                    signed __int64 * result);
         HRESULT __stdcall Sum2Doubles(double x, double y, double * result);
         HRESULT __stdcall SumProperties(double * result);
+
+        HRESULT __stdcall IncrementProperties();
+
+        HRESULT __stdcall NoopIUnk(IUnknown * iunk);
+        HRESULT __stdcall NoopIDisp(IDispatch * idisp);
 };
 
 //==============================================================================
@@ -125,6 +131,9 @@ HINSTANCE get_module_handle()
 {
     // Get a handle to the module containing this translation unit.
     // See here: http://stackoverflow.com/a/6924332/1911388
+    // NOTE: GetModuleHandleEx requires Windows XP (0x0501) or higher. If we
+    //       need to support XP, see here as well:
+    //       http://stackoverflow.com/q/557081/1911388
     HINSTANCE hinst(0);
     if (! GetModuleHandleEx(
             GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
@@ -172,9 +181,8 @@ ITypeLib * load_type_lib()
 ITypeInfo * load_type_info()
 {
     ITypeInfo * result(0);
-    ITypeLib * type_lib(load_type_lib());
+    com_managed_interface<ITypeLib> type_lib(load_type_lib());
     HRESULT hresult = type_lib->GetTypeInfoOfGuid(IID_ITestJSDICom, &result);
-    type_lib->Release();
     if (FAILED(hresult))
     {
         std::ostringstream() << ERROR_STR("failed to load type info for "
@@ -189,21 +197,17 @@ ITypeInfo * load_type_info()
 //==============================================================================
 
 TestJSDIComImpl::TestJSDIComImpl()
-    : d_ref_count(0)
-    , d_type_info(0)
-    , d_bool_value(FALSE)
+    : d_ref_count(1)
+    , d_type_info(load_type_info())
+    , d_bool_value(VARIANT_FALSE)
     , d_int32_value(0)
     , d_int64_value(0)
     , d_double_value(0.0)
     , d_date_value(0.0) // 30 December 1899, midnight
-{
-    d_type_info = load_type_info();
-}
+{ }
 
 TestJSDIComImpl::~TestJSDIComImpl()
-{
-    d_type_info->Release();
-}
+{ }
 
 //==============================================================================
 //                                 IUnknown
@@ -213,7 +217,7 @@ HRESULT __stdcall TestJSDIComImpl::QueryInterface(REFIID riid, void ** ppv)
 {
     CHECK_OUTPUT_POINTER(ppv);
     if (IID_IDispatch == riid)
-            *ppv = static_cast<IDispatch *>(this);
+        *ppv = static_cast<IDispatch *>(this);
     else if (IID_IUnknown == riid)
         *ppv = static_cast<IUnknown *>(this);
     else if (IID_ITestJSDICom == riid)
@@ -264,7 +268,7 @@ HRESULT __stdcall TestJSDIComImpl::GetTypeInfo(UINT iTypeInfo, LCID lcid,
     if (0 != iTypeInfo) return DISP_E_BADINDEX;
     lock_guard<critical_section> lock(&d_critical_section);
     d_type_info->AddRef();
-    *ppITypeInfo = d_type_info;
+    *ppITypeInfo = d_type_info.get();
     return S_OK;
 }
 
@@ -275,7 +279,7 @@ HRESULT __stdcall TestJSDIComImpl::GetIDsOfNames(REFIID riid,
 {
     if (IID_NULL != riid) return DISP_E_UNKNOWNINTERFACE;
     lock_guard<critical_section> lock(&d_critical_section);
-    HRESULT result = DispGetIDsOfNames(d_type_info, rgszNames, cNames,
+    HRESULT result = DispGetIDsOfNames(d_type_info.get(), rgszNames, cNames,
                                        rgDispId);
     return result;
 }
@@ -289,7 +293,7 @@ HRESULT __stdcall TestJSDIComImpl::Invoke(DISPID dispIdMember, REFIID riid,
 {
     if (IID_NULL != riid) return DISP_E_UNKNOWNINTERFACE;
     lock_guard<critical_section> lock(&d_critical_section);
-    HRESULT result = DispInvoke(this, d_type_info, dispIdMember, wFlags,
+    HRESULT result = DispInvoke(this, d_type_info.get(), dispIdMember, wFlags,
                                 pDispParams, pVarResult, pExcepInfo,
                                 puArgError);
     return result;
@@ -311,10 +315,10 @@ HRESULT __stdcall TestJSDIComImpl::Invoke(DISPID dispIdMember, REFIID riid,
 HRESULT __stdcall TestJSDIComImpl::get_RefCount(unsigned __int32 * value)
 { GETTER(d_ref_count); }
 
-HRESULT __stdcall TestJSDIComImpl::get_BoolValue(BOOL * value)
+HRESULT __stdcall TestJSDIComImpl::get_BoolValue(VARIANT_BOOL * value)
 { GETTER(d_bool_value); }
 
-HRESULT __stdcall TestJSDIComImpl::put_BoolValue(BOOL newvalue)
+HRESULT __stdcall TestJSDIComImpl::put_BoolValue(VARIANT_BOOL newvalue)
 { PUTTER(d_bool_value); }
 
 HRESULT __stdcall TestJSDIComImpl::get_Int32Value(signed __int32 * value)
@@ -340,14 +344,20 @@ HRESULT __stdcall TestJSDIComImpl::get_StringValue(BSTR * value)
     lock_guard<critical_section> lock(&d_critical_section);
     // Contract is caller must release with SysFreeString
     // http://stackoverflow.com/a/19523652/1911388
-    *value = SysAllocString(d_string_value.data());
+    *value = SysAllocStringLen(d_string_value.data(), d_string_value.size());
     return S_OK;
 }
 
 HRESULT __stdcall TestJSDIComImpl::put_StringValue(BSTR newvalue)
 {
-    lock_guard<critical_section> lock(&d_critical_section);
-    PUTTER(d_string_value);
+    {
+        lock_guard<critical_section> lock(&d_critical_section);
+        d_string_value.assign(newvalue, SysStringLen(newvalue));
+    }
+    // Contract is we own the new string. But since we copied it, we need to
+    // release the value passed in.
+    SysFreeString(newvalue);
+    return S_OK;
 }
 
 HRESULT __stdcall TestJSDIComImpl::get_DateValue(DATE * value)
@@ -385,6 +395,34 @@ HRESULT __stdcall TestJSDIComImpl::SumProperties(double * result)
               static_cast<double>(d_int64_value) +
               d_double_value;
     return S_OK;
+}
+
+HRESULT __stdcall TestJSDIComImpl::IncrementProperties()
+{
+    ++d_int32_value;
+    ++d_int64_value;
+    ++d_double_value;
+    return S_OK;
+}
+
+HRESULT __stdcall TestJSDIComImpl::NoopIUnk(IUnknown * iunk)
+{
+    if (iunk)
+    {
+        iunk->Release();
+        return S_OK;
+    }
+    return E_INVALIDARG;
+}
+
+HRESULT __stdcall TestJSDIComImpl::NoopIDisp(IDispatch * idisp)
+{
+    if (idisp)
+    {
+        idisp->Release();
+        return S_OK;
+    }
+    return E_INVALIDARG;
 }
 
 } // anonymous namespace

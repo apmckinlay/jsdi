@@ -18,8 +18,8 @@ extern "C"
 //     or unloads a DLL. The loader serializes calls to DllMain so that only a
 //     single DllMain ever runs at the same time.
 //         See http://msdn.microsoft.com/library/en-us/dllproc/base/dllmain.asp.
-BOOL APIENTRY DllMain(
-    HANDLE hModule,
+BOOL WINAPI DllMain(
+    HINSTANCE hModule,
     DWORD fdwReason,
     LPVOID lpvReserved
 )
