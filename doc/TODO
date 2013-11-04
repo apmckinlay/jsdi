@@ -11,10 +11,9 @@
         -- cppcheck
 
 NEXT STEPS on COM:
-    -- Make a README for test_com/ subfolder
-    -- Commit JSDI COM testing changes
-
-    -- Write JSDI COM code
+    -- Fix cSuneido Release/AddRef stuff
+    -- Bring cSuneido marshalling into line
+    -- Fix memory leak in cSuneido
  
 
 ================================================================================

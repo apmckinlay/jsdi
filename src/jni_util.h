@@ -936,6 +936,8 @@ inline jni_auto_local<jobject>::~jni_auto_local()
 inline jni_auto_local<jobject>::operator jobject()
 { return d_object; }
 
+// TODO: When doing the docs for this specialization, note that it can be
+//       "empty" (no managed object).
 template<>
 class jni_auto_local<jstring>
 {
@@ -947,10 +949,18 @@ class jni_auto_local<jstring>
         jstring  d_string;
 
         //
+        // INTERNALS
+        //
+
+        void release(JNIEnv * env, jstring string);
+
+        //
         // CONSTRUCTORS
         //
 
     public:
+
+        jni_auto_local();
 
         jni_auto_local(JNIEnv * env, const jchar * unicode_chars,
                        const jsize size);
@@ -966,40 +976,60 @@ class jni_auto_local<jstring>
     public:
 
         operator jstring();
+
+        //
+        // MUTATORS
+        //
+
+    public:
+
+        void reset(JNIEnv * env, jstring string);
 };
+
+inline void jni_auto_local<jstring>::release(JNIEnv * env, jstring string)
+{
+    assert(env || ! string);
+    if (string) env->DeleteLocalRef(string);
+}
+
+inline jni_auto_local<jstring>::jni_auto_local() : d_env(0), d_string(0) { }
 
 inline jni_auto_local<jstring>::jni_auto_local(JNIEnv * env,
                                                const jchar * unicode_chars,
                                                const jsize size)
     : d_env(env)
     , d_string(env->NewString(unicode_chars, size))
-{ }
+{ assert(env && unicode_chars); }
 
 inline jni_auto_local<jstring>::jni_auto_local(JNIEnv * env, jstring string)
     : d_env(env)
     , d_string(string)
-{ }
+{ assert(env || ! string); }
 
 inline jni_auto_local<jstring>::~jni_auto_local()
-{ d_env->DeleteLocalRef(d_string); }
+{ release(d_env, d_string); }
 
 inline jni_auto_local<jstring>::operator jstring()
 { return d_string; }
 
-//==============================================================================
-//                     class jni_utf16_output_streambuf
-//==============================================================================
+inline void jni_auto_local<jstring>::reset(JNIEnv * env, jstring string)
+{
+    JNIEnv * old_env(d_env);
+    jstring old_string(d_string);
+    d_env = env;
+    d_string = string;
+    release(old_env, old_string);
+}
 
-/** \cond internal */
-class jni_utf16_output_streambuf : public std::basic_streambuf<char16_t>,
-                                   private non_copyable
+template<>
+class jni_auto_local<jthrowable>
 {
         //
         // DATA
         //
 
-        JNIEnv *              d_env;
-        std::vector<char16_t> d_buf;
+        JNIEnv    * d_env;
+        jthrowable  d_throwable;
 
         //
         // CONSTRUCTORS
@@ -1007,7 +1037,9 @@ class jni_utf16_output_streambuf : public std::basic_streambuf<char16_t>,
 
     public:
 
-        jni_utf16_output_streambuf(JNIEnv * env, size_t capacity);
+        jni_auto_local(JNIEnv * env, jthrowable throwable);
+
+        ~jni_auto_local();
 
         //
         // ACCESSORS
@@ -1015,52 +1047,40 @@ class jni_utf16_output_streambuf : public std::basic_streambuf<char16_t>,
 
     public:
 
-        jstring jstr() const;
-
-        //
-        // ANCESTOR CLASS: std::streambuf
-        //
-
-    private:
-
-        virtual int_type overflow(int_type ch);
+        operator jthrowable();
 };
 
-inline jstring jni_utf16_output_streambuf::jstr() const
-{
-    return d_env->NewString(reinterpret_cast<jchar *>(pbase()),
-                            epptr() - pbase());
-}
-/** \endcond */
+inline jni_auto_local<jthrowable>::jni_auto_local(JNIEnv * env,
+                                                  jthrowable throwable)
+    : d_env(env)
+    , d_throwable(throwable)
+{ }
+
+inline jni_auto_local<jthrowable>::~jni_auto_local()
+{ if (d_throwable) d_env->DeleteLocalRef(d_throwable); }
+
+inline jni_auto_local<jthrowable>::operator jthrowable()
+{ return d_throwable; }
+
 
 //==============================================================================
-//                          class jni_utf16_ostream
+//                          class jni_auto_monitor
 //==============================================================================
 
 /**
- * \brief Output stream for generating immutable Java strings.
+ * \brief Automatic stack object for exception-safe simulation of Java
+ *        <dfn>synchronized</dfn> blocks.
  * \author Victor Schappert
- * \since 20130701 (Happy Canada Day!)
- *
- * The values inserted into this stream should be compatible with JNI's
- * &quot;modified UTF-8&quot; format in order to ensure that the strings sent to
- * the Java side are valid.
- *
- * \note
- * If we are sending a lot of strings back to the Java side, it may be
- * worthwhile to refactor all of the string code in jsdi to use
- * <dfn>wchar_t</dfn>, <dfn>std::wstring</dfn>, and <dfn>std::wostream</dfn> in
- * order to eliminate an unnecessary conversion between 16-bit wide characters
- * and modified UTF8-.
+ * \since 20131101
  */
-class jni_utf16_ostream : public std::basic_ostream<char16_t, std::char_traits<char16_t>>,
-                          private non_copyable
+class jni_auto_monitor
 {
         //
         // DATA
         //
 
-        jni_utf16_output_streambuf d_buf;
+        JNIEnv * d_env;
+        jobject  d_object;
 
         //
         // CONSTRUCTORS
@@ -1068,36 +1088,25 @@ class jni_utf16_ostream : public std::basic_ostream<char16_t, std::char_traits<c
 
     public:
 
-        /**
-         * Constructs a new stream.
-         * \param env Valid pointer to the JNI environment
-         * \param capacity Suggested initial capacity of the stream (the more
-         * accurate this is, the less reallocation or overallocation will be
-         * done).
-         */
-        jni_utf16_ostream(JNIEnv * env, size_t capacity = 127);
+        jni_auto_monitor(JNIEnv * env, jobject object);
 
-        //
-        // ACCESSORS
-        //
-
-    public:
-
-        /**
-         * \brief Returns a newly allocated <dfn>jstring</dfn> containing the
-         * contents of the stream.
-         * \return A JNI reference to an immutable Java string containing the
-         * contents of the stream.
-         */
-        jstring jstr() const;
+        ~jni_auto_monitor();
 };
 
-inline jni_utf16_ostream::jni_utf16_ostream(JNIEnv * env, size_t capacity)
-    : d_buf(env, capacity)
-{ init(&d_buf); }
+inline jni_auto_monitor::jni_auto_monitor(JNIEnv * env, jobject object)
+    : d_env(env)
+    , d_object(object)
+{
+    assert(env && object);
+    if (0 != env->MonitorEnter(object))
+        throw jni_exception("can't enter monitor", false);
+}
 
-inline jstring jni_utf16_ostream::jstr() const
-{ return d_buf.jstr(); }
+inline jni_auto_monitor::~jni_auto_monitor()
+{
+    if (0 != d_env->MonitorExit(d_object))
+        throw jni_exception("can't exit monitor", false);
+}
 
 //==============================================================================
 //                       class jni_utf8_string_region
@@ -1193,6 +1202,8 @@ class jni_utf16_string_region : private non_copyable
 
         typedef const value_type * const_pointer;
 
+        typedef const_pointer const_iterator;
+
         //
         // DATA
         //
@@ -1223,6 +1234,10 @@ class jni_utf16_string_region : private non_copyable
         const_pointer str() const;
 
         const wchar_t * wstr() const;
+
+        const_iterator begin() const;
+
+        const_iterator end() const;
 };
 
 inline jni_utf16_string_region::jni_utf16_string_region(JNIEnv * env,
@@ -1230,7 +1245,9 @@ inline jni_utf16_string_region::jni_utf16_string_region(JNIEnv * env,
     : d_size(env->GetStringLength(str))
     , d_str(new char16_t[d_size + 1])
 {
+    assert(env && str);
     env->GetStringRegion(str, 0, d_size, reinterpret_cast<jchar *>(d_str));
+    JNI_EXCEPTION_CHECK(env);
     d_str[d_size] = u'\0';
 }
 
@@ -1239,6 +1256,7 @@ inline jni_utf16_string_region::~jni_utf16_string_region()
 
 inline jni_utf16_string_region::size_type jni_utf16_string_region::size() const
 { return d_size; }
+
 
 inline jni_utf16_string_region::const_pointer
        jni_utf16_string_region::str() const
@@ -1252,6 +1270,147 @@ inline const wchar_t * jni_utf16_string_region::wstr() const
     );
     return reinterpret_cast<wchar_t *>(d_str);
 }
+
+inline jni_utf16_string_region::const_iterator jni_utf16_string_region::begin() const
+{ return d_str; }
+
+inline jni_utf16_string_region::const_iterator jni_utf16_string_region::end() const
+{ return d_str + d_size; }
+
+//==============================================================================
+//                     class jni_utf16_output_streambuf
+//==============================================================================
+
+/** \cond internal */
+class jni_utf16_output_streambuf : public std::basic_streambuf<char16_t>,
+                                   private non_copyable
+{
+        //
+        // DATA
+        //
+
+        JNIEnv *              d_env;
+        std::vector<char16_t> d_buf;
+
+        //
+        // CONSTRUCTORS
+        //
+
+    public:
+
+        jni_utf16_output_streambuf(JNIEnv * env, size_t capacity);
+
+        //
+        // ACCESSORS
+        //
+
+    public:
+
+        jstring jstr() const;
+
+        JNIEnv * env();
+
+        //
+        // ANCESTOR CLASS: std::streambuf
+        //
+
+    private:
+
+        virtual int_type overflow(int_type ch);
+};
+
+inline JNIEnv * jni_utf16_output_streambuf::env()
+{ return d_env; }
+/** \endcond */
+
+//==============================================================================
+//                            class utf16_ostream
+//==============================================================================
+
+/**
+ * \brief Type name of an output stream which accepts 16-bit characters.
+ * \author Victor Schappert
+ * \since 20131103
+ */
+typedef std::basic_ostream<char16_t, std::char_traits<char16_t>> utf16_ostream;
+
+utf16_ostream& operator<<(utf16_ostream&, jstring) throw(std::bad_cast);
+
+utf16_ostream& operator<<(utf16_ostream&, const char *);
+
+utf16_ostream& operator<<(utf16_ostream&, const jni_utf16_string_region&);
+
+//==============================================================================
+//                          class jni_utf16_ostream
+//==============================================================================
+/**
+ * \brief Output stream for generating immutable Java strings.
+ * \author Victor Schappert
+ * \since 20130701 (Happy Canada Day!)
+ *
+ * The values inserted into this stream should be compatible with JNI's
+ * &quot;modified UTF-8&quot; format in order to ensure that the strings sent to
+ * the Java side are valid.
+ *
+ * \note
+ * If we are sending a lot of strings back to the Java side, it may be
+ * worthwhile to refactor all of the string code in jsdi to use
+ * <dfn>wchar_t</dfn>, <dfn>std::wstring</dfn>, and <dfn>std::wostream</dfn> in
+ * order to eliminate an unnecessary conversion between 16-bit wide characters
+ * and modified UTF-8.
+ */
+class jni_utf16_ostream : public utf16_ostream, private non_copyable
+{
+        //
+        // DATA
+        //
+
+        jni_utf16_output_streambuf d_buf;
+
+        //
+        // FRIENDSHIPS
+        //
+
+        friend jni_utf16_ostream& jsdi::operator<<(jni_utf16_ostream&, jstring);
+
+        //
+        // CONSTRUCTORS
+        //
+
+    public:
+
+        /**
+         * Constructs a new stream.
+         * \param env Valid pointer to the JNI environment
+         * \param capacity Suggested initial capacity of the stream (the more
+         * accurate this is, the less reallocation or overallocation will be
+         * done).
+         */
+        jni_utf16_ostream(JNIEnv * env, size_t capacity = 127);
+
+        //
+        // ACCESSORS
+        //
+
+    public:
+
+        /**
+         * \brief Returns a newly allocated <dfn>jstring</dfn> containing the
+         * contents of the stream.
+         * \return A JNI reference to an immutable Java string containing the
+         * contents of the stream.
+         */
+        jstring jstr() const;
+};
+
+inline jni_utf16_ostream::jni_utf16_ostream(JNIEnv * env, size_t capacity)
+    : d_buf(env, capacity)
+{ init(&d_buf); }
+
+inline jstring jni_utf16_ostream::jstr() const
+{ return d_buf.jstr(); }
+
+jni_utf16_ostream& operator<<(jni_utf16_ostream&, jstring);
 
 //==============================================================================
 //                         string utility functions

@@ -19,11 +19,11 @@
 #define NOMINMAX
 #endif
 
-#if _WIN32_WINNT < 0x0500
+#if _WIN32_WINNT < 0x0501
 #ifdef _WIN32_WINNT
 #undef _WIN32_WINNT
 #endif
-#define _WIN32_WINNT 0x0500 // Windows 2000 or higher
+#define _WIN32_WINNT 0x0501 // Windows XP or higher
 #endif
 
 #include <windows.h>

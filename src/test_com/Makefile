@@ -41,6 +41,8 @@ $(OBJDIR)/$(TARGET_A): $(IID_OBJECT) $(IMPL_OBJECT)
 	@echo $@
 	@ar rcs $@ $^
 
+# NOTE: To get midl to run properly, you may need to set up your VC environment
+#       See: http://stackoverflow.com/a/6476764/1911388
 $(GEN_HEADER) $(GEN_TLB_FILE) $(GEN_IID_FILE): $(IDL_FILE)
 	@echo $@
 	@midl $(IDL_FILE) //h $(GEN_HEADER) //tlb $(GEN_TLB_FILE) //iid $(GEN_IID_FILE)
