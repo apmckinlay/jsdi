@@ -209,6 +209,21 @@ jobject jni_make_date(JNIEnv * env, double com_date)
     return result;
 }
 
+double java_date_to_com_date(JNIEnv * env, jobject java_date)
+{
+    double result(0.0);
+    try
+    {
+        result = millis_since_jan1_1970_to_com_date(
+            env->CallNonvirtualLongMethod(
+                java_date, GLOBAL_REFS->java_util_Date(),
+                GLOBAL_REFS->java_util_Date__m_getTime()));
+    }
+    catch (const std::runtime_error& e)
+    { throw_com_exception(env, e.what()); }
+    return result;
+}
+
 jobject jni_make_comobject(JNIEnv * env, IUnknown * iunk)
 {
     assert(env && iunk);
@@ -316,12 +331,7 @@ VARIANT& jsuneido_to_com(JNIEnv * env, jobject in, VARIANT& out)
     else if (env->IsInstanceOf(in, GLOBAL_REFS->java_util_Date()))
     {
         V_VT(&out) = VT_DATE;
-        // TODO: need to catch possible std::runtime_error here and rethrow
-        //       properly
-        V_DATE(&out) = millis_since_jan1_1970_to_com_date(
-            env->CallNonvirtualLongMethod(
-                in, GLOBAL_REFS->java_util_Date(),
-                GLOBAL_REFS->java_util_Date__m_getTime()));
+        V_DATE(&out) = java_date_to_com_date(env, in);
     }
     else if (env->IsInstanceOf(
         in, GLOBAL_REFS->suneido_language_jsdi_com_COMobject()))
