@@ -57,7 +57,7 @@ com_managed_bstr jstr_to_bstr(jstring jstr, JNIEnv * env)
 {
     assert(jstr && env);
     jsize size(env->GetStringLength(jstr));
-    com_managed_bstr result(SysAllocStringLen(NULL, size));
+    com_managed_bstr result(SysAllocStringLen(nullptr, size));
     env->GetStringRegion(jstr, 0, size,
                          reinterpret_cast<jchar *>(result.get()));
     // GetStringRegion() raises a JNI exception if it fails
@@ -114,7 +114,7 @@ jobject jni_make_int64(JNIEnv * env, int64_t value)
 
 jobject jni_make_uint64(JNIEnv * env, uint64_t value)
 {
-    jobject result(0);
+    jobject result(nullptr);
     if (value <= static_cast<uint64_t>(std::numeric_limits<jlong>::max()))
     {
         result = env->NewObject(GLOBAL_REFS->java_lang_Long(),
@@ -224,7 +224,7 @@ jobject jni_make_comobject(JNIEnv * env, IUnknown * iunk)
     jobject result = env->NewObject(
         GLOBAL_REFS->suneido_language_jsdi_com_COMobject(),
         GLOBAL_REFS->suneido_language_jsdi_com_COMobject__init(),
-        static_cast<jstring>(NULL), static_cast<jlong>(0),
+        static_cast<jstring>(nullptr), static_cast<jlong>(0),
         reinterpret_cast<jlong>(iunk));
     JNI_EXCEPTION_CHECK(env);
     if (! result) throw jni_bad_alloc("NewObject", __FUNCTION__);
@@ -395,7 +395,7 @@ jobject com_to_jsuneido(JNIEnv * env, VARIANT& in)
     // * Please keep this code in sync with the jSuneido type system in the Java
     //   code.
     // -------------------------------------------------------------------------
-    jobject result(0);
+    jobject result(nullptr);
     //
     // Dereference the variant if necessary.
     //
@@ -570,10 +570,10 @@ void throw_invoke_fail(JNIEnv * env, HRESULT hresult, EXCEPINFO& excepinfo,
 IDispatch * com::query_for_dispatch(IUnknown * iunk)
 {
     ASSERT_IUNKNOWN(iunk);
-    IDispatch * idisp(0);
+    IDispatch * idisp(nullptr);
     HRESULT hresult = iunk->QueryInterface(IID_IDispatch,
                                            reinterpret_cast<void **>(&idisp));
-    return SUCCEEDED(hresult) ? idisp : 0;
+    return SUCCEEDED(hresult) ? idisp : nullptr;
 }
 
 jstring com::get_progid(IDispatch * idisp, JNIEnv * env)
@@ -582,17 +582,16 @@ jstring com::get_progid(IDispatch * idisp, JNIEnv * env)
     UINT count(0);
     if (SUCCEEDED(idisp->GetTypeInfoCount(&count)) && 0 < count)
     {
-        ITypeInfo * type_info_unmanaged(0);
+        ITypeInfo * type_info_unmanaged(nullptr);
         if (SUCCEEDED(idisp->GetTypeInfo(0, LOCALE_SYSTEM_DEFAULT,
                                          &type_info_unmanaged)) &&
             type_info_unmanaged)
         {
             com_managed_interface<ITypeInfo> type_info(type_info_unmanaged);
-            BSTR name_unmanaged(0);
+            BSTR name_unmanaged(nullptr);
             if (SUCCEEDED(type_info->GetDocumentation(MEMBERID_NIL,
-                                                      &name_unmanaged,
-                                                      NULL, NULL, NULL)) &&
-                name_unmanaged)
+                    &name_unmanaged,
+                    nullptr, nullptr, nullptr)) && name_unmanaged)
             {
                 static_assert(sizeof(OLECHAR) == sizeof(char16_t),
                               "character size mismatch");
@@ -601,7 +600,7 @@ jstring com::get_progid(IDispatch * idisp, JNIEnv * env)
             }
         }
     }
-    return static_cast<jstring>(NULL);
+    return static_cast<jstring>(nullptr);
 }
 
 bool com::create_from_progid(JNIEnv * env, jstring progid, IUnknown *& iunk,
@@ -612,11 +611,11 @@ bool com::create_from_progid(JNIEnv * env, jstring progid, IUnknown *& iunk,
     if (FAILED(CLSIDFromProgID(progid_bstr.get(), &clsid))) return false;
     // Try to get IDispatch first. Only if we don't get IDispatch will we try
     // to get IUnknown.
-    HRESULT hresult = CoCreateInstance(clsid, NULL, CLSCTX_SERVER,
+    HRESULT hresult = CoCreateInstance(clsid, nullptr, CLSCTX_SERVER,
                                        IID_IDispatch,
                                        reinterpret_cast<void **>(&idisp));
     if (SUCCEEDED(hresult) && idisp) return true;
-    hresult = CoCreateInstance(clsid, NULL, CLSCTX_SERVER, IID_IUnknown,
+    hresult = CoCreateInstance(clsid, nullptr, CLSCTX_SERVER, IID_IUnknown,
                                reinterpret_cast<void **>(&iunk));
     return SUCCEEDED(hresult) && iunk;
 }
@@ -643,16 +642,16 @@ jobject com::property_get(IDispatch * idisp, DISPID dispid, JNIEnv * env)
     throw (jni_exception)
 {
     ASSERT_IDISPATCH(idisp);
-    DISPPARAMS args = { NULL, NULL, 0, 0 };
+    DISPPARAMS args = { nullptr, nullptr, 0, 0 };
     VARIANT result;
     EXCEPINFO excepinfo;
     HRESULT hresult = idisp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT,
                                     DISPATCH_PROPERTYGET, &args, &result,
-                                    &excepinfo, NULL);
+                                    &excepinfo, nullptr);
     com_managed_variant managed_result(&result);
     if (FAILED(hresult))
     {
-        throw_invoke_fail(env, hresult, excepinfo, NULL, "property get");
+        throw_invoke_fail(env, hresult, excepinfo, nullptr, "property get");
     }
     return com_to_jsuneido(env, result);
 }
@@ -668,11 +667,11 @@ void com::property_put(IDispatch * idisp, DISPID dispid, JNIEnv * env,
     // The reason we don't need a managed pointer for 'input' is that it is
     // callee's responsibility to free it.
     HRESULT hresult = idisp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT,
-                                    DISPATCH_PROPERTYPUT, &args, NULL,
-                                    &excepinfo, NULL);
+                                    DISPATCH_PROPERTYPUT, &args, nullptr,
+                                    &excepinfo, nullptr);
     if (FAILED(hresult))
     {
-        throw_invoke_fail(env, hresult, excepinfo, NULL, "property put");
+        throw_invoke_fail(env, hresult, excepinfo, nullptr, "property put");
     }
 }
 
@@ -681,7 +680,7 @@ jobject com::call_method(IDispatch * idisp, DISPID dispid, JNIEnv * env,
 {
     ASSERT_IDISPATCH(idisp);
     const jsize num_args(env->GetArrayLength(args));
-    DISPPARAMS com_args = { NULL, NULL, static_cast<UINT>(num_args), 0 };
+    DISPPARAMS com_args = { nullptr, nullptr, static_cast<UINT>(num_args), 0 };
     std::vector<VARIANT> var_args(com_args.cArgs);
     std::vector<VARIANT>::reverse_iterator i = var_args.rbegin(),
                                            e = var_args.rend();
@@ -706,13 +705,14 @@ jobject com::call_method(IDispatch * idisp, DISPID dispid, JNIEnv * env,
     com_args.rgvarg = var_args.data();
     VARIANT result;
     EXCEPINFO excepinfo;
+    UINT arg_error(0);
     HRESULT hresult = idisp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT,
                                     DISPATCH_METHOD, &com_args, &result,
-                                    &excepinfo, NULL);
+                                    &excepinfo, &arg_error);
     com_managed_variant managed_result(&result);
     if (FAILED(hresult))
     {
-        throw_invoke_fail(env, hresult, excepinfo, NULL, "call");
+        throw_invoke_fail(env, hresult, excepinfo, &arg_error, "call");
     }
     return com_to_jsuneido(env, result); // com_to_jsuneido() will clear result.
 }

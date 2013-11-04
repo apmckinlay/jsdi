@@ -112,7 +112,8 @@ class marshalling_vi_container : private non_copyable
         void replace_byte_array(size_t pos, jobject new_object);
 };
 
-constexpr marshalling_vi_container::tuple NULL_TUPLE = { 0, 0, 0, JNI_FALSE };
+constexpr marshalling_vi_container::tuple NULL_TUPLE = { nullptr, nullptr,
+                                                         nullptr, JNI_FALSE };
     // On gcc 4.6.2 (MinGW), you can't declare this inside the definition of
     // marshalling_vi_container or the compiler complains.
 
