@@ -167,7 +167,7 @@ ITypeLib * load_type_lib()
     // defined as wchar_t, so we can do the following.
     wcsncat(module_name, L"\\9999", array_length(module_name));
     // Load type library resource 1 from the module
-    ITypeLib * result(0);
+    ITypeLib * result(nullptr);
     HRESULT hresult = LoadTypeLibEx(module_name, REGKIND_NONE, &result);
     if (FAILED(hresult))
     {
@@ -180,7 +180,7 @@ ITypeLib * load_type_lib()
 
 ITypeInfo * load_type_info()
 {
-    ITypeInfo * result(0);
+    ITypeInfo * result(nullptr);
     com_managed_interface<ITypeLib> type_lib(load_type_lib());
     HRESULT hresult = type_lib->GetTypeInfoOfGuid(IID_ITestJSDICom, &result);
     if (FAILED(hresult))
@@ -224,7 +224,7 @@ HRESULT __stdcall TestJSDIComImpl::QueryInterface(REFIID riid, void ** ppv)
         *ppv = static_cast<ITestJSDICom *>(this);
     else
     {
-        *ppv = NULL;
+        *ppv = nullptr;
         return E_NOINTERFACE;
     }
     AddRef();
