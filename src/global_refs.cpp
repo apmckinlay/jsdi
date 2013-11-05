@@ -148,7 +148,7 @@ void global_refs::init(JNIEnv * env) throw(jni_exception)
 
     global_refs * g = &global_refs_;
 
-    // [BEGIN:GENERATED CODE last updated Sat Nov 02 18:54:08 PDT 2013]
+    // [BEGIN:GENERATED CODE last updated Mon Nov 04 22:46:09 PST 2013]
     g->java_lang_Object_ = get_global_class_ref(env, "java/lang/Object");
     g->java_lang_Object__m_toString_ = get_method_id(env, g->java_lang_Object_, "toString", "()Ljava/lang/String;");
     g->java_lang_Boolean_ = get_global_class_ref(env, "java/lang/Boolean");
@@ -180,10 +180,10 @@ void global_refs::init(JNIEnv * env) throw(jni_exception)
     g->suneido_language_jsdi_type_Callback__m_invoke_ = get_method_id(env, g->suneido_language_jsdi_type_Callback_, "invoke", "(Lsuneido/SuValue;[B)I");
     g->suneido_language_jsdi_type_Callback__m_invokeVariableIndirect_ = get_method_id(env, g->suneido_language_jsdi_type_Callback_, "invokeVariableIndirect", "(Lsuneido/SuValue;[B[Ljava/lang/Object;)I");
     g->suneido_language_jsdi_com_COMobject_ = get_global_class_ref(env, "suneido/language/jsdi/com/COMobject");
-    g->suneido_language_jsdi_com_COMobject__init_ = get_method_id(env, g->suneido_language_jsdi_com_COMobject_, "<init>", "(Ljava/lang/String;JJ)V");
+    g->suneido_language_jsdi_com_COMobject__init_ = get_method_id(env, g->suneido_language_jsdi_com_COMobject_, "<init>", "(Ljava/lang/String;JZ)V");
+    g->suneido_language_jsdi_com_COMobject__m_isDispatch_ = get_method_id(env, g->suneido_language_jsdi_com_COMobject_, "isDispatch", "()Z");
     g->suneido_language_jsdi_com_COMobject__m_verifyNotReleased_ = get_method_id(env, g->suneido_language_jsdi_com_COMobject_, "verifyNotReleased", "()V");
-    g->suneido_language_jsdi_com_COMobject__f_ptrToIUnknown_ = get_field_id(env, g->suneido_language_jsdi_com_COMobject_, "ptrToIUnknown", "J");
-    g->suneido_language_jsdi_com_COMobject__f_ptrToIDispatch_ = get_field_id(env, g->suneido_language_jsdi_com_COMobject_, "ptrToIDispatch", "J");
+    g->suneido_language_jsdi_com_COMobject__f_ptr_ = get_field_id(env, g->suneido_language_jsdi_com_COMobject_, "ptr", "J");
     g->suneido_language_jsdi_com_COMException_ = get_global_class_ref(env, "suneido/language/jsdi/com/COMException");
     g->suneido_language_jsdi_com_COMException__init_ = get_method_id(env, g->suneido_language_jsdi_com_COMException_, "<init>", "(Ljava/lang/String;)V");
     g->suneido_language_Numbers_ = get_global_class_ref(env, "suneido/language/Numbers");

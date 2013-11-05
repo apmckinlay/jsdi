@@ -240,8 +240,8 @@ jobject jni_make_comobject(JNIEnv * env, IUnknown * iunk)
     jobject result = env->NewObject(
         GLOBAL_REFS->suneido_language_jsdi_com_COMobject(),
         GLOBAL_REFS->suneido_language_jsdi_com_COMobject__init(),
-        static_cast<jstring>(nullptr), static_cast<jlong>(0),
-        reinterpret_cast<jlong>(iunk));
+        static_cast<jstring>(nullptr), reinterpret_cast<jlong>(iunk),
+        JNI_FALSE);
     JNI_EXCEPTION_CHECK(env);
     if (! result) throw jni_bad_alloc("NewObject", __FUNCTION__);
     managed_iunk.release(); // Everything worked so don't reduce ref count
@@ -260,7 +260,7 @@ jobject jni_make_comobject(JNIEnv * env, IDispatch * idisp)
         GLOBAL_REFS->suneido_language_jsdi_com_COMobject(),
         GLOBAL_REFS->suneido_language_jsdi_com_COMobject__init(),
         static_cast<jstring>(progid), reinterpret_cast<jlong>(idisp),
-        static_cast<jlong>(0));
+        JNI_TRUE);
     JNI_EXCEPTION_CHECK(env);
     if (! result) throw jni_bad_alloc("NewObject", __FUNCTION__);
     managed_idisp.release(); // Everything worked so don't reduce ref count
@@ -360,12 +360,14 @@ VARIANT& jsuneido_to_com(JNIEnv * env, jobject in, VARIANT& out)
             GLOBAL_REFS
                 ->suneido_language_jsdi_com_COMobject__m_verifyNotReleased());
         JNI_EXCEPTION_CHECK(env); // Will throw if verifyNotReleased() fails
-        jlong ptr =
-            env->GetLongField(
-                in,
-                GLOBAL_REFS
-                    ->suneido_language_jsdi_com_COMobject__f_ptrToIDispatch());
-        if (ptr)
+        jlong ptr = env->GetLongField(
+            in, GLOBAL_REFS->suneido_language_jsdi_com_COMobject__f_ptr());
+        jboolean is_disp = env->CallNonvirtualBooleanMethod(
+            in,
+            GLOBAL_REFS->suneido_language_jsdi_com_COMobject(),
+            GLOBAL_REFS->suneido_language_jsdi_com_COMobject__m_isDispatch());
+        assert(ptr || !"COMobject cannot contain a NULL pointer");
+        if (is_disp)
         {
             V_VT(&out) = VT_DISPATCH;
             V_DISPATCH(&out) = reinterpret_cast<IDispatch *>(ptr);
@@ -373,11 +375,6 @@ VARIANT& jsuneido_to_com(JNIEnv * env, jobject in, VARIANT& out)
         }
         else
         {
-            ptr = env->GetLongField(
-                in,
-                GLOBAL_REFS
-                    ->suneido_language_jsdi_com_COMobject__f_ptrToIUnknown());
-            ASSERT_IUNKNOWN(ptr);
             V_VT(&out) = VT_UNKNOWN;
             V_UNKNOWN(&out) = reinterpret_cast<IUnknown *>(ptr);
             V_UNKNOWN(&out)->AddRef(); // Convention is callee Release
