@@ -32,10 +32,21 @@ jni_utf16_output_streambuf::jni_utf16_output_streambuf(JNIEnv * env,
 jstring jni_utf16_output_streambuf::jstr() const
 {
     jstring result = d_env->NewString(reinterpret_cast<jchar *>(pbase()),
-                                      pptr() - pbase());
+                                      size());
     JNI_EXCEPTION_CHECK(d_env);
     if (! result) throw jni_bad_alloc("NewString", __FUNCTION__);
     return result;
+}
+
+void jni_utf16_output_streambuf::expand(size_t min_capacity)
+{
+    auto new_size = smallest_pow2(min_capacity);
+    auto old_size = d_buf.size();
+    if (new_size < old_size || d_buf.max_size() < new_size)
+        throw std::length_error("buffer overflow");
+    d_buf.resize(new_size);
+    char_type * base = &d_buf.front();
+    setp(base + old_size, base + new_size);
 }
 
 jni_utf16_output_streambuf::int_type jni_utf16_output_streambuf::overflow(
@@ -43,16 +54,27 @@ jni_utf16_output_streambuf::int_type jni_utf16_output_streambuf::overflow(
 {
     if (traits_type::eof() != ch)
     {
-        assert(epptr() <= pptr());
-        size_t size = d_buf.size();
-        d_buf.resize(2 * size);
-        char16_t * base = &d_buf.front();
-        setp(base + size, base + d_buf.size());
+        expand(d_buf.size() + 1);
         *pptr() = traits_type::to_char_type(ch);
         pbump(1);
     }
     return ch;
 }
+
+std::streamsize jni_utf16_output_streambuf::xsputn(const char16_t * s,
+                                                   std::streamsize count)
+{
+    assert(0 < count || !"count cannot be negative");
+    size_t capacity = d_buf.size();
+    size_t used = size();
+    size_t free_space = capacity - used;
+    if (free_space < static_cast<size_t>(count))
+        expand(used + static_cast<size_t>(count) /* minimum capacity */);
+    std::copy(s, s + count, pptr());
+    pbump(count);
+    return count;
+}
+
 
 //==============================================================================
 //                            class utf16_ostream
@@ -66,22 +88,26 @@ utf16_ostream& operator<<(utf16_ostream& o, jstring jstr) throw(std::bad_cast)
 
 utf16_ostream& operator<<(utf16_ostream& o, const char * str)
 {
-    if (! str) o << reinterpret_cast<void *>(0);
-    else do
+    utf16_ostream::sentry sentry(o);
+    if (sentry)
     {
-        const char c = *str;
-        if (! c) break;
-        o << static_cast<char16_t>(c);
-        ++str;
+        if (! str) o << reinterpret_cast<void *>(0);
+        else do
+        {
+            const char c = *str;
+            if (! c) break;
+            o.put(o.widen(c));
+            ++str;
+        }
+        while (true);
     }
-    while (true);
     return o;
 }
 
 utf16_ostream& operator<<(utf16_ostream& o, const jni_utf16_string_region& str)
 {
-    jni_utf16_string_region::const_iterator i = str.begin(), e = str.end();
-    for (; i != e; ++i) o << *i;
+    utf16_ostream::sentry sentry(o);
+    if (sentry) o.write(str.str(), str.size());
     return o;
 }
 
