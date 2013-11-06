@@ -1316,11 +1316,20 @@ class jni_utf16_output_streambuf : public std::basic_streambuf<char16_t>,
 
     private:
 
-        virtual int_type overflow(int_type ch);
+        std::streamsize size() const;
+
+        void expand(size_t);
+
+        virtual int_type overflow(int_type);
+
+        virtual std::streamsize xsputn(const char16_t *, std::streamsize);
 };
 
 inline JNIEnv * jni_utf16_output_streambuf::env()
 { return d_env; }
+
+inline std::streamsize jni_utf16_output_streambuf::size() const
+{ return pptr() - pbase(); }
 /** \endcond */
 
 //==============================================================================
@@ -1404,7 +1413,8 @@ class jni_utf16_ostream : public utf16_ostream, private non_copyable
 };
 
 inline jni_utf16_ostream::jni_utf16_ostream(JNIEnv * env, size_t capacity)
-    : d_buf(env, capacity)
+    : basic_ostream(nullptr)
+    , d_buf(env, capacity)
 { init(&d_buf); }
 
 inline jstring jni_utf16_ostream::jstr() const

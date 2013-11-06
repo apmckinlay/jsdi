@@ -13,9 +13,11 @@
 #define __INCLUDED_UTIL_H__
 
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 #include <iosfwd>
 #include <typeinfo>
+#include <type_traits>
 
 namespace jsdi {
 
@@ -103,6 +105,44 @@ void operator<<(
     typedef std::basic_ostringstream<CharT, Traits> stream_type;
     stream_type& s(dynamic_cast<stream_type&>(o)); // may throw std::bad_cast
     t.throw_(s.str());
+}
+
+/** \cond internal */
+template <typename IntType>
+void or_and_shift_remainder(IntType&);
+
+template <>
+inline void or_and_shift_remainder(uint8_t&) { }
+
+template <>
+inline void or_and_shift_remainder(uint16_t& x) { x |= x >> 010; }
+
+template <>
+inline void or_and_shift_remainder(uint32_t& x)
+{
+    x |= x >> 010;
+    x |= x >> 020;
+}
+/** \endcond */
+
+/**
+ *
+ *
+ * Inspiration: http://stackoverflow.com/a/1322548/1911388
+ */
+template <typename IntType>
+inline IntType smallest_pow2(IntType x)
+{
+    static_assert(std::is_integral<IntType>::value,
+                  "only unsigned integers allowed");
+    static_assert(std::is_unsigned<IntType>::value,
+                  "only unsigned integers allowed");
+    --x;
+    x |= x >> 001;
+    x |= x >> 002;
+    x |= x >> 004;
+    or_and_shift_remainder(x);
+    return x + 1;
 }
 
 } // namespace jsdi

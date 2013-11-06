@@ -19,7 +19,9 @@
 #include <cassert>
 #include <limits>
 #include <stdexcept>
-#include <type_traits>
+#include <type_traits>  // TODO: is this needed? who is using it?
+
+#include <iostream> // TODO: delete me
 
 namespace jsdi {
 
@@ -521,7 +523,19 @@ void append_excepinfo(jni_utf16_ostream& o, EXCEPINFO& excepinfo)
 }
 
 void append_param(jni_utf16_ostream& o, const UINT * pu_arg_error)
-{ if (pu_arg_error) o << u" (at param " << *pu_arg_error << u')'; }
+{
+//    if (pu_arg_error) o << u" (at param " << *pu_arg_error << u')';
+    if (pu_arg_error)
+    {
+        std::ostringstream o2;
+        o << u" (at ";
+        o << u'a' << u"0000 ";
+        std::cout << "aaaaaa " << o.bad() << " TODO: deleteme" << std::endl; // TODO: delete me
+        o << (int)*pu_arg_error;
+        std::cout << "aaaaaa " << o.bad() << " TODO: deleteme" << std::endl; // TODO: delete me
+        o << u')';
+    }
+}
 
 void throw_invoke_fail(JNIEnv * env, HRESULT hresult, EXCEPINFO& excepinfo,
                        const UINT * pu_arg_error, const char * action)
