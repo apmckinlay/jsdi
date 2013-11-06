@@ -19,9 +19,6 @@
 #include <cassert>
 #include <limits>
 #include <stdexcept>
-#include <type_traits>  // TODO: is this needed? who is using it?
-
-#include <iostream> // TODO: delete me
 
 namespace jsdi {
 
@@ -43,6 +40,37 @@ constexpr int64_t _100_NANO_INTERVALS_FROM_JAN1_1601_TO_JAN1_1970 =
     116444736000000000LL; // see here: http://support.microsoft.com/kb/167296
 constexpr int64_t _100_NANO_INTERVALS_PER_MILLISECOND = 10000;
 
+std::u16string temp_convert_string(const std::string& s)
+{
+    // TODO: Remove this function once it is safe to remove the temp_to_string
+    //       functions below.
+    std::u16string t(s.size(), std::char_traits<char16_t>::eof());
+    std::string::const_iterator i = s.begin(), e = s.end();
+    std::u16string::iterator j = t.begin();
+    for (; i != e; ++i, ++j) *j = static_cast<char16_t>(*i);
+    return t;
+}
+
+template <typename NumberType>
+std::u16string temp_to_string(const NumberType& n)
+{
+    // This is a temporary workaround to the present inability to insert
+    // integers into basic_ostream's based no char16_t because the std library
+    // isn't fully implemented.
+    //
+    // TODO: Remove this function once GCC and MinGW finally get some more
+    //       support for char16_t -- for example, when they support char16_t-
+    //       based locale facets -- or even when std::to_string() is actually
+    //       available. We don't even have std::to_string() in GCC 4.8.1 with
+    //       MinGW, because of the _GLIBCXX_HAVE_BROKEN_VSWPRINTF guard in
+    //       basic_string.h.
+    // SEE:  http://stackoverflow.com/q/19784588/1911388
+    //       http://stackoverflow.com/q/12975341/1911388
+    static_assert(std::is_arithmetic<NumberType>::value, "use only on numbers");
+    std::ostringstream o;
+    o << n;
+    return temp_convert_string(o.str());
+}
 
 jstring bstr_to_jstr(BSTR bstr, JNIEnv * env)
 {
@@ -127,7 +155,7 @@ jobject jni_make_uint64(JNIEnv * env, uint64_t value)
     else
     {
         jni_utf16_ostream o(env);
-        o << value;
+        o << temp_to_string(value);
         jni_auto_local<jstring> str_value(env, o.jstr());
         result = env->NewObject(GLOBAL_REFS->java_math_BigDecimal(),
                                 GLOBAL_REFS->java_math_BigDecimal__init1(),
@@ -510,7 +538,7 @@ void append_excepinfo(jni_utf16_ostream& o, EXCEPINFO& excepinfo)
         o << excepinfo.bstrDescription << u", ";
         SysFreeString(excepinfo.bstrDescription);
     }
-    o << u" code: " << excepinfo.wCode;
+    o << u" code: " << temp_to_string(excepinfo.wCode);
     if (excepinfo.bstrSource)
     {
         o << u", source: " << excepinfo.bstrSource;
@@ -524,17 +552,8 @@ void append_excepinfo(jni_utf16_ostream& o, EXCEPINFO& excepinfo)
 
 void append_param(jni_utf16_ostream& o, const UINT * pu_arg_error)
 {
-//    if (pu_arg_error) o << u" (at param " << *pu_arg_error << u')';
     if (pu_arg_error)
-    {
-        std::ostringstream o2;
-        o << u" (at ";
-        o << u'a' << u"0000 ";
-        std::cout << "aaaaaa " << o.bad() << " TODO: deleteme" << std::endl; // TODO: delete me
-        o << (int)*pu_arg_error;
-        std::cout << "aaaaaa " << o.bad() << " TODO: deleteme" << std::endl; // TODO: delete me
-        o << u')';
-    }
+        o << u" (at param " << temp_to_string(*pu_arg_error) << u')';
 }
 
 void throw_invoke_fail(JNIEnv * env, HRESULT hresult, EXCEPINFO& excepinfo,
