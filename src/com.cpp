@@ -39,6 +39,7 @@ static_assert(sizeof(std::remove_pointer<BSTR>::type) == sizeof(jchar),
 constexpr int64_t _100_NANO_INTERVALS_FROM_JAN1_1601_TO_JAN1_1970 =
     116444736000000000LL; // see here: http://support.microsoft.com/kb/167296
 constexpr int64_t _100_NANO_INTERVALS_PER_MILLISECOND = 10000;
+constexpr UINT INVALID_PARAM_INDEX = std::numeric_limits<UINT>::max();
 
 std::u16string temp_convert_string(const std::string& s)
 {
@@ -315,21 +316,24 @@ VARIANT& jsuneido_to_com(JNIEnv * env, jobject in, VARIANT& out)
             env->CallStaticObjectMethod(
                 GLOBAL_REFS->suneido_language_Numbers(),
                 GLOBAL_REFS->suneido_language_Numbers__m_narrow(), in));
-        if (env->IsInstanceOf(in, GLOBAL_REFS->java_lang_Integer()))
+        if (env->IsInstanceOf(static_cast<jobject>(number),
+                              GLOBAL_REFS->java_lang_Integer()))
         {
             V_VT(&out) = VT_I4;
             V_I4(&out) = env->CallNonvirtualIntMethod(
                 in, GLOBAL_REFS->java_lang_Integer(),
                 GLOBAL_REFS->java_lang_Integer__m_intValue());
         }
-        else if (env->IsInstanceOf(in, GLOBAL_REFS->java_lang_Long()))
+        else if (env->IsInstanceOf(static_cast<jobject>(number),
+                                   GLOBAL_REFS->java_lang_Long()))
         {
             V_VT(&out) = VT_I8;
             V_I8(&out) = env->CallNonvirtualLongMethod(
                 in, GLOBAL_REFS->java_lang_Long(),
                 GLOBAL_REFS->java_lang_Long__m_longValue());
         }
-        else if (env->IsInstanceOf(in, GLOBAL_REFS->java_math_BigDecimal()))
+        else if (env->IsInstanceOf(static_cast<jobject>(number),
+                                   GLOBAL_REFS->java_math_BigDecimal()))
         {
             V_VT(&out) = VT_R8;
             V_R8(&out) = env->CallNonvirtualDoubleMethod(
@@ -412,7 +416,7 @@ VARIANT& jsuneido_to_com(JNIEnv * env, jobject in, VARIANT& out)
     }
     else
     {
-        throw_com_exception(env, "can't convert", in);
+        throw_com_exception(env, "can't convert jSuneido value to COM", in);
     }
     //
     // Throw if any part of the conversion process raised a Java exception.
@@ -516,7 +520,7 @@ jobject com_to_jsuneido(JNIEnv * env, VARIANT& in)
                 ;
             break;
         default:
-            throw_com_exception(env, "can't convert to jSuneido value");
+            throw_com_exception(env, "can't convert COM value to jSuneido");
             break;
     }
     //
@@ -553,7 +557,14 @@ void append_excepinfo(jni_utf16_ostream& o, EXCEPINFO& excepinfo)
 void append_param(jni_utf16_ostream& o, const UINT * pu_arg_error)
 {
     if (pu_arg_error)
-        o << u" (at param " << temp_to_string(*pu_arg_error) << u')';
+    {
+        o << u" (at param ";
+        if (INVALID_PARAM_INDEX != *pu_arg_error)
+            o << temp_to_string(*pu_arg_error);
+        else
+            o << u'?';
+        o << u')';
+    }
 }
 
 void throw_invoke_fail(JNIEnv * env, HRESULT hresult, EXCEPINFO& excepinfo,
@@ -689,12 +700,12 @@ jobject com::property_get(IDispatch * idisp, DISPID dispid, JNIEnv * env)
     HRESULT hresult = idisp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT,
                                     DISPATCH_PROPERTYGET, &args, &result,
                                     &excepinfo, nullptr);
-    com_managed_variant managed_result(&result);
     if (FAILED(hresult))
     {
         throw_invoke_fail(env, hresult, excepinfo, nullptr, "property get");
     }
-    return com_to_jsuneido(env, result);
+    com_managed_variant managed_result(&result);
+    return com_to_jsuneido(env, result); // this will clear result
 }
 
 void com::property_put(IDispatch * idisp, DISPID dispid, JNIEnv * env,
@@ -746,11 +757,12 @@ jobject com::call_method(IDispatch * idisp, DISPID dispid, JNIEnv * env,
     com_args.rgvarg = var_args.data();
     VARIANT result;
     EXCEPINFO excepinfo;
-    UINT arg_error(0);
+    UINT arg_error(INVALID_PARAM_INDEX);
+    VariantInit(&result);
+    com_managed_variant managed_result(&result);
     HRESULT hresult = idisp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT,
                                     DISPATCH_METHOD, &com_args, &result,
                                     &excepinfo, &arg_error);
-    com_managed_variant managed_result(&result);
     if (FAILED(hresult))
     {
         throw_invoke_fail(env, hresult, excepinfo, &arg_error, "call");
