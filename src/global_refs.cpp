@@ -148,7 +148,7 @@ void global_refs::init(JNIEnv * env) throw(jni_exception)
 
     global_refs * g = &global_refs_;
 
-    // [BEGIN:GENERATED CODE last updated Mon Nov 04 22:46:09 PST 2013]
+    // [BEGIN:GENERATED CODE last updated Thu Nov 07 21:37:54 PST 2013]
     g->java_lang_Object_ = get_global_class_ref(env, "java/lang/Object");
     g->java_lang_Object__m_toString_ = get_method_id(env, g->java_lang_Object_, "toString", "()Ljava/lang/String;");
     g->java_lang_Boolean_ = get_global_class_ref(env, "java/lang/Boolean");
@@ -164,7 +164,6 @@ void global_refs::init(JNIEnv * env) throw(jni_exception)
     g->java_lang_Long__m_longValue_ = get_method_id(env, g->java_lang_Long_, "longValue", "()J");
     g->java_math_BigDecimal_ = get_global_class_ref(env, "java/math/BigDecimal");
     g->java_math_BigDecimal__init_ = get_method_id(env, g->java_math_BigDecimal_, "<init>", "(DLjava/math/MathContext;)V");
-    g->java_math_BigDecimal__init1_ = get_method_id(env, g->java_math_BigDecimal_, "<init>", "(Ljava/lang/String;Ljava/math/MathContext;)V");
     g->java_math_BigDecimal__m_doubleValue_ = get_method_id(env, g->java_math_BigDecimal_, "doubleValue", "()D");
     g->java_lang_CharSequence_ = get_global_class_ref(env, "java/lang/CharSequence");
     g->java_lang_Enum_ = get_global_class_ref(env, "java/lang/Enum");
