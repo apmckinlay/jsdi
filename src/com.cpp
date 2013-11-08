@@ -144,30 +144,6 @@ jobject jni_make_int64(JNIEnv * env, int64_t value)
     return result;
 }
 
-jobject jni_make_uint64(JNIEnv * env, uint64_t value)
-{
-    jobject result(nullptr);
-    if (value <= static_cast<uint64_t>(std::numeric_limits<jlong>::max()))
-    {
-        result = env->NewObject(GLOBAL_REFS->java_lang_Long(),
-                                GLOBAL_REFS->java_lang_Long__init(),
-                                static_cast<jlong>(value));
-    }
-    else
-    {
-        jni_utf16_ostream o(env);
-        o << temp_to_string(value);
-        jni_auto_local<jstring> str_value(env, o.jstr());
-        result = env->NewObject(GLOBAL_REFS->java_math_BigDecimal(),
-                                GLOBAL_REFS->java_math_BigDecimal__init1(),
-                                static_cast<jstring>(str_value),
-                                GLOBAL_REFS->suneido_language_Numbers__f_MC());
-    }
-    JNI_EXCEPTION_CHECK(env);
-    if (! result) jni_bad_alloc("NewObject", __FUNCTION__);
-    return result;
-}
-
 jobject jni_make_bigdecimal(JNIEnv * env, double value)
 {
     jobject result(
@@ -489,9 +465,6 @@ jobject com_to_jsuneido(JNIEnv * env, VARIANT& in)
             break;
         case VT_UI4:
             result = jni_make_int64(env, static_cast<int64_t>(V_UI4(value)));
-            break;
-        case VT_UI8:
-            result = jni_make_uint64(env, static_cast<uint64_t>(V_UI8(value)));
             break;
         case VT_R4:
             result = jni_make_bigdecimal(env, static_cast<double>(V_R4(value)));
