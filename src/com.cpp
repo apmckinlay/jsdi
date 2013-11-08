@@ -321,7 +321,7 @@ VARIANT& jsuneido_to_com(JNIEnv * env, jobject in, VARIANT& out)
         {
             V_VT(&out) = VT_I4;
             V_I4(&out) = env->CallNonvirtualIntMethod(
-                in, GLOBAL_REFS->java_lang_Integer(),
+                static_cast<jobject>(number), GLOBAL_REFS->java_lang_Integer(),
                 GLOBAL_REFS->java_lang_Integer__m_intValue());
         }
         else if (env->IsInstanceOf(static_cast<jobject>(number),
@@ -329,7 +329,7 @@ VARIANT& jsuneido_to_com(JNIEnv * env, jobject in, VARIANT& out)
         {
             V_VT(&out) = VT_I8;
             V_I8(&out) = env->CallNonvirtualLongMethod(
-                in, GLOBAL_REFS->java_lang_Long(),
+                static_cast<jobject>(number), GLOBAL_REFS->java_lang_Long(),
                 GLOBAL_REFS->java_lang_Long__m_longValue());
         }
         else if (env->IsInstanceOf(static_cast<jobject>(number),
@@ -337,7 +337,8 @@ VARIANT& jsuneido_to_com(JNIEnv * env, jobject in, VARIANT& out)
         {
             V_VT(&out) = VT_R8;
             V_R8(&out) = env->CallNonvirtualDoubleMethod(
-                in, GLOBAL_REFS->java_math_BigDecimal(),
+                static_cast<jobject>(number),
+                GLOBAL_REFS->java_math_BigDecimal(),
                 GLOBAL_REFS->java_math_BigDecimal__m_doubleValue());
         }
         else
