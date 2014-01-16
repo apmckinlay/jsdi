@@ -25,7 +25,7 @@ jni_utf16_output_streambuf::jni_utf16_output_streambuf(JNIEnv * env,
     , d_buf(capacity)
 {
     assert(0 < capacity || !"Initial capacity must be more than zero");
-    char16_t * base = &d_buf.front();
+    char_type * base = &d_buf.front();
     setp(base, base + d_buf.size());
 }
 
@@ -46,7 +46,8 @@ void jni_utf16_output_streambuf::expand(size_t min_capacity)
         throw std::length_error("buffer overflow");
     d_buf.resize(new_size);
     char_type * base = &d_buf.front();
-    setp(base + old_size, base + new_size);
+    setp(base, base + new_size);
+    pbump(old_size);
 }
 
 jni_utf16_output_streambuf::int_type jni_utf16_output_streambuf::overflow(
@@ -91,15 +92,19 @@ utf16_ostream& operator<<(utf16_ostream& o, const char * str)
     utf16_ostream::sentry sentry(o);
     if (sentry)
     {
-        if (! str) o << reinterpret_cast<void *>(0);
-        else do
+        if (! str) o << "0x00000000"; // inserting numbers fails right now
+        else
         {
-            const char c = *str;
-            if (! c) break;
-            o.put(o.widen(c));
-            ++str;
+            utf16_streambuf * buf(o.rdbuf());
+            if (buf) do
+            {
+                const char c = *str;
+                if (! c) break;
+                buf->sputc(static_cast<char16_t>(c)); // should use widen() but
+                ++str;                                // no facets for char16_t
+            }
+            while (true);
         }
-        while (true);
     }
     return o;
 }
