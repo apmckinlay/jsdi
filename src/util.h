@@ -126,7 +126,13 @@ inline void or_and_shift_remainder(uint32_t& x)
 /** \endcond */
 
 /**
- *
+ * \brief Determines the smallest power of two that is greater than or equal to
+ *        a given number of unsigned integer type, if it can be represented.
+ * \param x A number of unsigned integer type
+ * \return The smallest power of two which is greater than or equal to \dfn x
+ *         and can be represented by the type of x. If there is no such number,
+ *         the return value is 0.
+ * \since 20131105
  *
  * Inspiration: http://stackoverflow.com/a/1322548/1911388
  */
