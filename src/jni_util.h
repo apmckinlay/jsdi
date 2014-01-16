@@ -1278,12 +1278,22 @@ inline jni_utf16_string_region::const_iterator jni_utf16_string_region::end() co
 { return d_str + d_size; }
 
 //==============================================================================
+//                          typedef utf16_streambuf
+//==============================================================================
+
+/**
+ * \brief Type name of a stream buffer which accepts 16-bit characters.
+ * \author Victor Schappert
+ * \since 20140115
+ */
+typedef std::basic_streambuf<char16_t> utf16_streambuf;
+
+//==============================================================================
 //                     class jni_utf16_output_streambuf
 //==============================================================================
 
 /** \cond internal */
-class jni_utf16_output_streambuf : public std::basic_streambuf<char16_t>,
-                                   private non_copyable
+class jni_utf16_output_streambuf : public utf16_streambuf, private non_copyable
 {
         //
         // DATA
@@ -1333,7 +1343,7 @@ inline std::streamsize jni_utf16_output_streambuf::size() const
 /** \endcond */
 
 //==============================================================================
-//                            class utf16_ostream
+//                           typedef utf16_ostream
 //==============================================================================
 
 /**
@@ -1348,6 +1358,9 @@ utf16_ostream& operator<<(utf16_ostream&, jstring) throw(std::bad_cast);
 utf16_ostream& operator<<(utf16_ostream&, const char *);
 
 utf16_ostream& operator<<(utf16_ostream&, const jni_utf16_string_region&);
+
+inline utf16_ostream& operator<<(utf16_ostream& o, const wchar_t * str)
+{ return o << reinterpret_cast<const char16_t *>(str); }
 
 //==============================================================================
 //                          class jni_utf16_ostream
