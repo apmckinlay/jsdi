@@ -642,8 +642,8 @@ JNIEXPORT jboolean JNICALL Java_suneido_language_jsdi_com_COMobject_coCreateFrom
         assert(iunk || idisp);
         const jlong ptrs[2] =
         {
-            reinterpret_cast<jlong>(iunk),
             reinterpret_cast<jlong>(idisp),
+            reinterpret_cast<jlong>(iunk),
         };
         env->SetLongArrayRegion(ptrPair, 0, 2, ptrs);
         did_create_object = true;
