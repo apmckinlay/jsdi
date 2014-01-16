@@ -130,6 +130,7 @@ void throw_com_exception(JNIEnv * env, const char * message, jobject object)
             object, GLOBAL_REFS->java_lang_Object__m_toString())));
     JNI_EXCEPTION_CHECK(env);
     jni_utf16_ostream o(env);
+    o.exceptions(jni_utf16_ostream::failbit | jni_utf16_ostream::badbit);
     o << message << u": " << static_cast<jstring>(tostr);
     jni_auto_local<jstring> jstr_message(env, o.jstr());
     throw_com_exception(env, static_cast<jstring>(jstr_message));
@@ -510,18 +511,22 @@ void append_excepinfo(jni_utf16_ostream& o, EXCEPINFO& excepinfo)
         if (FAILED(excepinfo.pfnDeferredFillIn(&excepinfo)))
             throw std::runtime_error("failed deferred fill-in");
     }
-    o << u"COM exception - ";
     if (excepinfo.bstrDescription)
     {
-        o << excepinfo.bstrDescription << u", ";
+        o << excepinfo.bstrDescription << u" - ";
         SysFreeString(excepinfo.bstrDescription);
     }
-    o << u" code: " << temp_to_string(excepinfo.wCode);
+    else o << u"exception - ";
     if (excepinfo.bstrSource)
     {
-        o << u", source: " << excepinfo.bstrSource;
+        o << u"source: " << excepinfo.bstrSource << u", ";
         SysFreeString(excepinfo.bstrSource);
     }
+    o << u"code: ";
+    if (excepinfo.wCode)
+        o << temp_to_string(excepinfo.wCode);
+    else
+        o << temp_to_string(excepinfo.scode);
     if (excepinfo.bstrHelpFile)
     {
         SysFreeString(excepinfo.bstrHelpFile);
@@ -546,6 +551,7 @@ void throw_invoke_fail(JNIEnv * env, HRESULT hresult, EXCEPINFO& excepinfo,
 {
     assert(env && action); // pu_arg_error may be NULL
     jni_utf16_ostream o(env);
+    o.exceptions(jni_utf16_ostream::failbit | jni_utf16_ostream::badbit);
     // Convert HRESULT and/or the other exception information into readable
     // string.
     switch (hresult)
@@ -579,9 +585,10 @@ void throw_invoke_fail(JNIEnv * env, HRESULT hresult, EXCEPINFO& excepinfo,
             break;
         default:
             assert(FAILED(hresult));
-            o << u"failed with HRESULT: " << hresult;
+            o << u"failed with HRESULT: " << temp_to_string(hresult);
             break;
     }
+    o << u" in " << action;
     // Throw the exception
     jni_auto_local<jstring> message(env, o.jstr());
     throw_com_exception(env, static_cast<jstring>(message));
@@ -657,6 +664,7 @@ DISPID com::get_dispid_of_name(IDispatch * idisp, JNIEnv * env, jstring name)
                                     LOCALE_SYSTEM_DEFAULT, &dispid)))
     {
         jni_utf16_ostream o(env);
+        o.exceptions(jni_utf16_ostream::failbit | jni_utf16_ostream::badbit);
         o << u"no member named '" << name << u'\'';
         jni_auto_local<jstring> message(env, o.jstr());
         throw_com_exception(env, static_cast<jstring>(message));
