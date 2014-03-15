@@ -242,9 +242,9 @@ ULONG __stdcall TestJSDIComImpl::Release()
     unsigned __int32 nrefs(0);
     {
         lock_guard<critical_section> lock(&d_critical_section);
-        nrefs = --d_ref_count;
+        nrefs = d_ref_count--;
     }
-    assert(0 <= nrefs);
+    assert(1 <= nrefs);
     if (! nrefs) delete this;
     return nrefs;
 }
