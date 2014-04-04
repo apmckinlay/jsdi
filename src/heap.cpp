@@ -105,6 +105,29 @@ void heap::free(void * ptr) noexcept
 
 using namespace jsdi;
 
+inline void call_copy_27(void * code, int& receives_27)
+{
+    // Calls the code block pointed to by 'code', which must simply copy the
+    // value 27 into the register 'eax' and return.
+#ifdef __GNUC__
+    asm (
+        "call * %1"
+        : "=a" (receives_27)
+        : "0" (code)
+        :
+    );
+#elif defined(_MSC_VER)
+    __asm
+    {
+        mov  eax, code
+        call eax
+        mov  receives_27, eax
+    }
+#else
+    #error Replacement for inline assembler required
+#endif
+}
+
 TEST(heap,
     heap h1("my heap", false);
     char * str = reinterpret_cast<char *>(
@@ -122,16 +145,7 @@ TEST(heap,
     void * code = h2.alloc(sizeof(CODE));
     std::memcpy(code, CODE, sizeof(CODE));
     int should_be_27(0xffffff00);
-#ifdef __GNUC__
-    asm (
-        "call * %1"
-        : "=a" (should_be_27)
-        : "0" (code)
-        :
-    );
-#else
-#pragma error "Replacement for inline assembler required"
-#endif
+    call_copy_27(code, should_be_27);
     assert_equals(27, should_be_27);
 );
 
