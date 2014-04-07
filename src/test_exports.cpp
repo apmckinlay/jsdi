@@ -31,12 +31,12 @@ void assign(T& t, const U& u, T * next)
 
 struct Recursive_StringSum_Storage
 {
-    Recursive_StringSum rss;
-    char                buffer[32];
+    struct Recursive_StringSum  rss;
+    char                        buffer[32];
 };
 
 template <>
-void assign(Recursive_StringSum_Storage& t, const Recursive_StringSum& u,
+void assign(Recursive_StringSum_Storage& t, const struct Recursive_StringSum& u,
             Recursive_StringSum_Storage * next)
 {
     std::copy(u.x, u.x + jsdi::array_length(u.x), t.rss.x);
@@ -76,82 +76,82 @@ void recursive_copy(const T * ptr, U(&x)[N] )
 
 extern "C" {
 
-EXPORT_STDCALL void TestVoid()
+EXPORT_STDCALL(void) TestVoid()
 { }
 
-EXPORT_STDCALL signed char TestChar(signed char a)
+EXPORT_STDCALL(signed char) TestChar(signed char a)
 { return a; }
 
-EXPORT_STDCALL short TestShort(short a)
+EXPORT_STDCALL(short) TestShort(short a)
 { return a; }
 
-EXPORT_STDCALL long TestLong(long a)
+EXPORT_STDCALL(long) TestLong(long a)
 { return a; }
 
-EXPORT_STDCALL int64_t TestInt64(int64_t a)
+EXPORT_STDCALL(int64_t) TestInt64(int64_t a)
 { return a; }
 
-EXPORT_STDCALL float TestReturn1_0Float()
+EXPORT_STDCALL(float) TestReturn1_0Float()
 { return 1.0f; }
 
-EXPORT_STDCALL double TestReturn1_0Double()
+EXPORT_STDCALL(double) TestReturn1_0Double()
 { return 1.0; }
 
-EXPORT_STDCALL float TestFloat(float a)
+EXPORT_STDCALL(float) TestFloat(float a)
 { return a; }
 
-EXPORT_STDCALL double TestDouble(double a)
+EXPORT_STDCALL(double) TestDouble(double a)
 { return a; }
 
-EXPORT_STDCALL int64_t TestRemoveSignFromLong(long a)
+EXPORT_STDCALL(int64_t) TestRemoveSignFromLong(long a)
 {
     return reinterpret_cast<int64_t>(reinterpret_cast<void *>(a)) &
            0xffffffffLL;
 }
 
-EXPORT_STDCALL signed char TestSumTwoChars(signed char a, signed char b)
+EXPORT_STDCALL(signed char) TestSumTwoChars(signed char a, signed char b)
 { return a + b; }
 
-EXPORT_STDCALL short TestSumTwoShorts(short a, short b)
+EXPORT_STDCALL(short) TestSumTwoShorts(short a, short b)
 { return a + b; }
 
-EXPORT_STDCALL long TestSumTwoLongs(long a, long b)
+EXPORT_STDCALL(long) TestSumTwoLongs(long a, long b)
 { return a + b; }
 
-EXPORT_STDCALL float TestSumTwoFloats(float a, float b)
+EXPORT_STDCALL(float) TestSumTwoFloats(float a, float b)
 { return a + b; }
 
-EXPORT_STDCALL double TestSumTwoDoubles(double a, double b)
+EXPORT_STDCALL(double) TestSumTwoDoubles(double a, double b)
 { return a + b; }
 
-EXPORT_STDCALL long TestSumThreeLongs(long a, long b, long c)
+EXPORT_STDCALL(long) TestSumThreeLongs(long a, long b, long c)
 { return a + b + c; }
 
-EXPORT_STDCALL long TestSumFourLongs(long a, long b, long c, long d)
+EXPORT_STDCALL(long) TestSumFourLongs(long a, long b, long c, long d)
 { return a + b + c + d; }
 
-EXPORT_STDCALL int64_t TestSumCharPlusInt64(signed char a, int64_t b)
+EXPORT_STDCALL(int64_t) TestSumCharPlusInt64(signed char a, int64_t b)
 { return a + b; }
 
-EXPORT_STDCALL long TestSumPackedCharCharShortLong(Packed_CharCharShortLong x)
+EXPORT_STDCALL(long) TestSumPackedCharCharShortLong(Packed_CharCharShortLong x)
 { return x.a + x.b + x.c + x.d; }
 
-EXPORT_STDCALL long TestStrLen(const char * str)
+EXPORT_STDCALL(long) TestStrLen(const char * str)
 { return str ? std::strlen(str) : 0; }
 
-EXPORT_STDCALL const char * TestHelloWorldReturn(long flag)
+EXPORT_STDCALL(const char *) TestHelloWorldReturn(long flag)
 { return flag ? "hello world" : 0; }
 
-EXPORT_STDCALL void TestHelloWorldOutParam(const char ** str)
+EXPORT_STDCALL(void) TestHelloWorldOutParam(const char ** str)
 { if (str) *str = "hello world"; }
 
-EXPORT_STDCALL void TestHelloWorldOutBuffer(char * buffer, long size)
+EXPORT_STDCALL(void) TestHelloWorldOutBuffer(char * buffer, long size)
 { if (buffer) std::strncpy(buffer, "hello world", size); }
 
-EXPORT_STDCALL void TestNullPtrOutParam(const char ** ptr)
+EXPORT_STDCALL(void) TestNullPtrOutParam(const char ** ptr)
 { if (ptr) *ptr = 0; }
 
-EXPORT_STDCALL uint64_t TestReturnPtrPtrPtrDoubleAsUInt64(
+EXPORT_STDCALL(uint64_t) TestReturnPtrPtrPtrDoubleAsUInt64(
     const double * const * const * ptr)
 {
     // The parameter type is because: http://stackoverflow.com/a/1404795/1911388
@@ -166,18 +166,28 @@ EXPORT_STDCALL uint64_t TestReturnPtrPtrPtrDoubleAsUInt64(
     return as_uint64;
 }
 
-EXPORT_STDCALL long TestSumString(Recursive_StringSum * ptr)
+EXPORT_STDCALL(long) TestSumString(struct Recursive_StringSum * ptr)
 {
     if (! ptr) return 0;
     long sum = TestSumPackedCharCharShortLong(ptr->x[0]) +
                TestSumPackedCharCharShortLong(ptr->x[1]);
     if (ptr->str) sum += std::atol(ptr->str);
     sum += TestSumString(ptr->inner);
-    if (ptr->buffer) snprintf(ptr->buffer, ptr->len, "%ld", sum);
+    if (ptr->buffer)
+    {
+        // Pathetically, Visual C++ doesn't support snprintf(...), a C99
+        // standard function, even in April 2014. This workaround is
+        // adequate to our needs, but for a more general workaround, see here:
+        // http://stackoverflow.com/a/8712996/1911388.
+        char buffer[32];
+        sprintf(buffer, "%ld", sum);
+        strncpy(ptr->buffer, buffer,
+            std::max(static_cast<long>(jsdi::array_length(buffer)), ptr->len));
+    }
     return sum;
 }
 
-EXPORT_STDCALL long TestSumResource(const char * res, const char ** pres)
+EXPORT_STDCALL(long) TestSumResource(const char * res, const char ** pres)
 {
     long sum(0);
     if (IS_INTRESOURCE(res))
@@ -207,7 +217,7 @@ EXPORT_STDCALL long TestSumResource(const char * res, const char ** pres)
     return sum;
 }
 
-EXPORT_STDCALL long TestSwap(Swap_StringLongLong * ptr)
+EXPORT_STDCALL(long) TestSwap(Swap_StringLongLong * ptr)
 {
     long result(0);
     if (ptr)
@@ -226,14 +236,14 @@ EXPORT_STDCALL long TestSwap(Swap_StringLongLong * ptr)
     return result;
 }
 
-EXPORT_STDCALL const char * TestReturnString(const char * str)
+EXPORT_STDCALL(const char *) TestReturnString(const char * str)
 { return str; }
 
-EXPORT_STDCALL const char * TestReturnPtrString(const char * const * ptr)
+EXPORT_STDCALL(const char *) TestReturnPtrString(const char * const * ptr)
 { return ptr ? *ptr : 0; }
 
-EXPORT_STDCALL char * TestReturnStringOutBuffer(const char * str,
-                                                      char * buffer, long size)
+EXPORT_STDCALL(char *) TestReturnStringOutBuffer(const char * str,
+                                                 char * buffer, long size)
 {
     if (! str || ! buffer || size < 1) return 0;
     // This is more-or-less strncpy, except that we guarantee that any non-empty
@@ -251,36 +261,37 @@ EXPORT_STDCALL char * TestReturnStringOutBuffer(const char * str,
     return buffer;
 }
 
-EXPORT_STDCALL const Packed_CharCharShortLong *
-TestReturnStatic_Packed_CharCharShortLong(const Packed_CharCharShortLong * ptr)
+EXPORT_STDCALL(const struct Packed_CharCharShortLong *)
+TestReturnStatic_Packed_CharCharShortLong(
+    const struct Packed_CharCharShortLong * ptr)
 {
     static Packed_CharCharShortLong x;
     if (ptr) x = *ptr;
     return &x;
 }
 
-EXPORT_STDCALL const Recursive_CharCharShortLong *
+EXPORT_STDCALL(const struct Recursive_CharCharShortLong *)
 TestReturnStatic_Recursive_CharCharShortLong(
-    const Recursive_CharCharShortLong * ptr)
+    const struct Recursive_CharCharShortLong * ptr)
 {
     static Recursive_CharCharShortLong x[3];
     recursive_copy(ptr, x);
     return x;
 }
 
-EXPORT_STDCALL const Recursive_StringSum *
-TestReturnStatic_Recursive_StringSum(const Recursive_StringSum * ptr)
+EXPORT_STDCALL(const struct Recursive_StringSum *)
+TestReturnStatic_Recursive_StringSum(const struct Recursive_StringSum * ptr)
 {
     static Recursive_StringSum_Storage x[3];
     recursive_copy(ptr, x);
     return &x[0].rss;
 }
 
-EXPORT_STDCALL long TestInvokeCallback_Long1(TestCallback_Long1 f, long a)
+EXPORT_STDCALL(long) TestInvokeCallback_Long1(TestCallback_Long1 f, long a)
 { return f ? f(a) : 0L; }
 
-EXPORT_STDCALL long TestInvokeCallback_Long1_2(TestCallback_Long1 f, long a,
-                                               TestCallback_Long1 g, long b)
+EXPORT_STDCALL(long) TestInvokeCallback_Long1_2(TestCallback_Long1 f, long a,
+                                                TestCallback_Long1 g, long b)
 {
     int count(0);
     if (f) f(a), ++count;
@@ -288,16 +299,16 @@ EXPORT_STDCALL long TestInvokeCallback_Long1_2(TestCallback_Long1 f, long a,
     return count;
 }
 
-EXPORT_STDCALL long TestInvokeCallback_Long2(TestCallback_Long2 f, long a,
-                                             long b)
+EXPORT_STDCALL(long) TestInvokeCallback_Long2(TestCallback_Long2 f, long a,
+                                              long b)
 { return f ? f(a, b) : 0L; }
 
-EXPORT_STDCALL long TestInvokeCallback_Packed_CharCharShortLong(
+EXPORT_STDCALL(long) TestInvokeCallback_Packed_CharCharShortLong(
     TestCallback_Packed_CharCharShortLong f, Packed_CharCharShortLong a)
 { return f ? f(a) : 0L; }
 
-EXPORT_STDCALL long TestInvokeCallback_Recursive_StringSum(
-    TestCallback_Recursive_StringSum f, Recursive_StringSum * ptr)
+EXPORT_STDCALL(long) TestInvokeCallback_Recursive_StringSum(
+    TestCallback_Recursive_StringSum f, struct Recursive_StringSum * ptr)
 { return f ? f(ptr) : 0L; }
 
 } // extern "C"
