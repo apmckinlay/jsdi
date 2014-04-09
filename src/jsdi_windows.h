@@ -12,19 +12,7 @@
 #ifndef __INCLUDED_JSDI_WINDOWS_H__
 #define __INCLUDED_JSDI_WINDOWS_H__
 
-#define WIN32_LEAN_AND_MEAN
-#define VC_EXTRALEAN
-
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-
-#if _WIN32_WINNT < 0x0501
-#ifdef _WIN32_WINNT
-#undef _WIN32_WINNT
-#endif
-#define _WIN32_WINNT 0x0501 // Windows XP or higher
-#endif
+#include "jsdi_windef.h"
 
 #include <windows.h>
 
