@@ -56,8 +56,8 @@ constexpr unsigned char INSTRUCTIONS[CODE_SIZE] =
                                      //   clean up the two arguments we pushed
                                      //   above.
     0xc2, 0x77, 0x77,                // ret $0x7777
-                                         // Pop return value, then remove
-                                         // args passed by caller from stack
+                                     //   Pop return value, then remove
+                                     //   args passed by caller from stack
 };
 
 static_assert(0x55 == INSTRUCTIONS[CODE_IMPL_POINTER_OFFSET+0], "check code");
