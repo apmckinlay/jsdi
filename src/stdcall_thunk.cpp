@@ -71,7 +71,7 @@ static_assert(0x66 == INSTRUCTIONS[CODE_CALL_ADDR_OFFSET+3], "check code");
 static_assert(0x77 == INSTRUCTIONS[CODE_RET_POP_SIZE_OFFSET+0], "check code");
 static_assert(0x77 == INSTRUCTIONS[CODE_RET_POP_SIZE_OFFSET+1], "check code");
 
-typedef __stdcall long (* wrapper_func)(stdcall_thunk_impl *, const char *);
+typedef long (__stdcall * wrapper_func)(stdcall_thunk_impl *, const char *);
 
 struct stub_code
 {
@@ -168,7 +168,7 @@ struct stdcall_thunk_impl
     // STATIC FUNCTIONS
     //
 
-    static __stdcall long wrapper(stdcall_thunk_impl *, const char *);
+    static long __stdcall wrapper(stdcall_thunk_impl *, const char *);
 
     //
     // OPERATORS
@@ -206,7 +206,7 @@ stdcall_thunk_impl::~stdcall_thunk_impl()
     d_magic_2 = ~MAGIC2;
 }
 
-__stdcall long stdcall_thunk_impl::wrapper(stdcall_thunk_impl * impl,
+long __stdcall stdcall_thunk_impl::wrapper(stdcall_thunk_impl * impl,
                                            const char * args)
 {
     long result;
@@ -299,7 +299,7 @@ stdcall_thunk_state stdcall_thunk::clear()
 
 using namespace jsdi;
 
-static const int EMPTY_PTR_ARRAY[0] = { };
+static const int EMPTY_PTR_ARRAY[1] = { };
 
 // callback that can invoke a stdcall func and return its value
 struct stdcall_invoke_basic_callback : public callback
