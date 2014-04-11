@@ -210,7 +210,7 @@ JNIEXPORT jstring JNICALL Java_suneido_language_jsdi_JSDI_when
     jstring result(0);
     JNI_EXCEPTION_SAFE_BEGIN
     jni_utf16_ostream o(env);
-    o << u"todo: make when() result"; // TODO: make when() result
+    o << UTF16("todo: make when() result"); // TODO: make when() result
     result = o.jstr();
     JNI_EXCEPTION_SAFE_END(env);
     return result;
@@ -295,7 +295,7 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callReturnInt6
     JNIEnv *, jclass, jlong funcPtr)
 {
     // TODO: tracing
-    return reinterpret_cast<__stdcall jlong (*)()>(funcPtr)();
+    return reinterpret_cast<jlong(__stdcall *)()>(funcPtr)();
 }
 
 /*
@@ -307,7 +307,7 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLReturnInt
     JNIEnv *, jclass, jlong funcPtr, jint arg0)
 {
     // TODO: tracing
-    return reinterpret_cast<__stdcall jlong (*)(long)>(funcPtr)(arg0);
+    return reinterpret_cast<jlong(__stdcall *)(long)>(funcPtr)(arg0);
 }
 
 /*
@@ -319,7 +319,7 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLLReturnIn
     JNIEnv *, jclass, jlong funcPtr, jint arg0, jint arg1)
 {
     // TODO: tracing
-    return reinterpret_cast<__stdcall jlong (*)(long, long)>(funcPtr)(arg0, arg1);
+    return reinterpret_cast<jlong(__stdcall *)(long, long)>(funcPtr)(arg0, arg1);
 }
 
 /*
@@ -331,9 +331,9 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLLLReturnI
     JNIEnv *, jclass, jlong funcPtr, jint arg0, jint arg1, jint arg2)
 {
     // TODO: tracing
-    return reinterpret_cast<__stdcall long (*)(long, long, long)>(funcPtr)(arg0,
-                                                                           arg1,
-                                                                           arg2);
+    return reinterpret_cast<long(__stdcall *)(long, long, long)>(funcPtr)(arg0,
+                                                                          arg1,
+                                                                          arg2);
 }
 
 /*
