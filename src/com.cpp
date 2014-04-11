@@ -39,39 +39,12 @@ static_assert(sizeof(std::remove_pointer<BSTR>::type) == sizeof(jchar),
 constexpr int64_t _100_NANO_INTERVALS_FROM_JAN1_1601_TO_JAN1_1970 =
     116444736000000000LL; // see here: http://support.microsoft.com/kb/167296
 constexpr int64_t _100_NANO_INTERVALS_PER_MILLISECOND = 10000;
-constexpr UINT INVALID_PARAM_INDEX = std::numeric_limits<UINT>::max();
-
-std::u16string temp_convert_string(const std::string& s)
-{
-    // TODO: Remove this function once it is safe to remove the temp_to_string
-    //       functions below.
-    std::u16string t(s.size(), std::char_traits<char16_t>::eof());
-    std::string::const_iterator i = s.begin(), e = s.end();
-    std::u16string::iterator j = t.begin();
-    for (; i != e; ++i, ++j) *j = static_cast<char16_t>(*i);
-    return t;
-}
-
-template <typename NumberType>
-std::u16string temp_to_string(const NumberType& n)
-{
-    // This is a temporary workaround to the present inability to insert
-    // integers into basic_ostream's based no char16_t because the std library
-    // isn't fully implemented.
-    //
-    // TODO: Remove this function once GCC and MinGW finally get some more
-    //       support for char16_t -- for example, when they support char16_t-
-    //       based locale facets -- or even when std::to_string() is actually
-    //       available. We don't even have std::to_string() in GCC 4.8.1 with
-    //       MinGW, because of the _GLIBCXX_HAVE_BROKEN_VSWPRINTF guard in
-    //       basic_string.h.
-    // SEE:  http://stackoverflow.com/q/19784588/1911388
-    //       http://stackoverflow.com/q/12975341/1911388
-    static_assert(std::is_arithmetic<NumberType>::value, "use only on numbers");
-    std::ostringstream o;
-    o << n;
-    return temp_convert_string(o.str());
-}
+// TODO: MSVC-ISSUE: Uncomment the 'constexpr' line below and remove the
+//       #define when the Microsoft Visual C++ compiler properly implements
+//       'constexpr' for std::numeric_limits functions. It doesn't work as of
+//       November 2013 CTP.
+// constexpr UINT INVALID_PARAM_INDEX = std::numeric_limits<UINT>::max();
+# define INVALID_PARAM_INDEX std::numeric_limits<UINT>::max()
 
 jstring bstr_to_jstr(BSTR bstr, JNIEnv * env)
 {
@@ -131,7 +104,7 @@ void throw_com_exception(JNIEnv * env, const char * message, jobject object)
     JNI_EXCEPTION_CHECK(env);
     jni_utf16_ostream o(env);
     o.exceptions(jni_utf16_ostream::failbit | jni_utf16_ostream::badbit);
-    o << message << u": " << static_cast<jstring>(tostr);
+    o << message << UTF16(": ") << static_cast<jstring>(tostr);
     jni_auto_local<jstring> jstr_message(env, o.jstr());
     throw_com_exception(env, static_cast<jstring>(jstr_message));
 }
@@ -513,20 +486,20 @@ void append_excepinfo(jni_utf16_ostream& o, EXCEPINFO& excepinfo)
     }
     if (excepinfo.bstrDescription)
     {
-        o << excepinfo.bstrDescription << u" - ";
+        o << excepinfo.bstrDescription << UTF16(" - ");
         SysFreeString(excepinfo.bstrDescription);
     }
-    else o << u"exception - ";
+    else o << UTF16("exception - ");
     if (excepinfo.bstrSource)
     {
-        o << u"source: " << excepinfo.bstrSource << u", ";
+        o << UTF16("source: ") << excepinfo.bstrSource << UTF16(", ");
         SysFreeString(excepinfo.bstrSource);
     }
-    o << u"code: ";
+    o << UTF16("code: ");
     if (excepinfo.wCode)
-        o << temp_to_string(excepinfo.wCode);
+        o << excepinfo.wCode;
     else
-        o << temp_to_string(excepinfo.scode);
+        o << excepinfo.scode;
     if (excepinfo.bstrHelpFile)
     {
         SysFreeString(excepinfo.bstrHelpFile);
@@ -537,12 +510,12 @@ void append_param(jni_utf16_ostream& o, const UINT * pu_arg_error)
 {
     if (pu_arg_error)
     {
-        o << u" (at param ";
+        o << UTF16(" (at param ");
         if (INVALID_PARAM_INDEX != *pu_arg_error)
-            o << temp_to_string(*pu_arg_error);
+            o << *pu_arg_error;
         else
-            o << u'?';
-        o << u')';
+            o << UTF16('?');
+        o << UTF16(')');
     }
 }
 
@@ -557,38 +530,38 @@ void throw_invoke_fail(JNIEnv * env, HRESULT hresult, EXCEPINFO& excepinfo,
     switch (hresult)
     {
         case DISP_E_BADPARAMCOUNT:
-            o << u"bad param count";
+            o << UTF16("bad param count");
             break;
         case DISP_E_BADVARTYPE:
-            o << u"bad var type";
+            o << UTF16("bad var type");
             break;
         case DISP_E_EXCEPTION:
             append_excepinfo(o, excepinfo);
             break;
         case DISP_E_MEMBERNOTFOUND:
-            o << u"member not found";
+            o << UTF16("member not found");
             break;
         case DISP_E_NONAMEDARGS:
-            o << u"no named args";
+            o << UTF16("no named args");
             break;
         case DISP_E_OVERFLOW:
-            o << u"overflow (one of the arguments could not be coerced to the "
-                  "specified type)";
+            o << UTF16("overflow (one of the arguments could not be coerced ")
+                 UTF16("to the specified type)");
             break;
         case DISP_E_PARAMNOTFOUND:
-            o << u"param not found";
+            o << UTF16("param not found");
             append_param(o, pu_arg_error);
             break;
         case DISP_E_TYPEMISMATCH:
-            o << u"type mismatch";
+            o << UTF16("type mismatch");
             append_param(o, pu_arg_error);
             break;
         default:
             assert(FAILED(hresult));
-            o << u"failed with HRESULT: " << temp_to_string(hresult);
+            o << UTF16("failed with HRESULT: ") << hresult;
             break;
     }
-    o << u" in " << action;
+    o << UTF16(" in ") << action;
     // Throw the exception
     jni_auto_local<jstring> message(env, o.jstr());
     throw_com_exception(env, static_cast<jstring>(message));
@@ -665,7 +638,7 @@ DISPID com::get_dispid_of_name(IDispatch * idisp, JNIEnv * env, jstring name)
     {
         jni_utf16_ostream o(env);
         o.exceptions(jni_utf16_ostream::failbit | jni_utf16_ostream::badbit);
-        o << u"no member named '" << name << u'\'';
+        o << UTF16("no member named '") << name << UTF16('\'');
         jni_auto_local<jstring> message(env, o.jstr());
         throw_com_exception(env, static_cast<jstring>(message));
     }
