@@ -112,7 +112,7 @@ inline uint64_t stdcall_invoke::basic(int args_size_bytes, char * args_ptr,
         : "%ecx" /* eax, ecx, edx are caller-save */, "cc", "memory"
     );
 #else
-#pragma error "Replacement for inline assembler required"
+#error Replacement for inline assembler required
 #endif
     return result;
 }
@@ -149,7 +149,7 @@ inline double stdcall_invoke::return_double(int args_size_bytes,
           "memory"
     );
 #else
-#pragma error "Replacement for inline assembler required"
+#error Replacement for inline assembler required
 #endif
     return result;
 }
