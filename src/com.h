@@ -13,8 +13,8 @@
  */
 
 #include "jni_exception.h"
+#include "jsdi_ole2.h"
 
-#include <ole2.h>
 #include <jni.h>
 
 namespace jsdi {
