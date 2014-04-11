@@ -124,7 +124,7 @@ inline void call_copy_27(void * code, int& receives_27)
         mov  receives_27, eax
     }
 #else
-    #error Replacement for inline assembler required
+#error Replacement for inline assembler required
 #endif
 }
 
