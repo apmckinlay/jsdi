@@ -16,7 +16,7 @@
 namespace jsdi {
 
 //==============================================================================
-//                      class jni_utf8_output_streambuf
+//                     class jni_utf16_output_streambuf
 //==============================================================================
 
 jni_utf16_output_streambuf::jni_utf16_output_streambuf(JNIEnv * env,
@@ -32,7 +32,7 @@ jni_utf16_output_streambuf::jni_utf16_output_streambuf(JNIEnv * env,
 jstring jni_utf16_output_streambuf::jstr() const
 {
     jstring result = d_env->NewString(reinterpret_cast<jchar *>(pbase()),
-                                      size());
+                                      static_cast<jsize>(size()));
     JNI_EXCEPTION_CHECK(d_env);
     if (! result) throw jni_bad_alloc("NewString", __FUNCTION__);
     return result;
@@ -62,58 +62,18 @@ jni_utf16_output_streambuf::int_type jni_utf16_output_streambuf::overflow(
     return ch;
 }
 
-std::streamsize jni_utf16_output_streambuf::xsputn(const char16_t * s,
+std::streamsize jni_utf16_output_streambuf::xsputn(const utf16char_t * s,
                                                    std::streamsize count)
 {
     assert(0 < count || !"count cannot be negative");
     size_t capacity = d_buf.size();
-    size_t used = size();
+    size_t used = static_cast<size_t>(size());
     size_t free_space = capacity - used;
     if (free_space < static_cast<size_t>(count))
         expand(used + static_cast<size_t>(count) /* minimum capacity */);
     std::copy(s, s + count, pptr());
-    pbump(count);
+    pbump(static_cast<int>(count));
     return count;
-}
-
-
-//==============================================================================
-//                            class utf16_ostream
-//==============================================================================
-
-utf16_ostream& operator<<(utf16_ostream& o, jstring jstr) throw(std::bad_cast)
-{
-    auto& o2(dynamic_cast<jni_utf16_ostream&>(o)); // may throw std::bad_cast
-    return o2 << jstr;
-}
-
-utf16_ostream& operator<<(utf16_ostream& o, const char * str)
-{
-    utf16_ostream::sentry sentry(o);
-    if (sentry)
-    {
-        if (! str) o << "0x00000000"; // inserting numbers fails right now
-        else
-        {
-            utf16_streambuf * buf(o.rdbuf());
-            if (buf) do
-            {
-                const char c = *str;
-                if (! c) break;
-                buf->sputc(static_cast<char16_t>(c)); // should use widen() but
-                ++str;                                // no facets for char16_t
-            }
-            while (true);
-        }
-    }
-    return o;
-}
-
-utf16_ostream& operator<<(utf16_ostream& o, const jni_utf16_string_region& str)
-{
-    utf16_ostream::sentry sentry(o);
-    if (sentry) o.write(str.str(), str.size());
-    return o;
 }
 
 //==============================================================================
@@ -157,6 +117,19 @@ jstring make_jstring(JNIEnv * env, const char * sz)
     JNI_EXCEPTION_CHECK(env);
     if (! result) throw jni_bad_alloc("NewString", __FUNCTION__);
     return result;
+}
+
+utf16_ostream& operator<<(utf16_ostream& o, jstring jstr) throw(std::bad_cast)
+{
+    auto& o2(dynamic_cast<jni_utf16_ostream&>(o)); // may throw std::bad_cast
+    return o2 << jstr;
+}
+
+utf16_ostream& operator<<(utf16_ostream& o, const jni_utf16_string_region& str)
+{
+    utf16_ostream::sentry sentry(o);
+    if (sentry) o.write(str.str(), str.size());
+    return o;
 }
 
 } // namespace jsdi

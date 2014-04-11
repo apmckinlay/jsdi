@@ -13,7 +13,7 @@
  */
 
 #include "util.h"
-
+#include "utf16_util.h"
 #include "jni_exception.h"
 
 #include <jni.h>
@@ -1090,7 +1090,7 @@ class jni_auto_monitor
 
         jni_auto_monitor(JNIEnv * env, jobject object);
 
-        ~jni_auto_monitor();
+        ~jni_auto_monitor() noexcept(false);
 };
 
 inline jni_auto_monitor::jni_auto_monitor(JNIEnv * env, jobject object)
@@ -1196,7 +1196,7 @@ class jni_utf16_string_region : private non_copyable
 
         typedef size_t size_type;
 
-        typedef char16_t value_type;
+        typedef utf16char_t value_type;
 
         typedef value_type * pointer;
 
@@ -1243,12 +1243,12 @@ class jni_utf16_string_region : private non_copyable
 inline jni_utf16_string_region::jni_utf16_string_region(JNIEnv * env,
                                                         jstring str)
     : d_size(env->GetStringLength(str))
-    , d_str(new char16_t[d_size + 1])
+    , d_str(new utf16char_t[d_size + 1])
 {
     assert(env && str);
     env->GetStringRegion(str, 0, d_size, reinterpret_cast<jchar *>(d_str));
     JNI_EXCEPTION_CHECK(env);
-    d_str[d_size] = u'\0';
+    d_str[d_size] = UTF16('\0');
 }
 
 inline jni_utf16_string_region::~jni_utf16_string_region()
@@ -1265,8 +1265,8 @@ inline jni_utf16_string_region::const_pointer
 inline const wchar_t * jni_utf16_string_region::wstr() const
 {
     static_assert(
-        sizeof(wchar_t) == sizeof(char16_t),
-        "can't convert char16_t to wchar_t"
+        sizeof(wchar_t) == sizeof(utf16char_t),
+        "can't convert utf16char_t to wchar_t"
     );
     return reinterpret_cast<wchar_t *>(d_str);
 }
@@ -1278,15 +1278,16 @@ inline jni_utf16_string_region::const_iterator jni_utf16_string_region::end() co
 { return d_str + d_size; }
 
 //==============================================================================
-//                          typedef utf16_streambuf
+//                 stream insertion operators for JNI types
 //==============================================================================
 
-/**
- * \brief Type name of a stream buffer which accepts 16-bit characters.
- * \author Victor Schappert
- * \since 20140115
- */
-typedef std::basic_streambuf<char16_t> utf16_streambuf;
+utf16_ostream& operator<<(utf16_ostream&, jstring) throw(std::bad_cast);
+
+utf16_ostream& operator<<(utf16_ostream&, const jni_utf16_string_region&);
+
+class jni_utf16_ostream;
+
+jni_utf16_ostream& operator<<(jni_utf16_ostream&, jstring);
 
 //==============================================================================
 //                     class jni_utf16_output_streambuf
@@ -1299,8 +1300,8 @@ class jni_utf16_output_streambuf : public utf16_streambuf, private non_copyable
         // DATA
         //
 
-        JNIEnv *              d_env;
-        std::vector<char16_t> d_buf;
+        JNIEnv *                 d_env;
+        std::vector<utf16char_t> d_buf;
 
         //
         // CONSTRUCTORS
@@ -1332,7 +1333,7 @@ class jni_utf16_output_streambuf : public utf16_streambuf, private non_copyable
 
         virtual int_type overflow(int_type);
 
-        virtual std::streamsize xsputn(const char16_t *, std::streamsize);
+        virtual std::streamsize xsputn(const utf16char_t *, std::streamsize);
 };
 
 inline JNIEnv * jni_utf16_output_streambuf::env()
@@ -1343,28 +1344,9 @@ inline std::streamsize jni_utf16_output_streambuf::size() const
 /** \endcond */
 
 //==============================================================================
-//                           typedef utf16_ostream
-//==============================================================================
-
-/**
- * \brief Type name of an output stream which accepts 16-bit characters.
- * \author Victor Schappert
- * \since 20131103
- */
-typedef std::basic_ostream<char16_t, std::char_traits<char16_t>> utf16_ostream;
-
-utf16_ostream& operator<<(utf16_ostream&, jstring) throw(std::bad_cast);
-
-utf16_ostream& operator<<(utf16_ostream&, const char *);
-
-utf16_ostream& operator<<(utf16_ostream&, const jni_utf16_string_region&);
-
-inline utf16_ostream& operator<<(utf16_ostream& o, const wchar_t * str)
-{ return o << reinterpret_cast<const char16_t *>(str); }
-
-//==============================================================================
 //                          class jni_utf16_ostream
 //==============================================================================
+
 /**
  * \brief Output stream for generating immutable Java strings.
  * \author Victor Schappert
