@@ -55,7 +55,9 @@ TEST(smallest_pow2,
     assert_equals(  0, smallest_pow2(std::numeric_limits<uint32_t>::max()));
     uint16_t x16(10), y16(16);
     uint32_t x32(10), y32(16);
-    for (; x32 <= std::numeric_limits<int16_t>::max(); ++x16, ++x32)
+    for (;
+         x32 <= static_cast<uint32_t>(std::numeric_limits<int16_t>::max());
+         ++x16, ++x32)
     {
         if (x16 < y16)
         {
