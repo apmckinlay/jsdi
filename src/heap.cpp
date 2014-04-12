@@ -105,28 +105,27 @@ void heap::free(void * ptr) noexcept
 
 using namespace jsdi;
 
-inline void call_copy_27(void * code, int& receives_27)
-{
-    // Calls the code block pointed to by 'code', which must simply copy the
-    // value 27 into the register 'eax' and return.
+// Calls the code block pointed to by 'code', which must simply copy the
+// value 27 into the register 'eax' and return.
 #ifdef __GNUC__
-    asm (
-        "call * %1"
-        : "=a" (receives_27)
-        : "0" (code)
-        :
+#define CALL_COPY_27(code, receives_27) \
+    asm (                               \
+        "call * %1"                     \
+        : "=a" (receives_27)            \
+        : "0" (code)                    \
+        :                               \
     );
 #elif defined(_MSC_VER)
-    __asm
-    {
-        mov  eax, code
-        call eax
-        mov  receives_27, eax
+#define CALL_COPY_27(code, receives_27) \
+    __asm                               \
+    {                                   \
+        __asm mov  eax, code            \
+        __asm call eax                  \
+        __asm mov  receives_27, eax     \
     }
 #else
 #error Replacement for inline assembler required
 #endif
-}
 
 TEST(heap,
     heap h1("my heap", false);
@@ -136,7 +135,7 @@ TEST(heap,
     std::strcpy(str, "bonjour monde");
     assert_equals(std::string("bonjour monde"), str);
     h1.free(str);
-    static unsigned char CODE[] =
+    constexpr unsigned char CODE[] =
     {
         0xb8, 0x1b, 0x00, 0x00, 0x00, // movl 0x0000001b, %eax
         0xc3                          // ret
@@ -145,7 +144,7 @@ TEST(heap,
     void * code = h2.alloc(sizeof(CODE));
     std::memcpy(code, CODE, sizeof(CODE));
     int should_be_27(0xffffff00);
-    call_copy_27(code, should_be_27);
+    CALL_COPY_27(code, should_be_27);
     assert_equals(27, should_be_27);
 );
 
