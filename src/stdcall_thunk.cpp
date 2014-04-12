@@ -47,9 +47,9 @@ constexpr unsigned char INSTRUCTIONS[CODE_SIZE] =
                                      //   Get pointer to start of arguments
     0x50,                            // push %eax
                                      //   Push pointer to arguments onto stack
-    0x68, 0x55, 0x55, 0x55, 0x55,    // push 0x55555555
+    0x68, 0x55, 0x55, 0x55, 0x55,    // push $0x55555555
                                      //   Placeholder for pushing impl pointer
-    0xe8, 0x66, 0x66, 0x66, 0x66,    // call 0x66666666
+    0xe8, 0x66, 0x66, 0x66, 0x66,    // call $0x66666666
                                      //   Placeholder for call-relative operand
                                      //   to call wrapper which itself is a
                                      //   __stdcall function so it, not us, will
@@ -60,6 +60,13 @@ constexpr unsigned char INSTRUCTIONS[CODE_SIZE] =
                                      //   args passed by caller from stack
 };
 
+#if !defined(_MSC_VER)
+// TODO: Microsoft's Visual C++ compiler doesn't properly support 'constexpr'
+//       so that static_assert(...)-ing against elements of constexpr arrays
+//       fails with error C2057 - "Expected constant expression". This is as
+//       of version 18.00.21114 for x86 (November 2013 CTP). These asserts
+//       should be re-enabled as soon as 'constexpr' support is properly
+//       available.
 static_assert(0x55 == INSTRUCTIONS[CODE_IMPL_POINTER_OFFSET+0], "check code");
 static_assert(0x55 == INSTRUCTIONS[CODE_IMPL_POINTER_OFFSET+1], "check code");
 static_assert(0x55 == INSTRUCTIONS[CODE_IMPL_POINTER_OFFSET+2], "check code");
@@ -70,6 +77,8 @@ static_assert(0x66 == INSTRUCTIONS[CODE_CALL_ADDR_OFFSET+2], "check code");
 static_assert(0x66 == INSTRUCTIONS[CODE_CALL_ADDR_OFFSET+3], "check code");
 static_assert(0x77 == INSTRUCTIONS[CODE_RET_POP_SIZE_OFFSET+0], "check code");
 static_assert(0x77 == INSTRUCTIONS[CODE_RET_POP_SIZE_OFFSET+1], "check code");
+#endif
+
 
 typedef long (__stdcall * wrapper_func)(stdcall_thunk_impl *, const char *);
 
@@ -333,8 +342,8 @@ struct stdcall_invoke_basic_callback : public callback
 template<typename Param1, typename Param2>
 struct Func
 {
-    typedef __stdcall long (*callback_function)(Param1, Param2);
-    typedef __stdcall long (*function)(callback_function, Param1, Param2);
+    typedef long(__stdcall * callback_function)(Param1, Param2);
+    typedef long(__stdcall * function)(callback_function, Param1, Param2);
     static long call(function f, stdcall_thunk& t, Param1 arg1, Param2 arg2)
     {
         callback_function c = reinterpret_cast<callback_function>(t
@@ -346,8 +355,8 @@ struct Func
 template<typename Param>
 struct Func<Param, void>
 {
-    typedef __stdcall long (*callback_function)(Param);
-    typedef __stdcall long (*function)(callback_function, Param);
+    typedef long(__stdcall * callback_function)(Param);
+    typedef long(__stdcall * function)(callback_function, Param);
     static long call(function f, stdcall_thunk& t, Param arg)
     {
         callback_function c = reinterpret_cast<callback_function>(t
@@ -405,14 +414,14 @@ TEST(sum_string,
         SIZE_DIRECT = sizeof(Recursive_StringSum *),
         SIZE_INDIRECT = sizeof(r_ss),
         SIZE_TOTAL = SIZE_DIRECT + SIZE_INDIRECT,
-        STR_OFFSET = reinterpret_cast<char *>(&r_ss[0].str) -
-                     reinterpret_cast<char *>(&r_ss[0]),
-        BUF_OFFSET = reinterpret_cast<char *>(&r_ss[0].buffer) -
-                     reinterpret_cast<char *>(&r_ss[0]),
-        INNER_OFFSET = reinterpret_cast<char *>(&r_ss[0].inner) -
-                       reinterpret_cast<char *>(&r_ss[0]),
         VI_COUNT = 4,
     };
+    const int STR_OFFSET =   reinterpret_cast<char *>(&r_ss[0].str) -
+                             reinterpret_cast<char *>(&r_ss[0]),
+              BUF_OFFSET =   reinterpret_cast<char *>(&r_ss[0].buffer) -
+                             reinterpret_cast<char *>(&r_ss[0]),
+              INNER_OFFSET = reinterpret_cast<char *>(&r_ss[0].inner) -
+                             reinterpret_cast<char *>(&r_ss[0]);
     static int PTR_ARRAY[12] =
     {
         0, SIZE_DIRECT,
