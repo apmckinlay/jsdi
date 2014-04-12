@@ -196,8 +196,8 @@ void unmarshaller_indirect::normal_ptr(char * data, int ptr_pos, int ptd_to_pos,
     //     NOTE: If this normal pointer is NULL, we don't copy, we zero out.
     int copy_end(d_size_total);
     if (ptr_i != d_ptr_end) copy_end = *(ptr_i + 1);
-    char ** ptr_addr(to_char_ptr_ptr(data, ptr_pos));
-    char ** ptd_to_addr(to_char_ptr_ptr(data, ptd_to_pos));
+    char ** ptr_addr = to_char_ptr_ptr(data, ptr_pos);
+    char ** ptd_to_addr = to_char_ptr_ptr(data, ptd_to_pos);
     if (*ptr_addr)
         std::memcpy(ptd_to_addr, *ptr_addr, copy_end - ptd_to_pos);
     else
@@ -228,7 +228,7 @@ void unmarshaller_vi_base::vi_ptr(char * data, int ptr_pos, int ptd_to_pos,
 {
     int vi_index = ptd_to_pos - unmarshaller_base::d_size_total;
     assert(0 <= vi_index && vi_index < d_vi_count);
-    char ** pstr(unmarshaller_base::to_char_ptr_ptr(data, ptr_pos));
+    char ** pstr = unmarshaller_base::to_char_ptr_ptr(data, ptr_pos);
     if (*pstr)
         vi_string_ptr(*pstr, vi_index, env, vi_array, vi_inst_array[vi_index]);
 }
@@ -264,8 +264,8 @@ void unmarshaller_vi_base::normal_ptr(char * data, int ptr_pos, int ptd_to_pos,
         }
         while (ptr_j != ptr_e);
     }
-    char ** ptr_addr(unmarshaller_base::to_char_ptr_ptr(data, ptr_pos));
-    char ** ptd_to_addr(unmarshaller_base::to_char_ptr_ptr(data, ptd_to_pos));
+    char ** ptr_addr = unmarshaller_base::to_char_ptr_ptr(data, ptr_pos);
+    char ** ptd_to_addr = unmarshaller_base::to_char_ptr_ptr(data, ptd_to_pos);
     if (*ptr_addr)
         std::memcpy(ptd_to_addr, *ptr_addr, copy_end - ptd_to_pos);
     else
@@ -400,12 +400,12 @@ TEST(ptrs_init,
     {
         union u_
         {
-            struct
+            struct x_
             {
                 long * ptr;
                 long   value;
             } x;
-            jbyte args[sizeof(x)];
+            jbyte args[sizeof(x_)];
         } u;
         jint ptr_array[] = { 0, sizeof(long *) };
         marshalling_roundtrip::ptrs_init(u.args, ptr_array,
@@ -417,13 +417,13 @@ TEST(ptrs_init,
     {
         union u_
         {
-            struct
+            struct x_
             {
                 long ** ptr_ptr;
                 long *  ptr;
                 long    value;
             } x;
-            jbyte args[sizeof(x)];
+            jbyte args[sizeof(x_)];
         } u;
         jint ptr_array[] = { 0, sizeof(long **), sizeof(long **), sizeof(long **) + sizeof(long *) };
         marshalling_roundtrip::ptrs_init(u.args, ptr_array,
@@ -435,14 +435,14 @@ TEST(ptrs_init,
     {
         union u_
         {
-            struct
+            struct x_
             {
                 double *** ptr_ptr_ptr;
                 double **  ptr_ptr;
                 double *   ptr;
                 double     value;
             } x;
-            jbyte args[sizeof(x)];
+            jbyte args[sizeof(x_)];
         } u;
         jint ptr_array[] =
         {
@@ -487,7 +487,7 @@ TEST(ptrs_init,
 
 namespace {
 
-static const int EMPTY_PTR_ARRAY[0] = { };
+static const int EMPTY_PTR_ARRAY[1] = { };
 
 static const int ZEROED_VI_INST_ARRAY[10] = { };
 
