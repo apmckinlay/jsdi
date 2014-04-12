@@ -28,7 +28,7 @@ jni_exception::jni_exception(const std::string& str, bool jni_except_pending)
 
 jni_exception::jni_exception(const std::string& str, JNIEnv * env)
     : std::runtime_error(str)
-    , d_jni_except_pending(env->ExceptionCheck())
+    , d_jni_except_pending(env->ExceptionCheck() ? true : false)
 { }
 
 void jni_exception::throw_jni(JNIEnv * env) const
