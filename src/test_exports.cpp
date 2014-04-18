@@ -182,7 +182,8 @@ EXPORT_STDCALL(long) TestSumString(struct Recursive_StringSum * ptr)
         char buffer[32];
         sprintf(buffer, "%ld", sum);
         strncpy(ptr->buffer, buffer,
-            std::max(static_cast<long>(jsdi::array_length(buffer)), ptr->len));
+                std::max(static_cast<long>(0), ptr->len - 1));
+        if (0 < ptr->len) ptr->buffer[ptr->len - 1] = '\0';
     }
     return sum;
 }
