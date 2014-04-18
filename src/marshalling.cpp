@@ -460,7 +460,7 @@ TEST(ptrs_init,
         assert_equals(expect, u.x.value);
         for (int k = 0; k < 10; ++k)
         {
-            std::shared_ptr<u_> u2(new u_);
+            std::unique_ptr<u_> u2(new u_);
             std::fill(u2->args, u2->args + array_length(u2->args), 0);
             std::vector<jint> ptr_vector(ptr_array,
                                          ptr_array + array_length(ptr_array));

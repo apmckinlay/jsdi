@@ -192,7 +192,7 @@ inline void marshalling_roundtrip::ptrs_init(jbyte * args,
                                              jsize ptr_array_size)
 {
     assert(0 == ptr_array_size % 2 || !"pointer array must have even size");
-    jint const * i(ptr_array), *e(ptr_array + ptr_array_size);
+    jint const * i(ptr_array), * e(ptr_array + ptr_array_size);
     while (i < e)
     {
         jint ptr_pos = *i++;

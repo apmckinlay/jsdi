@@ -50,7 +50,6 @@ double double_invoke(FuncPtr f, int nargs, ArgType * args)
     );
 }
 
-
 } // anonymous namespace
 
 TEST(basic,
