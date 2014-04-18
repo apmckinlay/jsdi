@@ -84,15 +84,11 @@ struct stdcall_invoke
 inline uint64_t stdcall_invoke::basic(int args_size_bytes, char * args_ptr,
                                       void * func_ptr)
 {
-    union
-    {
-        uint32_t result32[2];
-        uint64_t result64;
-    };
     assert(
         0 == args_size_bytes % 4
             || !"argument size must be a multiple of 4 bytes");
 #if defined(__GNUC__)
+    uint64_t result;
     asm volatile
     (
         /* OUTPUT PARAMS: %0 gets the 64-bit value EDX << 32 | EAX */
@@ -111,11 +107,13 @@ inline uint64_t stdcall_invoke::basic(int args_size_bytes, char * args_ptr,
             "jg    1b            # Callee cleans up b/c __stdcall.     \n"
         "2:\n\t"
             "call  * %3"
-        : "=A" (result64)
+        : "=A" (result)
         : "r" (args_size_bytes), "r" (args_ptr), "r" (func_ptr)
         : "%ecx" /* eax, ecx, edx are caller-save */, "cc", "memory"
     );
+    return result;
 #elif defined(_MSC_VER)
+    uint32_t result[2];
     // The assembly code below tries to clobber only the registers that are
     // caller save under __stdcall anyway: eax, ecx, and edx. Hopefully this
     // will cause MSVC to generate the minimum amount of register preserving
@@ -135,13 +133,13 @@ inline uint64_t stdcall_invoke::basic(int args_size_bytes, char * args_ptr,
     ms_asm_basic_call:
         mov   ecx, func_ptr      // Might as well clobber ecx since it is caller
         call  ecx                // save under __stdcall anyway.
-        mov   eax, result32[0]
-        mov   edx, result32[1]
+        mov   result[0 * type int], eax
+        mov   result[1 * type int], edx
     }
+    return *reinterpret_cast<uint64_t *>(result);
 #else
 #error Replacement for inline assembler required
 #endif
-    return result64;
 }
 
 inline double stdcall_invoke::return_double(int args_size_bytes,
@@ -191,7 +189,7 @@ inline double stdcall_invoke::return_double(int args_size_bytes,
     ms_asm_double_call:
         mov   ecx, func_ptr      // Might as well clobber ecx since it is caller
         call  ecx                // save under __stdcall anyway.
-        fst   result             // Callee will leave result in ST0.
+        fstp  result             // Callee will leave result in ST0.
     }
 #else
 #error Replacement for inline assembler required
