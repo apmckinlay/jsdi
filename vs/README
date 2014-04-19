@@ -1,0 +1,11 @@
+This directory contains Visual Studio solutions for building jsdi.
+
+For example, the folder vs12_nov2013_ctp/ contains the solution and projects for
+building jsdi using Visual Studio 12.0 + the Visual C++ November 2013 CTP
+(customer technology preview).
+
+To get a particular version working:
+    [ ] Ensure your environment has a JAVA_HOME_X86 variable set which points to
+        the root of an x86 JDK.
+    [ ] Ensure you have the correct Visual Studio and compiler toolchain
+        installed.

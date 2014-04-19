@@ -13,14 +13,9 @@
  */
 
 #include "../jsdi_windows.h"
+#include "../jsdi_ole2.h"
 
-// Somehow including ole2.h before midl.h fixes some MinGW-related include
-// dependency problems which otherwise produce compiler errors of the form:
-//     error: 'DISPID' does not name a type
-//     error: 'CALLCONV' does not name a type
-// See here: http://mingw.5.n7.nabble.com/Errors-in-oleauto-h-td16631.html
-#include <ole2.h>
-
+// This file is generated from test_com.idl by the MIDL compiler.
 #include "midl.h"
 
 extern "C"
