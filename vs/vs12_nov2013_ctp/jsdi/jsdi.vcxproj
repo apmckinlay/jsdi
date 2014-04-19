@@ -242,9 +242,12 @@
       <TypeLibraryName Condition="'$(Configuration)|$(Platform)'=='Debug-dll|Win32'">midl.tlb</TypeLibraryName>
       <OutputDirectory Condition="'$(Configuration)|$(Platform)'=='Release-dll|Win32'">
       </OutputDirectory>
-      <OutputDirectory Condition="'$(Configuration)|$(Platform)'=='Release-exe|Win32'">$(TestComDir)</OutputDirectory>
-      <OutputDirectory Condition="'$(Configuration)|$(Platform)'=='Debug-exe|Win32'">$(TestComDir)</OutputDirectory>
-      <OutputDirectory Condition="'$(Configuration)|$(Platform)'=='Debug-dll|Win32'">$(TestComDir)</OutputDirectory>
+      <OutputDirectory Condition="'$(Configuration)|$(Platform)'=='Release-exe|Win32'">
+      </OutputDirectory>
+      <OutputDirectory Condition="'$(Configuration)|$(Platform)'=='Debug-exe|Win32'">
+      </OutputDirectory>
+      <OutputDirectory Condition="'$(Configuration)|$(Platform)'=='Debug-dll|Win32'">
+      </OutputDirectory>
     </Midl>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
