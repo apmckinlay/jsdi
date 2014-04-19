@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Express 2013 for Windows Desktop
+VisualStudioVersion = 12.0.30110.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsdi", "jsdi\jsdi.vcxproj", "{442F5419-47B8-4576-B90A-BA8B2CA1A5FB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug-dll|Win32 = Debug-dll|Win32
+		Debug-exe|Win32 = Debug-exe|Win32
+		Release-dll|Win32 = Release-dll|Win32
+		Release-exe|Win32 = Release-exe|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{442F5419-47B8-4576-B90A-BA8B2CA1A5FB}.Debug-dll|Win32.ActiveCfg = Debug-dll|Win32
+		{442F5419-47B8-4576-B90A-BA8B2CA1A5FB}.Debug-dll|Win32.Build.0 = Debug-dll|Win32
+		{442F5419-47B8-4576-B90A-BA8B2CA1A5FB}.Debug-exe|Win32.ActiveCfg = Debug-exe|Win32
+		{442F5419-47B8-4576-B90A-BA8B2CA1A5FB}.Debug-exe|Win32.Build.0 = Debug-exe|Win32
+		{442F5419-47B8-4576-B90A-BA8B2CA1A5FB}.Release-dll|Win32.ActiveCfg = Release-dll|Win32
+		{442F5419-47B8-4576-B90A-BA8B2CA1A5FB}.Release-dll|Win32.Build.0 = Release-dll|Win32
+		{442F5419-47B8-4576-B90A-BA8B2CA1A5FB}.Release-exe|Win32.ActiveCfg = Release-exe|Win32
+		{442F5419-47B8-4576-B90A-BA8B2CA1A5FB}.Release-exe|Win32.Build.0 = Release-exe|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -13,7 +13,7 @@ The architecture is as follows.
       midl generates a C++ protocol object containing pure virtual functions
       for each declared property and method.
 
-    - As a 'dual' interface, ITestJSDICom implements IDispatch
+    - As a 'dual' interface, ITestJSDICom implements IDispatch.
 
     - ITestJSDICom is implemented by a backing struct called 'TestJSDIComImpl',
       which is defined in test_com.cpp.
