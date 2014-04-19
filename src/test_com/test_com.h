@@ -26,9 +26,9 @@
 extern "C"
 {
 
-#define EXPORT_STDCALL __declspec(dllexport) __stdcall
+#define EXPORT_STDCALL(return_type) __declspec(dllexport) return_type __stdcall
 
-EXPORT_STDCALL ITestJSDICom * TestCreateComObject();
+EXPORT_STDCALL(ITestJSDICom *) TestCreateComObject();
 
 } // extern "C"
 
