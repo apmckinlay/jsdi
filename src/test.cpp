@@ -11,6 +11,8 @@
 
 #include "test.h"
 
+#ifndef __NOTEST__
+
 #include <map>
 #include <cstring>
 #include <cstdlib>
@@ -209,3 +211,5 @@ test_manager& test_manager::instance()
 }
 
 } // namespace jsdi
+
+#endif // __NOTEST__
