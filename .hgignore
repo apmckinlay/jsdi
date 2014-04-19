@@ -1,3 +1,9 @@
 syntax: glob
 *.stackdump
 doxygen
+vs/*/Debug-*
+vs/*/Release-*
+vs/*/*.*sdf
+vs/*/jsdi/Debug-*
+vs/*/jsdi/Release-*
+vs/*/jsdi/midl*.*
