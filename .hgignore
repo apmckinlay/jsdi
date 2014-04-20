@@ -4,6 +4,7 @@ doxygen
 vs/*/Debug-*
 vs/*/Release-*
 vs/*/*.*sdf
+vs/*/*.suo
 vs/*/jsdi/Debug-*
 vs/*/jsdi/Release-*
 vs/*/jsdi/midl*.*
