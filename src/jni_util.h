@@ -517,19 +517,32 @@ class jni_array: private non_copyable
 
         /**
          * \brief Constructor for an array containing all of the elements of an
-         *        existing Java array.
+         *        existing Java array where the size of the array is not known
+         *        at construction time.
          * \param env JNI environment
          * \param array Reference to a JNI primitive array of the correct type
          *              (\em eg <dfn>jbyteArray</dfn>)
-         * \see #jni_array(JNIEnv *, size_type)
+         * \see #jni_array(JNIEnv *, array_type, size_type)
+         *
+         * The only difference between this constructor and
+         * #jni_array(JNIEnv *, array_type, size_type) is that the latter
+         * constructor is able to avoid a JNI call to fetch the array size since
+         * it is passed to the constructor.
          */
         jni_array(JNIEnv * env, array_type array);
 
         /**
-         * \brief Constructor for a new array.
+         * \brief Constructor for an array containing all of the elements of an
+         *        existing Java array where the size of the array is known at
+         *        construction time.
          * \param env JNI environment
-         * \param size Number of elements in the new array
+         * \param size Number of elements in the array
          * \see #jni_array(JNIEnv *, array_type)
+         *
+         * The parameter <dfn>size</dfn> must correctly specify the number of
+         * elements in the underlying Java array. Providing the size as a
+         * parameter enables this constructor to avoid a call to the
+         * JNI function <dfn>GetArrayLength</dfn>
          */
         jni_array(JNIEnv * env, array_type array, size_type size);
 
@@ -641,6 +654,7 @@ inline jni_array<JNIType>::jni_array(JNIEnv * env, array_type array, size_type s
     , d_jarray(array)
 {
     assert(0 <= size || !"array size cannot be negative");
+    assert(env->GetArrayLength(array) == size || !"array size mismatch");
     assert(d_env && d_jarray);
     if (! d_array) throw jni_bad_alloc("Get*ArrayElements", __FUNCTION__);
 }
@@ -767,21 +781,40 @@ class jni_critical_array : private non_copyable
         jboolean     d_is_copy;
 
         //
-        // INTERNALS
-        //
-
-    private:
-
-        void init(jsize size); // No delegating c'tors yet in GCC 4.5.3/MinGW
-
-        //
         // CONSTRUCTORS
         //
 
     public:
 
+        /**
+         * Constructor for a critical array containing all of the elements of an
+         * existing Java array where the size of the array is not known at
+         * construction time.
+         * \param env JNI environment
+         * \param array Reference to a JNI primitive array of the correct type
+         *              (\em eg <dfn>jintArray</dfn>)
+         * \see #jni_critical_array(JNIEnv * env, array_type, size_type)
+         *
+         * The only difference between this constructor and
+         * #jni_critical_array(JNIEnv *, array_type, size_type) is that the
+         * latter constructor is able to avoid a JNI call to fetch the array
+         * size since it is passed to the constructor.
+         */
         jni_critical_array(JNIEnv * env, array_type array);
 
+        /**
+         * \brief Constructor for a critical array containing all of the
+         *        elements of an existing Java array where the size of the array
+         *        is known at construction time.
+         * \param env JNI environment
+         * \param size Number of elements in the array
+         * \see #jni_critical_array(JNIEnv *, array_type)
+         *
+         * The parameter <dfn>size</dfn> must correctly specify the number of
+         * elements in the underlying Java array. Providing the size as a
+         * parameter enables this constructor to avoid a call to the
+         * JNI function <dfn>GetArrayLength</dfn>
+         */
         jni_critical_array(JNIEnv * env, array_type array, size_type size);
 
         ~jni_critical_array();
@@ -818,27 +851,10 @@ class jni_critical_array : private non_copyable
 };
 
 template <typename JNIType>
-inline void jni_critical_array<JNIType>::init(jsize size)
-{
-    assert(d_jarray || !"array cannot be NULL");
-    assert(0 <= size || !"size must be non-negative");
-    d_size = size;
-    d_array = reinterpret_cast<pointer>(d_env->GetPrimitiveArrayCritical(
-        d_jarray, &d_is_copy));
-    if (!d_array)
-        throw jni_bad_alloc("GetPrimitiveArrayCritical", __FUNCTION__);
-}
-
-template <typename JNIType>
 inline jni_critical_array<JNIType>::jni_critical_array(JNIEnv * env,
                                                        array_type array)
-    : d_env(env)
-    , d_jarray(array)
-{
-    assert(env || !"JNI environment cannot be NULL");
-    assert(array || !"array cannot be NULL");
-    init(env->GetArrayLength(array));
-}
+    : jni_critical_array(env, array, env->GetArrayLength(array))
+{ }
 
 template <typename JNIType>
 inline jni_critical_array<JNIType>::jni_critical_array(JNIEnv * env,
@@ -848,7 +864,13 @@ inline jni_critical_array<JNIType>::jni_critical_array(JNIEnv * env,
     , d_jarray(array)
 {
     assert(env || !"JNI environment cannot be NULL");
-    init(size);
+    assert(d_jarray || !"array cannot be NULL");
+    assert(0 <= size || !"size must be non-negative");
+    d_array = reinterpret_cast<pointer>(d_env->GetPrimitiveArrayCritical(
+        d_jarray, &d_is_copy));
+    if (!d_array)
+        throw jni_bad_alloc("GetPrimitiveArrayCritical", __FUNCTION__);
+    d_size = size;
 }
 
 template <typename JNIType>
