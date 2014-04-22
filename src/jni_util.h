@@ -691,6 +691,35 @@ inline typename jni_array<JNIType>::const_iterator jni_array<JNIType>::cend() co
 //                         class jni_critical_array
 //==============================================================================
 
+/**
+ * \brief Managed \em critical array of a JNI primitive type which was retrieved
+ *        from a JNI array reference. <strong>This class is subject to
+          significant narrow usage restrictions.</strong>
+ * \author Victor Schappert
+ * \since 20130813
+ * \tparam The JNI data type on which to specialize the array region &mdash;
+ *         \em eg <dfn>jbyte</dfn>.
+ * \see jni_array
+ *
+ * This class has the same basic behaviour as jni_array \em, including being a
+ * "two-way" data structure. The major difference is that this class is based on
+ * the JNI <dfn>GetPrimitiveArrayCritical(...)</dfn> function. This means it is
+ * subject to the following <strong>usage restrictions</strong>:
+ *
+ * <ul>
+ * <li>
+ * After an instance of this class is instantiated, no other JNI functions may
+ * be called in the same thread until the instance is destroyed. Failure to
+ * follow this requirement may result in abnormal program termination.
+ * </li>
+ * <li>
+ * Instantiation of critical arrays should be as brief as possible. No instance
+ * of this class should remain alive during any lengthy operation. Failure to
+ * follow this requirement may result in poor performance as other threads in
+ * the VM may be blocked while a critical array is alive.
+ * </li>
+ * </ul>
+ */
 template<typename JNIType>
 class jni_critical_array : private non_copyable
 {
