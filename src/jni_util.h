@@ -118,8 +118,8 @@ inline void jni_array_get_region<jboolean>(JNIEnv * env, jbooleanArray array,
  *        array reference \em but which cannot be copied back into the JVM.
  * \author Victor Schappert
  * \since 20130628
- * \tparam The JNI data type on which to specialize the array region &mdash;
- *         \em eg <dfn>jbyte</dfn>.
+ * \tparam JNIType The JNI data type on which to specialize the array region
+ *         &mdash; \em eg <dfn>jbyte</dfn>.
  * \see jni_array
  *
  * The array data is copied out of the JVM on construction using a JNI
@@ -446,8 +446,8 @@ inline jbyteArray jni_array_new<jbyte>(JNIEnv * env, jsize length)
  *        array reference.
  * \author Victor Schappert
  * \since 20130727
- * \tparam The JNI data type on which to specialize the array region &mdash;
- *         \em eg <dfn>jbyte</dfn>.
+ * \tparam JNIType The JNI data type on which to specialize the array region
+ *         &mdash; \em eg <dfn>jbyte</dfn>.
  * \see jni_array_region
  * \see jni_critical_array
  *
@@ -711,8 +711,8 @@ inline typename jni_array<JNIType>::const_iterator jni_array<JNIType>::cend() co
           significant narrow usage restrictions.</strong>
  * \author Victor Schappert
  * \since 20130813
- * \tparam The JNI data type on which to specialize the array region &mdash;
- *         \em eg <dfn>jbyte</dfn>.
+ * \tparam JNIType The JNI data type on which to specialize the array region
+ *         &mdash; \em eg <dfn>jbyte</dfn>.
  * \see jni_array
  *
  * This class has the same basic behaviour as jni_array \em, including being a
@@ -895,9 +895,29 @@ inline typename jni_critical_array<JNIType>::const_pointer jni_critical_array<
 //                           class jni_auto_local
 //==============================================================================
 
-template<typename T>
+/**
+ * \brief Automatic local reference to JNI object.
+ * \author Victor Schappert
+ * \since 20130628
+ * \tparam JNIObjectType JNI object type on which to specialize the auto local
+ *         reference.
+ * \see jni_auto_local<jclass>
+ * \see jni_auto_local<jobject>
+ * \see jni_auto_local<jstring>
+ * \see jni_auto_local<jthrowable>
+ * \see jni_array
+ * \see jni_array_region
+ *
+ * The various specializations of jni_auto_local may have type-specific
+ * constructors and, perhaps, methods, but they have consistent behaviour on
+ * destruction: if an auto local contains a live JNI object reference (\em ie a
+ * non-<dfn>null</dfn> pointer), the reference is released via
+ * <dfn>DeleteLocalRef(JNIEnv *, jobject)</dfn>.
+ */
+template<typename JNIObjectType>
 class jni_auto_local;
 
+// TODO: docs since 20130628
 template<>
 class jni_auto_local<jclass>
 {
@@ -939,6 +959,7 @@ inline jni_auto_local<jclass>::~jni_auto_local()
 inline jni_auto_local<jclass>::operator jclass()
 { return d_class; }
 
+// TODO: docs since 20130628
 template<>
 class jni_auto_local<jobject>
 {
@@ -989,6 +1010,7 @@ inline jni_auto_local<jobject>::operator jobject()
 
 // TODO: When doing the docs for this specialization, note that it can be
 //       "empty" (no managed object).
+// TODO: docs since 20130731
 template<>
 class jni_auto_local<jstring>
 {
@@ -1072,6 +1094,7 @@ inline void jni_auto_local<jstring>::reset(JNIEnv * env, jstring string)
     release(old_env, old_string);
 }
 
+// TODO: docs since 20131103
 template<>
 class jni_auto_local<jthrowable>
 {
@@ -1113,7 +1136,6 @@ inline jni_auto_local<jthrowable>::~jni_auto_local()
 inline jni_auto_local<jthrowable>::operator jthrowable()
 { return d_throwable; }
 
-
 //==============================================================================
 //                          class jni_auto_monitor
 //==============================================================================
@@ -1139,6 +1161,7 @@ class jni_auto_monitor
 
     public:
 
+        // TODO: docs
         jni_auto_monitor(JNIEnv * env, jobject object);
 
         ~jni_auto_monitor() noexcept(false);
