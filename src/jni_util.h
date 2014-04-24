@@ -917,7 +917,19 @@ inline typename jni_critical_array<JNIType>::const_pointer jni_critical_array<
 template<typename JNIObjectType>
 class jni_auto_local;
 
-// TODO: docs since 20130628
+/**
+ * \brief Automatic local reference to a Java class.
+ * \author Victor Schappert
+ * \since 20130628
+ * \see jni_auto_local
+ * \see jni_auto_local<jobject>
+ * \see jni_auto_local<jstring>
+ * \see jni_auto_local<jthrowable>
+ *
+ * As with all specializations of jni_auto_local, this class frees its
+ * managed local reference on destruction via
+ * <dfn>DeleteLocalRef(JNIEnv *, jobject)</dfn>.
+ */
 template<>
 class jni_auto_local<jclass>
 {
@@ -934,7 +946,38 @@ class jni_auto_local<jclass>
 
     public:
 
-        jni_auto_local(JNIEnv * env, const char * class_name);
+        /**
+         * \brief Constructs an automatic local reference to the specified
+         *        locally-defined Java class.
+         * \param env JNI environment
+         * \param class_name Fully-qualified class name
+         *
+         * Regarding the <dfn>class_name</dfn> parameter, the JNI documentation
+         * describes it as:
+         * > a fully-qualified class name (that is, a package name, delimited by
+         * > “/”, followed by the class name). If the name begins with “[“ (the
+         * > array signature character), it returns an array class. The string
+         * > is encoded in modified UTF-8.
+         *
+         * \attention
+         * This constructor looks up <dfn>class_name</dfn> using the JNI
+         * <dfn>FindClass(JNIEnv *, const char *)</dfn> function. This function
+         * may return <dfn>null</dfn> and, more importantly, <em>raise an
+         * exception in the JVM</em> of which the most likely variety is
+         * <dfn>NoClassDefFoundError</dfn>. In other words, although this
+         * constructor will not raise a <em>C++</em> exception, both the
+         * constructed class and the JVM may be in an error state post
+         * construction. Any code instantiating this class should therefore test
+         * for success post-construction, for example with:
+         *
+         *     jni_auto_local<jclass> clazz(env, "java/lang/Object");
+         *     if (! clazz)
+         *     {
+         *         // Handle exception state
+         *         // ...
+         *     } 
+         */
+        jni_auto_local(JNIEnv * env, const char * class_name) noexcept;
 
         ~jni_auto_local();
 
@@ -944,6 +987,8 @@ class jni_auto_local<jclass>
 
     public:
 
+        /** \brief Implicit conversion to <dfn>jclass</dfn>.
+         *  \return The <dfn>jclass</dfn> managed by this auto local. */
         operator jclass();
 };
 
