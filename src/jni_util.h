@@ -993,7 +993,7 @@ class jni_auto_local<jclass>
 };
 
 inline jni_auto_local<jclass>::jni_auto_local(JNIEnv * env,
-                                              const char * class_name)
+                                              const char * class_name) noexcept
     : d_env(env)
     , d_class(env->FindClass(class_name))
 { }
