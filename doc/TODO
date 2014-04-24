@@ -10,11 +10,15 @@
             [ ] Current number of warnings: 149
         -- cppcheck
 
-NEXT STEPS on COM:
-    -- Fix cSuneido Release/AddRef stuff
-    -- Bring cSuneido marshalling into line
-    -- Fix memory leak in cSuneido
- 
+C++ CONFORMANCE LIVE ISSUES
+
+    - Remove throw(ExceptionType) which is deprecated in C++11 (should eliminate many warnings)
+    - Remove __FUNCTION__ which is a non-standard VC feature
+
+VISUAL C++ ISSUES
+
+    - Try to eliminate warnings by eliminating throw(ExceptionType)
+    - Squelch constexpr warnings
 
 ================================================================================
 DLL INTERFACE GRAMMAR CLAMPDOWNS

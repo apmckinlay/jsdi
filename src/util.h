@@ -64,6 +64,10 @@ constexpr size_t array_length(T(&)[N])
  *        exception.
  * \author Victor Schappert
  * \since 20130628
+ * \tparam Exception Exception type whose constructor accepts a std::string as
+ *                   its first argument.
+ * \tparam Arg Type of the second argument to the exception type's constructor.
+ * \see throw_cpp<Exception, void>
  */
 template<typename Exception, typename Arg = void>
 struct throw_cpp
@@ -79,6 +83,21 @@ struct throw_cpp
  *        which the exception takes no arguments.
  * \author Victor Schappert
  * \since 20130628
+ * \tparam Exception Exception type whose constructor accepts a std::string as
+ *                   its only argument.
+ * \see throw_cpp
+ *
+ * The following code:
+ * 
+ *     std::ostringstream() << "oh no!" << throw_cpp<std::runtime_error>();
+ *
+ * is equivalent to:
+ *
+ *     std::ostringstream o;
+ *     o << "oh no!";
+ *     std::string s(o.str());
+ *     throw std::runtime_error(s);
+ * 
  */
 template <typename Exception>
 struct throw_cpp<Exception, void>
