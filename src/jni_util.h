@@ -1004,7 +1004,19 @@ inline jni_auto_local<jclass>::~jni_auto_local()
 inline jni_auto_local<jclass>::operator jclass()
 { return d_class; }
 
-// TODO: docs since 20130628
+/**
+ * \brief Automatic local reference to a Java object.
+ * \author Victor Schappert
+ * \since 20130628
+ * \see jni_auto_local
+ * \see jni_auto_local<jclass>
+ * \see jni_auto_local<jstring>
+ * \see jni_auto_local<jthrowable>
+ *
+ * As with all specializations of jni_auto_local, this class frees its
+ * managed local reference on destruction via
+ * <dfn>DeleteLocalRef(JNIEnv *, jobject)</dfn>.
+ */
 template<>
 class jni_auto_local<jobject>
 {
@@ -1021,8 +1033,51 @@ class jni_auto_local<jobject>
 
     public:
 
+        /**
+         * \brief Constructs an automatic local reference to the specified Java
+         *        object.
+         * \param env JNI environment
+         * \param object JNI pointer representing a Java object reference.
+         * \see jni_auto_local(JNIEnv *, jclass, jfieldID)
+         *
+         * If <dfn>object</dfn> is <dfn>null</dfn>, this auto local will be
+         * constructed "empty" and no action will be taken on destruction.
+         */
         jni_auto_local(JNIEnv * env, jobject object);
 
+        /**
+         * \brief Constructs an automatic local reference to a Java object that
+         *        is contained in a static field of a particular Java class.
+         * \param env JNI environment
+         * \param clazz Valid reference to a Java class.
+         * \param jfieldID Valid reference to a static field within
+         *        <dfn>clazz</dfn>.
+         *
+         * This constructor uses
+         * <dfn>GetStaticObjectField(JNIEnv *, jclass, jfieldID)</dfn> to load
+         * its local reference. The JNI documentation does not specify what
+         * happens if you give an invalid <dfn>jclass</dfn> or
+         * <dfn>jfieldID</dfn> or a field identifier that doesn't match the
+         * class, but it suffices to assume this would be very, very bad. Don't
+         * pass invalid parameters.
+         *
+         * Suppose you have Java code along these lines:
+         *
+         *     public class MyClass {
+         *         public static final Object field;
+         *         ...
+         *     }
+         *
+         * If <dfn>clazz</dfn> is a <dfn>jclass</dfn> handle to
+         * <dfn>MyClass.class</dfn> and <dfn>static_field_id</dfn> is a
+         * <dfn>jfieldID</dfn> identifying "field" within
+         * <dfn>MyClass.class</dfn>, then the C++ code
+         *
+         *     jni_auto_local<jobject> field(env, clazz, static_field_id);
+         *
+         * will construct an automatic local reference to
+         * <dfn>MyClass.field</dfn>.
+         */
         jni_auto_local(JNIEnv * env, jclass clazz, jfieldID static_field_id);
 
         ~jni_auto_local();
@@ -1033,6 +1088,8 @@ class jni_auto_local<jobject>
 
     public:
 
+        /** \brief Implicit conversion to <dfn>jobject</dfn>.
+         *  \return The <dfn>jobject</dfn> managed by this auto local. */
         operator jobject();
 };
 
@@ -1056,6 +1113,27 @@ inline jni_auto_local<jobject>::operator jobject()
 // TODO: When doing the docs for this specialization, note that it can be
 //       "empty" (no managed object).
 // TODO: docs since 20130731
+
+/**
+ * \brief Automatic local reference to a Java string.
+ * \author Victor Schappert
+ * \since 20130731
+ * \see jni_auto_local
+ * \see jni_auto_local<jclass>
+ * \see jni_auto_local<jobject>
+ * \see jni_auto_local<jthrowable>
+ *
+ * As with all specializations of jni_auto_local, this class frees its
+ * managed local reference on destruction via
+ * <dfn>DeleteLocalRef(JNIEnv *, jobject)</dfn>.
+ *
+ * \note
+ * This specialization of jni_auto_local is somewhat inconsistent with the
+ * others in that not only can the user deliberately initialize it "empty", it
+ * can also be emptied (or have its contents changed) while alive using
+ * #reset(JNIEnv *, jstring). It may be that in the future the behaviour of the
+ * various specializations should be made 100% uniform.
+ */
 template<>
 class jni_auto_local<jstring>
 {
@@ -1078,11 +1156,48 @@ class jni_auto_local<jstring>
 
     public:
 
+        /**
+         * \brief Constructs an "empty" automatic local reference (not actually
+         *        managing anything).
+         * \see #jni_auto_local(JNIEnv *, const jchar *, jsize)
+         * \see #jni_auto_local(JNIEnv *, jstring)
+         */
         jni_auto_local();
 
-        jni_auto_local(JNIEnv * env, const jchar * unicode_chars,
-                       const jsize size);
+        /**
+         * \brief Constructs a new <dfn>jstring</dfn> within the JNI environment
+         *        and commences managing it.
+         * \param env JNI environment
+         * \param unicode_chars Pointer to a string of at least <dfn>size</dfn>
+         *                      16-bit Unicode characters
+         * \param size Length of the string <dfn>unicode_chars</dfn> points to
+         * \see #jni_auto_local()
+         * \see #jni_auto_local(JNIEnv *, jstring)
+         *
+         * Constructs a new string using
+         * <dfn>NewString(JNIEnv *, const jchar *, jsize)</dfn> and manages it
+         * as an automatic local reference.
+         */
+        jni_auto_local(JNIEnv * env, const jchar * unicode_chars, jsize size);
 
+        /**
+         * \brief Constructs an automatic local reference managing an existing
+         *        string (or an "empty" automatic local reference).
+         * \param env JNI environment; may be <dfn>null</dfn> but only if
+         *            <dfn>string</dfn> is also <dfn>null</dfn>
+         * \param string String to manage (may be <dfn>null</dfn>)
+         * \see #reset(JNIEnv *, jstring)
+         * \see #jni_auto_local()
+         * \see #jni_auto_local(JNIEnv *, const jchar *, jsize)
+         *
+         * \note
+         * The code
+         *
+         *     jni_auto_local<jstring>(nullptr, nullptr);
+         * will construct an "empty" automatic local reference. However, if that
+         * is the desired result, it is preferable to use the parameterless
+         * constructor #jni_auto_local().
+         */
         jni_auto_local(JNIEnv * env, jstring string);
 
         ~jni_auto_local();
@@ -1093,6 +1208,8 @@ class jni_auto_local<jstring>
 
     public:
 
+        /** \brief Implicit conversion to <dfn>jstring</dfn>.
+         *  \return The <dfn>jstring</dfn> managed by this auto local. */
         operator jstring();
 
         //
@@ -1101,6 +1218,29 @@ class jni_auto_local<jstring>
 
     public:
 
+        /**
+         * \brief Stop managing the currently-managed <dfn>jstring</dfn>, if
+         *        any, and either begin managing a different <dfn>jstring</dfn>
+         *        or set this auto local empty.
+         * \param env JNI environment; may be <dfn>null</dfn> but only if
+         *            <dfn>string</dfn> is also <dfn>null</dfn>
+         * \param string New string to manage (may be <dfn>null</dfn>)
+         *
+         * Before beginning to manage <dfn>string</dfn>, this auto local deletes
+         * the reference to <dfn>jstring</dfn> it is currently managing, if any.
+         *
+         * The following code:
+         *
+         *     { // deliberate block
+         *         jni_auto_local<jstring> x(env, a);
+         *     }
+         *     jni_auto_local<jstring> x;
+         *
+         * is roughly equivalent to:
+         *
+         *     jni_auto_local<jstring> x(env, a);
+         *     x.reset(nullptr, nullptr);
+         */
         void reset(JNIEnv * env, jstring string);
 };
 
@@ -1110,11 +1250,14 @@ inline void jni_auto_local<jstring>::release(JNIEnv * env, jstring string)
     if (string) env->DeleteLocalRef(string);
 }
 
-inline jni_auto_local<jstring>::jni_auto_local() : d_env(0), d_string(0) { }
+inline jni_auto_local<jstring>::jni_auto_local()
+    : d_env(nullptr)
+    , d_string(nullptr)
+{ }
 
 inline jni_auto_local<jstring>::jni_auto_local(JNIEnv * env,
                                                const jchar * unicode_chars,
-                                               const jsize size)
+                                               jsize size)
     : d_env(env)
     , d_string(env->NewString(unicode_chars, size))
 { assert(env && unicode_chars); }
