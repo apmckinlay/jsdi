@@ -14,11 +14,19 @@ C++ CONFORMANCE LIVE ISSUES
 
     - Remove throw(ExceptionType) which is deprecated in C++11 (should eliminate many warnings)
     - Remove __FUNCTION__ which is a non-standard VC feature
+    - Put back delegating constructor in jsdi_callback.h
 
 VISUAL C++ ISSUES
 
     - Try to eliminate warnings by eliminating throw(ExceptionType)
     - Squelch constexpr warnings
+
+GENERAL ISSUES
+
+    - Need a logging system
+        [ ] test_com/test_com.cpp
+        [ ] suneido_protocol.cpp
+        [ ] jsdi_jni.cpp
 
 ================================================================================
 DLL INTERFACE GRAMMAR CLAMPDOWNS
