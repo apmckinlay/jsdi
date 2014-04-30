@@ -121,6 +121,8 @@ inline void jni_array_get_region<jboolean>(JNIEnv * env, jbooleanArray array,
  * \tparam JNIType The JNI data type on which to specialize the array region
  *         &mdash; \em eg <dfn>jbyte</dfn>.
  * \see jni_array
+ * \see jni_utf8_string_region
+ * \see jni_utf16_string_region
  *
  * The array data is copied out of the JVM on construction using a JNI
  * <dfn>Get&lt;Type&gt;ArrayRegion(...)</dfn> function and deallocated on
@@ -183,8 +185,7 @@ class jni_array_region: private non_copyable
          * \param array Reference to a JNI primitive array of the correct type
          *              (\em eg <dfn>jbyteArray</dfn>)
          */
-        jni_array_region(JNIEnv * env,
-                         typename jni_traits<JNIType>::array_type array);
+        jni_array_region(JNIEnv * env, array_type array);
 
         /**
          * \brief Constructor for region containing all of the elements of the
@@ -1110,10 +1111,6 @@ inline jni_auto_local<jobject>::~jni_auto_local()
 inline jni_auto_local<jobject>::operator jobject()
 { return d_object; }
 
-// TODO: When doing the docs for this specialization, note that it can be
-//       "empty" (no managed object).
-// TODO: docs since 20130731
-
 /**
  * \brief Automatic local reference to a Java string.
  * \author Victor Schappert
@@ -1282,7 +1279,19 @@ inline void jni_auto_local<jstring>::reset(JNIEnv * env, jstring string)
     release(old_env, old_string);
 }
 
-// TODO: docs since 20131103
+/**
+ * \brief Automatic local reference to a Java string.
+ * \author Victor Schappert
+ * \since 20131103
+ * \see jni_auto_local
+ * \see jni_auto_local<jclass>
+ * \see jni_auto_local<jobject>
+ * \see jni_auto_local<jstring>
+ *
+ * As with all specializations of jni_auto_local, this class frees its
+ * managed local reference on destruction via
+ * <dfn>DeleteLocalRef(JNIEnv *, jobject)</dfn>.
+ */
 template<>
 class jni_auto_local<jthrowable>
 {
@@ -1299,6 +1308,16 @@ class jni_auto_local<jthrowable>
 
     public:
 
+        /**
+         * \brief Constructs an automatic local reference to the specified Java
+         *        throwable.
+         * \param env JNI environment
+         * \param throwable JNI value representing a Java throwable local
+         *                  reference.
+         *
+         * If <dfn>throwable</dfn> is <dfn>null</dfn>, this auto local will be
+         * constructed "empty" and no action will be taken on destruction.
+         */
         jni_auto_local(JNIEnv * env, jthrowable throwable);
 
         ~jni_auto_local();
@@ -1309,6 +1328,8 @@ class jni_auto_local<jthrowable>
 
     public:
 
+        /** \brief Implicit conversion to <dfn>jthrowable</dfn>.
+         *  \return The <dfn>jthrowable</dfn> managed by this auto local. */
         operator jthrowable();
 };
 
@@ -1374,8 +1395,16 @@ inline jni_auto_monitor::~jni_auto_monitor()
 //                       class jni_utf8_string_region
 //==============================================================================
 
-// todo: docs
-// since: 20130709
+/**
+ * \brief Managed array of JNI modified UTF-8 characters that were retrieved
+ *        from a JNI string reference \em but which cannot be copied back into
+ *        the JVM.
+ * \author Victor Schappert
+ * \since 20130709
+ * \see jni_utf16_string_region
+ * \see jni_utf16_ostream
+ * \see jni_array_region
+ */
 class jni_utf8_string_region : private non_copyable
 {
         //
@@ -1384,13 +1413,18 @@ class jni_utf8_string_region : private non_copyable
 
     public:
 
+        /** \brief An unsigned integral type. */
         typedef size_t size_type;
-
+        /** \brief Type of the characters in this string region.
+         *  \see #const_value_type */
         typedef char value_type;
-
+        /** \brief Type of a pointer to a #value_type. */
         typedef value_type * pointer;
-
-        typedef const value_type * const_pointer;
+        /** \brief Type of <dfn>const</dfn> characters in this string region.
+         *  \see #value_type */
+        typedef const char const_value_type;
+        /** \brief Type of a pointer to a #const_value_type. */
+        typedef const_value_type * const_pointer;
 
         //
         // DATA
@@ -1407,6 +1441,12 @@ class jni_utf8_string_region : private non_copyable
 
     public:
 
+        /**
+         * \brief Fetches modified UTF-8 characters from a Java string into a
+         *        new UTF-8 string region.
+         * \param env JNI environment
+         * \param str String to fetch UTF-8 characters for
+         */
         jni_utf8_string_region(JNIEnv * env, jstring str);
 
         ~jni_utf8_string_region();
@@ -1417,8 +1457,20 @@ class jni_utf8_string_region : private non_copyable
 
     public:
 
+        /**
+         * \brief Returns the number of \em bytes in the UTF-8 string region.
+         * \return Number of bytes
+         *
+         * The value returned is not necessarily the number of modified UTF-8
+         * \em characters in the string!
+         */
         size_type size_bytes() const;
 
+        /**
+         * \brief Returns a pointer to the characters in the string region.
+         * \return Pointer to first modified UTF-8 character stored in the
+         *         string region.
+         */
         const_pointer str() const;
 };
 

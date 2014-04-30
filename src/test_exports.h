@@ -12,7 +12,8 @@
  * \brief Simple "C" functions exported from the DLL for testing purposes
  */
 
-#include <cstdint>
+#/** \cond internal */
+include <cstdint>
 
 extern "C"
 {
@@ -154,5 +155,7 @@ EXPORT_STDCALL(long) TestInvokeCallback_Recursive_StringSum(
     TestCallback_Recursive_StringSum f, struct Recursive_StringSum * ptr);
 
 } // extern "C"
+
+/** \endcond */
 
 #endif // __INCLUDED_TEST_EXPORTS_H___
