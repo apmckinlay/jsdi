@@ -21,13 +21,6 @@ VISUAL C++ ISSUES
     - Try to eliminate warnings by eliminating throw(ExceptionType)
     - Squelch constexpr warnings
 
-GENERAL ISSUES
-
-    - Need a logging system
-        [ ] test_com/test_com.cpp
-        [ ] suneido_protocol.cpp
-        [ ] jsdi_jni.cpp
-
 MORE DOXYGEN ISSUES
 
     - Incorrect use of \link \endlink commands
