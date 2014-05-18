@@ -13,6 +13,7 @@
 #include "test_com.h"
 
 #include "../com_util.h"
+#include "../log.h"
 #include "../util.h"
 
 #include <stdexcept>
@@ -20,7 +21,6 @@
 #include <string>
 #include <mutex>
 #include <cassert>
-#include <cstdio>  // TODO: remove this when we have better logging
 
 #define ERROR_STR(str) (__FILE__ ": " str)
 #define THROW_ERROR(str) { throw std::runtime_error(ERROR_STR(str)); }
@@ -443,18 +443,7 @@ EXPORT_STDCALL(ITestJSDICom *) TestCreateComObject()
     }
     catch (const std::runtime_error& e)
     {
-        // TODO: jsdi should have some kind of unified logging system for this
-        //       type of issue.
-        const std::string log_file(__FILE__ "_error.log");
-        const size_t base_pos(log_file.find_last_of("/\\"));
-        FILE * x = std::fopen(std::string::npos == base_pos
-            ? log_file.c_str()
-            : log_file.c_str() + base_pos + 1, "w");
-        if (x)
-        {
-            std::fprintf(x, e.what());
-            std::fclose(x);
-        }
+        LOG_ERROR("Failed to create ITestJSDICom *: '" << e.what() << '\'');
     }
     return result;
 }
