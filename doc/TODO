@@ -7,7 +7,7 @@
         -- doxygen
             [ ] Modify header style (include guard, then doxygen docs)
             [ ] Modify auto-generated header style.
-            [ ] Current number of warnings: 149
+            [ ] Current number of warnings: 188 (up from 149)
         -- cppcheck
 
 C++ CONFORMANCE LIVE ISSUES
@@ -38,10 +38,6 @@ DLL INTERFACE GRAMMAR CLAMPDOWNS
 
 2) string[N] and buffer[N] should not be permitted in dll params. If user
    desperately needs, can wrap them in a STRUCT.
-
-3) 'float' and 'double' return values must not be permitted, because such values
-   are not returned in EAX/EDX but rather at the top of the floating point
-   register stack (FP0). This breaks our stdcall invocation routine.
 
 ================================================================================
 IDEAS FOR PUSH-CHANGE SYSTEM

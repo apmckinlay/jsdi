@@ -35,10 +35,10 @@ namespace jsdi {
  * <p>
  * The following traits are available:
  * <dl>
- * <dd><dfn>array_type</dfn></dd>
- * <dt>
+ * <dt><dfn>array_type</dfn></dt>
+ * <dd>
  * JNI opaque array reference type &mdash; \em eg <dfn>jbyteArray</dfn>.
- * </dt>
+ * </dd>
  * </dl>
  * </p>
  * \todo Finish documenting available traits
@@ -537,6 +537,8 @@ class jni_array: private non_copyable
          *        existing Java array where the size of the array is known at
          *        construction time.
          * \param env JNI environment
+         * \param array Reference to a JNI primitive array of the correct type
+         *              (\em eg <dfn>jbyteArray</dfn>)
          * \param size Number of elements in the array
          * \see #jni_array(JNIEnv *, array_type)
          *
@@ -709,14 +711,14 @@ inline typename jni_array<JNIType>::const_iterator jni_array<JNIType>::cend() co
 /**
  * \brief Managed \em critical array of a JNI primitive type which was retrieved
  *        from a JNI array reference. <strong>This class is subject to
-          significant narrow usage restrictions.</strong>
+ *        significant narrow usage restrictions.</strong>
  * \author Victor Schappert
  * \since 20130813
  * \tparam JNIType The JNI data type on which to specialize the array region
  *         &mdash; \em eg <dfn>jbyte</dfn>.
  * \see jni_array
  *
- * This class has the same basic behaviour as jni_array \em, including being a
+ * This class has the same basic behaviour as jni_array, \em including being a
  * "two-way" data structure. The major difference is that this class is based on
  * the JNI <dfn>GetPrimitiveArrayCritical(...)</dfn> function. This means it is
  * subject to the following <strong>usage restrictions</strong>:
@@ -808,6 +810,8 @@ class jni_critical_array : private non_copyable
          *        elements of an existing Java array where the size of the array
          *        is known at construction time.
          * \param env JNI environment
+         * \param array Reference to a JNI primitive array of the correct type
+         *              (\em eg <dfn>jintArray</dfn>)
          * \param size Number of elements in the array
          * \see #jni_critical_array(JNIEnv *, array_type)
          *
@@ -1051,7 +1055,7 @@ class jni_auto_local<jobject>
          *        is contained in a static field of a particular Java class.
          * \param env JNI environment
          * \param clazz Valid reference to a Java class.
-         * \param jfieldID Valid reference to a static field within
+         * \param static_field_id Valid reference to a static field within
          *        <dfn>clazz</dfn>.
          *
          * This constructor uses
@@ -1370,7 +1374,13 @@ class jni_auto_monitor
 
     public:
 
-        // TODO: docs
+        /**
+         * \brief Enters the monitor for a given object (it will be exited on
+         *        destruction of this automatic object)
+         * \param env JNI environment
+         * \param object Object whose monitor is to be entered
+         * \throws jni_exception If the monitor cannot be acquired
+         */
         jni_auto_monitor(JNIEnv * env, jobject object);
 
         ~jni_auto_monitor() noexcept(false);
@@ -1404,6 +1414,9 @@ inline jni_auto_monitor::~jni_auto_monitor()
  * \see jni_utf16_string_region
  * \see jni_utf16_ostream
  * \see jni_array_region
+ *
+ * On construction, the string region appends a UTF-8 null character to the end
+ * of the Java characters. The string region is therefore zero-terminated.
  */
 class jni_utf8_string_region : private non_copyable
 {
@@ -1463,6 +1476,9 @@ class jni_utf8_string_region : private non_copyable
          *
          * The value returned is not necessarily the number of modified UTF-8
          * \em characters in the string!
+         *
+         * \note
+         * The value returned does not include the terminating null byte.
          */
         size_type size_bytes() const;
 
@@ -1498,8 +1514,18 @@ inline jni_utf8_string_region::const_pointer
 //                      class jni_utf16_string_region
 //==============================================================================
 
-// todo: docs
-// since: 20130709
+/**
+ * \brief Managed array of Java UTF-16 characters that were retrieved from a
+ *        JNI string reference \em but which cannot be copied back into the JVM.
+ * \author Victor Schappert
+ * \since 20130709
+ * \see jni_utf8_string_region
+ * \see jni_utf16_ostream
+ * \see jni_array_region
+ *
+ * On construction, the string region appends a UTF-16 null character to the end
+ * of the Java characters. The string region is therefore zero-terminated.
+ */
 class jni_utf16_string_region : private non_copyable
 {
         //
@@ -1508,14 +1534,19 @@ class jni_utf16_string_region : private non_copyable
 
     public:
 
+        /** \brief An unsigned integral type. */
         typedef size_t size_type;
-
+        /** \brief Type of the characters in this string region.
+         *  \see #const_value_type */
         typedef utf16char_t value_type;
-
+        /** \brief Type of a pointer to a #value_type. */
         typedef value_type * pointer;
-
-        typedef const value_type * const_pointer;
-
+        /** \brief Type of <dfn>const</dfn> characters in this string region.
+         *  \see #value_type */
+        typedef const utf16_char_t const_value_type;
+        /** \brief Type of a pointer to a #const_value_type. */
+        typedef const_value_type * const_pointer;
+        /** \brief A random access iterator to #const_value_type. */
         typedef const_pointer const_iterator;
 
         //
@@ -1533,6 +1564,12 @@ class jni_utf16_string_region : private non_copyable
 
     public:
 
+        /**
+         * \brief Fetches UTF-16 characters from a Java string into a new UTF-16
+         *        string region.
+         * \param env JNI environment
+         * \param str String to fetch UTF-16 characters for
+         */
         jni_utf16_string_region(JNIEnv * env, jstring str);
 
         ~jni_utf16_string_region();
@@ -1543,14 +1580,46 @@ class jni_utf16_string_region : private non_copyable
 
     public:
 
+        /**
+         * \brief Returns the number of characters in the UTF-16 string region.
+         * \return Number of characters
+         *
+         * \note
+         * The value returned does not include the terminating null character.
+         */
         size_type size() const;
 
+        /**
+         * \brief Returns a pointer to the characters in the string region.
+         * \return Pointer to first UTF-16 character stored in the string
+         *         region.
+         * \see #wstr() const
+         */
         const_pointer str() const;
 
-        const wchar_t * wstr() const;
+        /**
+         * \brief Returns a pointer to the characters in the string region.
+         * \return Pointer to first UTF-16 character stored in the string
+         *         region.
+         * \see #str() const
+         */
+         const wchar_t * wstr() const;
+        // TODO: This member function is redundant and should be deleted...
 
+        /**
+         * \brief Returns an iterator pointing to the first character of the
+         *        string region.
+         * \return Iterator to first character
+         * \see #end() const
+         */
         const_iterator begin() const;
 
+        /**
+         * \brief Returns an iterator pointing to the \em past-the-end character
+         *        of the string region.
+         * \return Iterator that is one position past the end of the string
+         * \see #begin() const
+         */
         const_iterator end() const;
 };
 
@@ -1738,7 +1807,7 @@ jni_utf16_ostream& operator<<(jni_utf16_ostream&, jstring);
 /**
  * \brief Converts a zero-terminated string of 8-bit characters into a vector
  *        of 16-bit Java characters.
- * \param Non-NULL pointer to a zero-terminated string
+ * \param sz Non-NULL pointer to a zero-terminated string
  * \return Vector containing the wide character equivalents of the characters
  *         in <dfn>sz</dfn> <em>but without the zero-terminator</em>
  * \author Victor Schappert
