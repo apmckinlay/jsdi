@@ -12,7 +12,6 @@
 #include "stdcall_thunk.h"
 
 #include "callback.h"
-#include "concurrent.h"
 #include "heap.h"
 
 #include <stdexcept>
@@ -20,6 +19,7 @@
 #include <sstream>
 #include <vector>
 #include <limits>
+#include <mutex>
 #include <cassert>
 #include <cstring>
 #include <cstdlib>
@@ -160,7 +160,7 @@ struct stdcall_thunk_impl
     int                         d_magic_1;
     stub_code                   d_code;
     std::shared_ptr<callback>   d_callback;
-    critical_section            d_critical_section;
+    std::mutex                  d_mutex;
     int                         d_num_ongoing_calls;
     stdcall_thunk_state         d_state;
     int                         d_magic_2;
@@ -205,7 +205,7 @@ stdcall_thunk_impl::~stdcall_thunk_impl()
 {
 #ifndef NDEBUG
     {
-        lock_guard<critical_section> lock(&d_critical_section);
+        std::lock_guard<std::mutex> lock(d_mutex);
         assert(CLEARED == d_state);
         assert(0 == d_num_ongoing_calls);
     }
@@ -223,7 +223,7 @@ long __stdcall stdcall_thunk_impl::wrapper(stdcall_thunk_impl * impl,
     assert(MAGIC2 == impl->d_magic_2);
     // SETUP
     {
-        lock_guard<critical_section> lock(&impl->d_critical_section);
+        std::lock_guard<std::mutex> lock(impl->d_mutex);
         assert(READY == impl->d_state || !"callback already cleared");
         ++impl->d_num_ongoing_calls; // No RAII guard is OK b/c of catch (...)
     }
@@ -248,7 +248,7 @@ long __stdcall stdcall_thunk_impl::wrapper(stdcall_thunk_impl * impl,
     // TEARDOWN
     //
     {
-        lock_guard<critical_section> lock(&impl->d_critical_section);
+        std::lock_guard<std::mutex> lock(impl->d_mutex);
         --impl->d_num_ongoing_calls;
         assert(MAGIC1 == impl->d_magic_1);
         assert(MAGIC2 == impl->d_magic_2);
@@ -286,7 +286,7 @@ stdcall_thunk_state stdcall_thunk::state() const
 
 stdcall_thunk_state stdcall_thunk::clear()
 {
-    lock_guard<critical_section> lock(&d_impl->d_critical_section);
+    std::lock_guard<std::mutex> lock(d_impl->d_mutex);
     assert(READY == d_impl->d_state);
     assert(0 <= d_impl->d_num_ongoing_calls);
     d_impl->d_state = 0 == d_impl->d_num_ongoing_calls ? CLEARED : CLEARING;

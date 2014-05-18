@@ -148,7 +148,7 @@ void global_refs::init(JNIEnv * env) throw(jni_exception)
 
     global_refs * g = &global_refs_;
 
-    // [BEGIN:GENERATED CODE last updated Thu Nov 07 21:37:54 PST 2013]
+    // [BEGIN:GENERATED CODE last updated Sat May 17 21:01:06 PDT 2014]
     g->java_lang_Object_ = get_global_class_ref(env, "java/lang/Object");
     g->java_lang_Object__m_toString_ = get_method_id(env, g->java_lang_Object_, "toString", "()Ljava/lang/String;");
     g->java_lang_Boolean_ = get_global_class_ref(env, "java/lang/Boolean");
@@ -185,6 +185,8 @@ void global_refs::init(JNIEnv * env) throw(jni_exception)
     g->suneido_language_jsdi_com_COMobject__f_ptr_ = get_field_id(env, g->suneido_language_jsdi_com_COMobject_, "ptr", "J");
     g->suneido_language_jsdi_com_COMException_ = get_global_class_ref(env, "suneido/language/jsdi/com/COMException");
     g->suneido_language_jsdi_com_COMException__init_ = get_method_id(env, g->suneido_language_jsdi_com_COMException_, "<init>", "(Ljava/lang/String;)V");
+    g->suneido_language_jsdi_suneido_protocol_InternetProtocol_ = get_global_class_ref(env, "suneido/language/jsdi/suneido_protocol/InternetProtocol");
+    g->suneido_language_jsdi_suneido_protocol_InternetProtocol__m_start_ = get_static_method_id(env, g->suneido_language_jsdi_suneido_protocol_InternetProtocol_, "start", "(Ljava/lang/String;)[B");
     g->suneido_language_Numbers_ = get_global_class_ref(env, "suneido/language/Numbers");
     g->suneido_language_Numbers__m_narrow_ = get_static_method_id(env, g->suneido_language_Numbers_, "narrow", "(Ljava/lang/Number;)Ljava/lang/Number;");
     g->suneido_language_Numbers__f_MC_ = get_static_field_id(env, g->suneido_language_Numbers_, "MC", "Ljava/math/MathContext;");
@@ -210,4 +212,3 @@ void global_refs::init(JNIEnv * env) throw(jni_exception)
 }
 
 } // namespace jsdi
-

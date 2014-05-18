@@ -18,5 +18,6 @@
 
 #undef min
 #undef max
+#undef ERROR
 
 #endif // __INCLUDED_JSDI_WINDOWS_H__

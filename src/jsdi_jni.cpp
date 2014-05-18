@@ -10,7 +10,6 @@
 //==============================================================================
 
 #include "com.h"
-#include "concurrent.h"
 #include "jni_exception.h"
 #include "jni_util.h"
 #include "jsdi_callback.h"
@@ -20,6 +19,7 @@
 #include "stdcall_thunk.h"
 
 #include <deque>
+#include <mutex>
 #include <cassert>
 #include <cstring>
 
@@ -133,13 +133,13 @@ inline const char * get_struct_ptr(jint struct_addr, jint size_direct)
 }
 
 constexpr size_t CLEARED_LIST_DELETE_THRESHOLD = 10;
-critical_section callback_list_lock;
+std::mutex callback_list_lock;
 std::deque<stdcall_thunk *> callback_clearing_list;
 std::deque<stdcall_thunk *> callback_cleared_list;
 
 void clear_callback(stdcall_thunk * thunk)
 {
-    lock_guard<critical_section> lock(&callback_list_lock);
+    std::lock_guard<std::mutex> lock(callback_list_lock);
     switch (thunk->clear())
     {
         case stdcall_thunk_state::CLEARED:

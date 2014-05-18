@@ -13,9 +13,12 @@
 
 #ifndef __NOTEST__
 
-#include <map>
-#include <cstring>
+#include "util.h"
+
 #include <cstdlib>
+#include <cstring>
+#include <functional>
+#include <map>
 #include <stdexcept>
 
 namespace jsdi {
@@ -37,19 +40,24 @@ typedef std::map<const char *, test_map, cstr_less> suite_map;
 struct test_manager_impl
 {
     suite_map d_map;
-    std::vector<test_failure> d_failures;
+    std::vector<test_failure> d_failures; // May be more than one fail per test
+    std::vector<test_failure> d_cancels;  // Max 1 cancel per test
     std::shared_ptr<test> d_running_test;
+    std::vector<std::string> d_jvm_args;
     int d_num_tests;
     int d_num_tests_run;
     int d_num_tests_failed;
+    bool d_has_jvm_args;
     test_manager_impl()
         : d_num_tests(0)
         , d_num_tests_run(0)
         , d_num_tests_failed(0)
+        , d_has_jvm_args(false)
     { }
     void init_run()
     {
         d_failures.clear();
+        d_cancels.clear();
         d_num_tests_run = 0;
         d_num_tests_failed = 0;
     }
@@ -60,6 +68,13 @@ struct test_manager_impl
         ++d_num_tests_run;
         try
         { _test->run(); }
+        catch (const test_java_vm_create_error& e)
+        {
+            if (d_has_jvm_args)
+                add_failure(e.what());
+            else
+                d_cancels.push_back(test_failure(d_running_test, e.what()));
+        }
         catch (...)
         {
             d_running_test.reset();
@@ -89,7 +104,6 @@ struct test_manager_impl
 
 test::~test()
 { }
-
 
 void test::fail_assert(const char * which, const char * expr, const char * line)
 {
@@ -127,18 +141,35 @@ void test_manager::dump_report(std::ostream& o) const
     std::vector<test_failure>::const_iterator i = d_impl->d_failures.begin(),
                                               e = d_impl->d_failures.end();
     std::string last_full_name;
-    for (; i != e; ++i)
+    if (i != e)
     {
-        const std::string& full_name(i->get_test().full_name());
-        if (full_name != last_full_name)
+        o << "-- failure messages --" << std::endl;
+        for (; i != e; ++i)
         {
-            last_full_name = full_name;
-            o << full_name << '\n';
+            const std::string& full_name(i->get_test().full_name());
+            if (full_name != last_full_name)
+            {
+                last_full_name = full_name;
+                o << '\t' << full_name << std::endl;
+            }
+            o << "\t\t" << i->output() << std::endl;
         }
-        o << '\t' << i->output() << '\n';
+    }
+    i = d_impl->d_cancels.begin();
+    e = d_impl->d_cancels.end();
+    if (i != e)
+    {
+        o << "-- cancellation messages --" << std::endl;
+        for (; i != e; ++i)
+        {
+            o << '\t' << i->get_test().full_name() << std::endl << "\t\t"
+              << i->output() << std::endl;
+        }
     }
     if (0 < d_impl->d_num_tests_failed)
         o << "FAILED " << d_impl->d_num_tests_failed;
+    else if (0 < d_impl->d_cancels.size())
+        o << "CANCELLED " << d_impl->d_cancels.size();
     else
         o << "SUCCEEDED " << d_impl->d_num_tests_run;
     o << " OF " << d_impl->d_num_tests_run << std::endl;
@@ -203,11 +234,71 @@ void test_manager::run_all()
     }
 }
 
+void test_manager::set_jvm_args(char * const argv[], int argc)
+{
+    d_impl->d_jvm_args.clear();
+    d_impl->d_jvm_args.reserve(argc);
+    for (int k = 0; k < argc; ++k)
+        d_impl->d_jvm_args.push_back(std::string(argv[k]));
+    d_impl->d_has_jvm_args = true;
+}
+
 test_manager& test_manager::instance()
 {
     // Not thread-safe!
     static test_manager instance;
     return instance;
+}
+
+//==============================================================================
+//                            class test_java_vm
+//==============================================================================
+
+test_java_vm::test_java_vm()
+    : d_env(nullptr)
+{
+    // Any exceptions thrown by this constructor during a test::run() will be
+    // caught by test_manager_impl::run_test(...) an processed appropriately.
+    test_manager_impl * const impl = test_manager::instance().d_impl.get();
+    // If user didn't specify to instantiate a JVM on the command-line, throw
+    // a create exception.
+    if (! impl->d_has_jvm_args)
+    {
+        std::ostringstream() << "No /jvm switch specified"
+                             << throw_cpp<test_java_vm_create_error>();
+    }
+    // Otherwise, try to create the JVM.
+    else
+    {
+        const size_t nopt(impl->d_jvm_args.size());
+        JavaVMInitArgs vm_args;
+        std::unique_ptr<JavaVMOption[]> options(new JavaVMOption[nopt]);
+        vm_args.version             = JNI_VERSION_1_2;
+        vm_args.options             = options.get();
+        vm_args.nOptions            = nopt;
+        vm_args.ignoreUnrecognized  = true;
+        for (size_t k = 0; k < nopt; ++k)
+        {
+            char * str(const_cast<char *>(impl->d_jvm_args[k].c_str()));
+            options[k].optionString = str;
+            options[k].extraInfo = nullptr;
+        }
+        JavaVM * vm(nullptr);
+        int result = JNI_CreateJavaVM(&vm, reinterpret_cast<void **>(&d_env),
+                                      &vm_args);
+        if (JNI_OK == result)
+            d_java_vm.reset(vm, std::mem_fn(&JavaVM::DestroyJavaVM));
+        else
+        {
+            std::ostringstream() << "Failed to create JVM: got error code "
+                                 << result
+                                 << throw_cpp<test_java_vm_create_error>();
+        }
+    }
+    // If we get to the end of the constructor without an exception having been
+    // thrown, both the virtual machine pointer and the environment pointer must
+    // be valid.
+    assert((d_java_vm && d_env) || !"failed to create JVM and JNI environment");
 }
 
 } // namespace jsdi
