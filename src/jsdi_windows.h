@@ -2,15 +2,16 @@
  * Licensed under GPLv2.
  */
 
-//==============================================================================
-// file: jsdi_windows.h
-// auth: Victor Schappert
-// date: 20130618
-// desc: Don't #include <windows.h> directly. Instead include this file.
-//==============================================================================
-
 #ifndef __INCLUDED_JSDI_WINDOWS_H__
 #define __INCLUDED_JSDI_WINDOWS_H__
+
+/**
+ * \file jsdi_windows.h
+ * \author Victor Schappert
+ * \since 20130618
+ * \brief Don't <dfn>#include &lt;windows.h&gt;</dfn> directly. Instead include
+ *        this file.
+ */
 
 #include "jsdi_windef.h"
 

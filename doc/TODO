@@ -28,12 +28,6 @@ MORE DOXYGEN ISSUES
       for example \link a::b::c() const Hello, there\endlink would make the text
       "Hello, therE" a link  to a::b::c() const
 
-    - The following files are missing \file blocks:
-          [ ] util.h
-          [ ] jsdi_windows.h
-          [ ] jsdi_ole2.h
-          [ ] jsdi_windef.h 
-
 ================================================================================
 DLL INTERFACE GRAMMAR CLAMPDOWNS
 ================================================================================
