@@ -24,44 +24,44 @@
 
 /** \brief Value of #STATIC_LOG_THRESHOLD where all log messages are stripped
  *         at compile time. */
-#define LOG_LEVEL_NONE -1
+#define LOG_LEVEL_NONE 0
 /**
  * \brief Value of #STATIC_LOG_THRESHOLD where all non-fatal log messages are
  *        stripped at compile time
  * \see LOG_FATAL(expr)
  */
-#define LOG_LEVEL_FATAL 0
+#define LOG_LEVEL_FATAL 1
 /**
  * \brief Value of #STATIC_LOG_THRESHOLD where all log messages whose priority
  *        level is not at least error are stripped at compile time
  * \see LOG_ERROR(expr)
  */
-#define LOG_LEVEL_ERROR 1
+#define LOG_LEVEL_ERROR 2
 /**
  * \brief Value of #STATIC_LOG_THRESHOLD where all log messages whose priority
  *        level is not at least warning are stripped at compile time
  * \see LOG_WARN(expr)
  */
-#define LOG_LEVEL_WARN  2
+#define LOG_LEVEL_WARN  3
 /**
  * \brief Value of #STATIC_LOG_THRESHOLD where all log messages whose priority
  *        level is not at least information are stripped at compile time
  * \see LOG_INFO(expr)
  */
-#define LOG_LEVEL_INFO  3
+#define LOG_LEVEL_INFO  4
 /**
  * \brief Value of #STATIC_LOG_THRESHOLD where all log messages whose priority
  *        level is not at least debug are stripped at compile time (i.e. only
  *        trace messages are stripped)
  * \see LOG_DEBUG(expr)
  */
-#define LOG_LEVEL_DEBUG 4
+#define LOG_LEVEL_DEBUG 5
 /**
  * \brief Value of #STATIC_LOG_THRESHOLD where all log messages are included at
  *        compile time
  * \see LOG_TRACE(expr)
  */
-#define LOG_LEVEL_TRACE 5
+#define LOG_LEVEL_TRACE 6
 
 #ifndef STATIC_LOG_THRESHOLD
 /**
@@ -160,14 +160,15 @@
 
 /** \cond internal */
 #if LOG_LEVEL_FATAL <= STATIC_LOG_THRESHOLD
-#define LOG_IF_LEVEL(level, expr)                                       \
-{                                                                       \
-    jsdi::log_manager& manager(jsdi::log_manager::instance());          \
-    if (manager.threshold() <= level)                                   \
-    {                                                                   \
-        std::lock_guard<jsdi::log_manager> l0ck(manager);               \
-        manager.stream(level, __FILE__, __LINE__, __func__) << expr;    \
-    }                                                                   \
+#define LOG_IF_LEVEL(level, expr)                                           \
+{                                                                           \
+    jsdi::log_manager& manager(jsdi::log_manager::instance());              \
+    if (level <= manager.threshold())                                       \
+    {                                                                       \
+        std::lock_guard<jsdi::log_manager> l0ck(manager);                   \
+        manager.stream(level, __FILE__, __LINE__, __func__) << expr         \
+                                                            << std::endl;   \
+    }                                                                       \
 }
 #undef LOG_FATAL
 #define LOG_FATAL(expr) LOG_IF_LEVEL(jsdi::log_level::FATAL, expr)
@@ -234,6 +235,9 @@ enum log_level
     TRACE = LOG_LEVEL_TRACE
 };
 
+/** \brief Stream insertion operator for log_level */
+std::ostream& operator<<(std::ostream&, log_level);
+
 //==============================================================================
 //                             class log_manager
 //==============================================================================
@@ -284,6 +288,13 @@ class log_manager : public non_copyable
     public:
 
         /**
+         * \brief Queries the log file path
+         * \return Current log file path
+         * \see #set_path(const std::string&)
+         */
+        std::string path() const;
+
+        /**
          * \brief Queries the dynamic log threshold
          * \return Minimum level of log messages that should be sent to the
          *         log stream
@@ -307,6 +318,7 @@ class log_manager : public non_copyable
         /**
          * \brief Changes the log file path
          * \param New log file path
+         * \see #path() const
          * \see #set_threshold(log_level)
          *
          * This function closes the old log file, if it was open, but does not
@@ -319,6 +331,8 @@ class log_manager : public non_copyable
          * \brief Sets the dynamic log level threshold
          * \param threshold Lowest priority log level that should actually be
          *        logged at runtime
+         * \see #threshold() const
+         * \see #set_path(const std::string&)
          *
          * If <dfn>threshold</dfn> is log_level::NONE, no messages at all will
          * be logged at runtime. If <dfn>threshold</dfn> is log_level::FATAL,
