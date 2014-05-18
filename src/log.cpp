@@ -6,10 +6,13 @@
 
 #include "util.h"
 
-#include <stdexcept>
+#include <chrono>
 #include <fstream>
+#include <iomanip>
 #include <sstream>
+#include <stdexcept>
 #include <cassert>
+#include <ctime>
 
 namespace jsdi {
 
@@ -35,6 +38,22 @@ log_level static_to_dynamic()
 } // anonymous namespace
 
 //==============================================================================
+//                              enum log_level
+//==============================================================================
+
+std::ostream& operator<<(std::ostream& o, log_level level)
+{
+    static const char * STR[] =
+    { "NONE", "FATAL", "ERROR", "WARN", "INFO", "DEBUG", "TRACE" };
+    assert(array_length(STR) == 1 + log_level::TRACE || !"array size mismatch");
+    // TODO: Make the above a static_assert as soon as MSVC supports constexpr
+    //       properly.
+    assert(NONE <= level && level <= TRACE);
+    o << STR[level];
+    return o;
+}
+
+//==============================================================================
 //                          struct log_manager_impl
 //==============================================================================
 
@@ -56,6 +75,13 @@ log_manager::log_manager()
     , d_threshold(static_to_dynamic())
 { }
 
+std::string log_manager::path() const
+{
+    std::lock_guard<log_manager> lock(const_cast<log_manager&>(*this));
+    std::string log_file_path(d_impl->d_log_file_path);
+    return log_file_path;
+}
+
 std::ostream& log_manager::stream(log_level level, const char * file_name,
                                   int line_no, const char * func_name)
 {
@@ -65,6 +91,7 @@ std::ostream& log_manager::stream(log_level level, const char * file_name,
     //       to ANY function of the log manager.
     CHECK_LEVEL(level);
     assert(file_name && func_name);
+    // Ensure there's an open stream.
     if (! d_impl->d_stream)
     {
         std::unique_ptr<std::ofstream> stream(new std::ofstream(
@@ -76,12 +103,20 @@ std::ostream& log_manager::stream(log_level level, const char * file_name,
                                  << d_impl->d_log_file_path << '\''
                                  << throw_cpp<std::runtime_error>();
     }
-    return *d_impl->d_stream;
+    std::ostream& o(*d_impl->d_stream);
+    // Put the boilerplate into the stream. Borrowed this solution from
+    // here: http://stackoverflow.com/a/17817079/1911388
+    auto now(std::chrono::system_clock::now());
+    time_t now_c(std::chrono::system_clock::to_time_t(now));
+    o << std::put_time(std::localtime(&now_c), "%c") << '\t' << level
+      << '\t' << file_name << ':' << line_no << '\t' << func_name << '\t';
+    // Return the stream.
+    return o;
 }
 
 void log_manager::set_path(const std::string& log_file_path)
 {
-    std::lock_guard<log_manager>(*this);
+    std::lock_guard<log_manager> lock(*this);
     if (log_file_path != d_impl->d_log_file_path)
     {
         d_impl->d_log_file_path = log_file_path;
@@ -92,7 +127,7 @@ void log_manager::set_path(const std::string& log_file_path)
 void log_manager::set_threshold(log_level threshold)
 {
     CHECK_LEVEL(threshold);
-    std::lock_guard<log_manager>(*this);
+    std::lock_guard<log_manager> lock(*this);
     d_threshold = threshold;
 }
 

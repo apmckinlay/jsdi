@@ -10,6 +10,7 @@
 //==============================================================================
 
 #include "com.h"
+#include "log.h"
 #include "jni_exception.h"
 #include "jni_util.h"
 #include "jsdi_callback.h"
@@ -17,6 +18,7 @@
 #include "marshalling.h"
 #include "stdcall_invoke.h"
 #include "stdcall_thunk.h"
+#include "suneido_protocol.h"
 
 #include <deque>
 #include <mutex>
@@ -200,7 +202,15 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_JSDI_init
   (JNIEnv * env, jclass)
 {
     JNI_EXCEPTION_SAFE_BEGIN;
-    global_refs::init(env);
+    JavaVM * vm(nullptr);
+    if (JNI_OK == env->GetJavaVM(&vm))
+    {
+        global_refs::init(env);
+        suneido_protocol::register_handler(vm);
+        // TODO: presently no-one is calling suneido_protocol::unregister_handler()
+        log_manager::instance().set_path(std::string("jsdi.log"));
+    }
+    else throw std::runtime_error("Failed to obtain JavaVM in JSDI.init()");
     JNI_EXCEPTION_SAFE_END(env);
 }
 
