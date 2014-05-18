@@ -12,8 +12,8 @@
  * \brief Simple "C" functions exported from the DLL for testing purposes
  */
 
-#/** \cond internal */
-include <cstdint>
+/** \cond internal */
+#include <cstdint>
 
 extern "C"
 {
