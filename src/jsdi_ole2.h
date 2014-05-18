@@ -2,15 +2,16 @@
  * Licensed under GPLv2.
  */
 
-//==============================================================================
-// file: jsdi_ole2.h
-// auth: Victor Schappert
-// date: 20140406
-// desc: Don't #include <ole2.h> directly. Instead include this file.
-//==============================================================================
-
 #ifndef __INCLUDED_JSDI_OLE2_H__
 #define __INCLUDED_JSDI_OLE2_H__
+
+/**
+ * \file jsdi_ole2.h
+ * \author Victor Schappert
+ * \since 20140406
+ * \brief Don't <dfn>#include &lt;ole2.h&gt;</dfn> directly. Instead include
+ *        this file.
+ */
 
 #include "jsdi_windef.h"
 

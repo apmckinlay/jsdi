@@ -2,15 +2,15 @@
  * Licensed under GPLv2.
  */
 
-//==============================================================================
-// file: util.h
-// auth: Victor Schappert
-// date: 20130624
-// desc: Utility functions used by the JSDI project.
-//==============================================================================
-
 #ifndef __INCLUDED_UTIL_H__
 #define __INCLUDED_UTIL_H__
+
+/**
+ * \file util.h
+ * \author Victor Schappert
+ * \since 20130624
+ * \brief Utility functions used by the JSDI project
+ */
 
 #include <cstddef>
 #include <cstdint>
