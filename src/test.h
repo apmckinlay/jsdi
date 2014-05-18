@@ -20,6 +20,8 @@
 #include <string>
 #include <memory>
 
+#include <jni.h>
+
 namespace jsdi {
 
 //==============================================================================
@@ -34,8 +36,8 @@ class test_failure
         // DATA
         //
 
-    std::shared_ptr<test> d_test;
-    std::string           d_output;
+        std::shared_ptr<test> d_test;
+        std::string           d_output;
 
         //
         // CONSTRUCTORS
@@ -44,6 +46,7 @@ class test_failure
     public:
 
         test_failure(std::shared_ptr<test>& _test, const std::string& output);
+            // TODO: VS 20140504 should the _test param be a 'const' reference?
 
         //
         // ACCESSORS
@@ -151,6 +154,8 @@ struct test_manager_impl;
 
 class test_registrar;
 
+class test_java_vm;
+
 class test_manager
 {
         //
@@ -164,6 +169,7 @@ class test_manager
         //
 
         friend class test;
+        friend class test_java_vm;
 
         //
         // CONSTRUCTORS
@@ -197,6 +203,8 @@ class test_manager
 
         void run_all();
 
+        void set_jvm_args(char * const argv[], int argc);
+
         //
         // SINGLETON INSTANCE
         //
@@ -207,7 +215,7 @@ class test_manager
 };
 
 //==============================================================================
-//                             class test_holder
+//                           class test_registrar
 //==============================================================================
 
 class test_registrar
@@ -229,6 +237,67 @@ class test_registrar
 
 inline test_registrar::test_registrar(test * _test) : d_test(_test)
 { test_manager::instance().register_test(d_test); }
+
+//==============================================================================
+//                     class test_java_vm_create_error
+//==============================================================================
+
+// TODO: Docs since 20140510
+struct test_java_vm_create_error : public std::runtime_error
+{
+        //
+        // CONSTRUCTORS
+        //
+
+        test_java_vm_create_error(const std::string& what);
+            // TODO: When MSVC finally gets support for inheriting constructors,
+            //       just replace this with
+            //           "using std::runtime_error::runtime_error"
+};
+
+inline test_java_vm_create_error::test_java_vm_create_error(const std::string& what)
+    : runtime_error(what)
+{ } // TODO: Can delete when MSVC++ adds support for inheriting constructors
+
+//==============================================================================
+//                            class test_java_vm
+//==============================================================================
+
+// TODO: Docs since 20140510
+class test_java_vm
+{
+        //
+        // DATA
+        //
+
+        std::shared_ptr<JavaVM> d_java_vm;
+        JNIEnv *                d_env;
+
+        //
+        // CONSTRUCTORS
+        //
+
+    public:
+
+        test_java_vm();
+            // TODO: docs: THROWS: test_java_jvm_create_error
+
+        //
+        // ACCESSORS
+        //
+
+    public:
+
+        JavaVM * java_vm();
+
+        JNIEnv * env_of_creating_thread();
+};
+
+inline JavaVM * test_java_vm::java_vm()
+{ return d_java_vm.get(); }
+
+inline JNIEnv * test_java_vm::env_of_creating_thread()
+{ return d_env; }
 
 } // namespace jsdi
 
@@ -253,14 +322,14 @@ inline std::string runtime_stringify(const T& t)
 #define stringify_int(x) stringify_int_(x)
 
 #define assert_true(expr) \
-    { if (! expr) fail_assert("true", #expr, stringify_int(__LINE__)); }
+    { if (! (expr)) fail_assert("true", #expr, stringify_int(__LINE__)); }
 
 #define assert_false(expr) \
     { if (expr) fail_assert("false", #expr, stringify_int(__LINE__)); }
 
 #define assert_equals(a, b)           \
     {                                 \
-    if (a != b)                       \
+    if ((a) != (b))                   \
         fail_assert_equals(           \
             #a, runtime_stringify(a), \
             #b, runtime_stringify(b), \

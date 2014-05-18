@@ -13,12 +13,12 @@
 #include "test_com.h"
 
 #include "../com_util.h"
-#include "../concurrent.h"
 #include "../util.h"
 
 #include <stdexcept>
 #include <sstream>
 #include <string>
+#include <mutex>
 #include <cassert>
 #include <cstdio>  // TODO: remove this when we have better logging
 
@@ -39,7 +39,7 @@ struct TestJSDIComImpl : public ITestJSDICom
 
         unsigned __int32                                d_ref_count;
         com_managed_interface<ITypeInfo>                d_type_info;
-        critical_section                                d_critical_section;
+        std::recursive_mutex                            d_mutex;
 
         VARIANT_BOOL                                    d_bool_value;
         signed __int32                                  d_int32_value;
@@ -233,7 +233,7 @@ HRESULT __stdcall TestJSDIComImpl::QueryInterface(REFIID riid, void ** ppv)
 
 ULONG __stdcall TestJSDIComImpl::AddRef()
 {
-    lock_guard<critical_section> lock(&d_critical_section);
+    std::lock_guard<std::recursive_mutex> lock(d_mutex);
     return ++d_ref_count;
 }
 
@@ -241,7 +241,7 @@ ULONG __stdcall TestJSDIComImpl::Release()
 {
     unsigned __int32 nrefs(0);
     {
-        lock_guard<critical_section> lock(&d_critical_section);
+        std::lock_guard<std::recursive_mutex> lock(d_mutex);
         nrefs = d_ref_count--;
     }
     assert(1 <= nrefs);
@@ -266,7 +266,7 @@ HRESULT __stdcall TestJSDIComImpl::GetTypeInfo(UINT iTypeInfo, LCID lcid,
     CHECK_OUTPUT_POINTER(ppITypeInfo);
     *ppITypeInfo = NULL;
     if (0 != iTypeInfo) return DISP_E_BADINDEX;
-    lock_guard<critical_section> lock(&d_critical_section);
+    std::lock_guard<std::recursive_mutex> lock(d_mutex);
     d_type_info->AddRef();
     *ppITypeInfo = d_type_info.get();
     return S_OK;
@@ -278,7 +278,7 @@ HRESULT __stdcall TestJSDIComImpl::GetIDsOfNames(REFIID riid,
                                                  DISPID * rgDispId)
 {
     if (IID_NULL != riid) return DISP_E_UNKNOWNINTERFACE;
-    lock_guard<critical_section> lock(&d_critical_section);
+    std::lock_guard<std::recursive_mutex> lock(d_mutex);
     HRESULT result = DispGetIDsOfNames(d_type_info.get(), rgszNames, cNames,
                                        rgDispId);
     return result;
@@ -292,7 +292,7 @@ HRESULT __stdcall TestJSDIComImpl::Invoke(DISPID dispIdMember, REFIID riid,
                                           UINT * puArgError)
 {
     if (IID_NULL != riid) return DISP_E_UNKNOWNINTERFACE;
-    lock_guard<critical_section> lock(&d_critical_section);
+    std::lock_guard<std::recursive_mutex> lock(d_mutex);
     HRESULT result = DispInvoke(this, d_type_info.get(), dispIdMember, wFlags,
                                 pDispParams, pVarResult, pExcepInfo,
                                 puArgError);
@@ -341,7 +341,7 @@ HRESULT __stdcall TestJSDIComImpl::put_DoubleValue(double newvalue)
 
 HRESULT __stdcall TestJSDIComImpl::get_StringValue(BSTR * value)
 {
-    lock_guard<critical_section> lock(&d_critical_section);
+    std::lock_guard<std::recursive_mutex> lock(d_mutex);
     // Contract is caller must release with SysFreeString
     // http://stackoverflow.com/a/19523652/1911388
     *value = SysAllocStringLen(d_string_value.data(), d_string_value.size());
@@ -351,7 +351,7 @@ HRESULT __stdcall TestJSDIComImpl::get_StringValue(BSTR * value)
 HRESULT __stdcall TestJSDIComImpl::put_StringValue(BSTR newvalue)
 {
     {
-        lock_guard<critical_section> lock(&d_critical_section);
+        std::lock_guard<std::recursive_mutex> lock(d_mutex);
         d_string_value.assign(newvalue, SysStringLen(newvalue));
     }
     // Contract is we own the new string. But since we copied it, we need to

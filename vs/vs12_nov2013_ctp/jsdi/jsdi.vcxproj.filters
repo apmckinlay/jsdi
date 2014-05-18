@@ -42,9 +42,6 @@
     <ClInclude Include="..\..\..\src\com_util.h">
       <Filter>Header Files\src</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\concurrent.h">
-      <Filter>Header Files\src</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\global_refs.h">
       <Filter>Header Files\src</Filter>
     </ClInclude>
@@ -111,6 +108,12 @@
     <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_type_Structure.h">
       <Filter>Header Files\gen</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\suneido_protocol.h">
+      <Filter>Header Files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\log.h">
+      <Filter>Header Files\src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\test_com\test_com.cpp">
@@ -123,9 +126,6 @@
       <Filter>Source Files\src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\com_util.cpp">
-      <Filter>Source Files\src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\concurrent.cpp">
       <Filter>Source Files\src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\global_refs.cpp">
@@ -178,6 +178,12 @@
     </ClCompile>
     <ClCompile Include="midl_iid.c">
       <Filter>Header Files\test_com</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\suneido_protocol.cpp">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\log.cpp">
+      <Filter>Source Files\src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

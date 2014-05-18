@@ -52,9 +52,23 @@ void run(const char * suite_name, const char * test_name, int& exit_code)
 
 } // anonymous namespace
 
+//  The command line should have the format
+//      <exe> [test|suite]* (/jvm [jvm-arg]*)?
 int main(int argc, char * argv[])
 {
     int return_value(0);
+    // Collect the JVM arguments, if any.
+    for (int j = 1; j < argc; ++j)
+    { 
+        if ('/' == argv[j][0] && ! std::strcmp(argv[j] + 1, "jvm"))
+        {
+            jsdi::test_manager::instance().set_jvm_args(argv + j + 1,
+                                                        argc - j - 1);
+            argc = j;
+            break;
+        }
+    }
+    // Run the tests.
     if (argc < 2)
         run(nullptr, nullptr, return_value);
     else for (int k = 1; k < argc; ++k)

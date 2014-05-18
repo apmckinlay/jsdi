@@ -9,3 +9,9 @@ To get a particular version working:
         the root of an x86 JDK.
     [ ] Ensure you have the correct Visual Studio and compiler toolchain
         installed.
+    [ ] The test executable (jsdi.exe) now uses the JNI invocation API to create
+        its own JVM for certain tests. This means that running jsdi.exe now
+        requires a jvm.dll. Preferably, ensure your PATH environment variable
+        includes $JAVA_HOME/jre/bin/client/ or $JAVA_HOME/jre/bin/server/.
+        Alternatively, you can copy jvm.dll into the executable's local
+        directory.
