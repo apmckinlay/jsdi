@@ -15,7 +15,7 @@
 #include <memory>
 #include <cassert>
 
-#include <ole2.h>
+#include "jsdi_ole2.h"
 
 namespace jsdi {
 
