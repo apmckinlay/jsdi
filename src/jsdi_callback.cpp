@@ -30,7 +30,7 @@ void jsdi_callback_basic::init(JNIEnv * env, jobject suneido_callback,
     d_suneido_bound_value_global_ref = env->NewGlobalRef(suneido_sucallable);
     assert(d_suneido_callback_global_ref);
     assert(d_suneido_bound_value_global_ref);
-    if (0 != env->GetJavaVM(&d_jni_jvm))
+    if (JNI_OK != env->GetJavaVM(&d_jni_jvm))
     {
         assert(false || !"failed to get JVM reference");
     }
@@ -55,9 +55,9 @@ jsdi_callback_basic::jsdi_callback_basic(JNIEnv * env, jobject suneido_callback,
 
 jsdi_callback_basic::~jsdi_callback_basic()
 {
-    JNIEnv * env(0);
-    d_jni_jvm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
-    if (env)
+    JNIEnv * env(nullptr);
+    if (JNI_OK == d_jni_jvm->GetEnv(reinterpret_cast<void **>(&env),
+                                    JNI_VERSION_1_6))
     {
         env->DeleteGlobalRef(d_suneido_callback_global_ref);
         env->DeleteGlobalRef(d_suneido_bound_value_global_ref);
@@ -157,7 +157,7 @@ long jsdi_callback_basic::call(const char * args)
 
 JNIEnv * jsdi_callback_basic::fetch_env() const
 {
-    JNIEnv * env(0);
+    JNIEnv * env(nullptr);
     d_jni_jvm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     assert(
         env || !"unable to fetch this thread's JNI environment (not attached?");
