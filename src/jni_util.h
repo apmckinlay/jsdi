@@ -1543,7 +1543,7 @@ class jni_utf16_string_region : private non_copyable
         typedef value_type * pointer;
         /** \brief Type of <dfn>const</dfn> characters in this string region.
          *  \see #value_type */
-        typedef const utf16_char_t const_value_type;
+        typedef const utf16char_t const_value_type;
         /** \brief Type of a pointer to a #const_value_type. */
         typedef const_value_type * const_pointer;
         /** \brief A random access iterator to #const_value_type. */
