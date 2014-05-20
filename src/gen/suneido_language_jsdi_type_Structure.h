@@ -10,26 +10,26 @@ extern "C" {
 /*
  * Class:     suneido_language_jsdi_type_Structure
  * Method:    copyOutDirect
- * Signature: (I[BI)V
+ * Signature: (J[BI)V
  */
 JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutDirect
-  (JNIEnv *, jclass, jint, jbyteArray, jint);
+  (JNIEnv *, jclass, jlong, jbyteArray, jint);
 
 /*
  * Class:     suneido_language_jsdi_type_Structure
  * Method:    copyOutIndirect
- * Signature: (I[BI[I)V
+ * Signature: (J[BI[I)V
  */
 JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutIndirect
-  (JNIEnv *, jclass, jint, jbyteArray, jint, jintArray);
+  (JNIEnv *, jclass, jlong, jbyteArray, jint, jintArray);
 
 /*
  * Class:     suneido_language_jsdi_type_Structure
  * Method:    copyOutVariableIndirect
- * Signature: (I[BI[I[Ljava/lang/Object;[I)V
+ * Signature: (J[BI[I[Ljava/lang/Object;[I)V
  */
 JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutVariableIndirect
-  (JNIEnv *, jclass, jint, jbyteArray, jint, jintArray, jobjectArray, jintArray);
+  (JNIEnv *, jclass, jlong, jbyteArray, jint, jintArray, jobjectArray, jintArray);
 
 #ifdef __cplusplus
 }

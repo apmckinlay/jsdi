@@ -127,7 +127,7 @@ inline jlong call_vi(JNIEnv * env, jlong funcPtr, jint sizeDirect,
     return result;
 }
 
-inline const char * get_struct_ptr(jint struct_addr, jint size_direct)
+inline const char * get_struct_ptr(jlong struct_addr, jint size_direct)
 {
     assert(struct_addr || !"can't copy out a NULL pointer");
     assert(0 < size_direct || !"structure must have positive size");
@@ -202,13 +202,13 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_JSDI_init
   (JNIEnv * env, jclass)
 {
     JNI_EXCEPTION_SAFE_BEGIN;
+    log_manager::instance().set_path(std::string("jsdi.log"));
     JavaVM * vm(nullptr);
     if (JNI_OK == env->GetJavaVM(&vm))
     {
         global_refs::init(env);
         suneido_protocol::register_handler(vm);
         // TODO: presently no-one is calling suneido_protocol::unregister_handler()
-        log_manager::instance().set_path(std::string("jsdi.log"));
     }
     else throw std::runtime_error("Failed to obtain JavaVM in JSDI.init()");
     JNI_EXCEPTION_SAFE_END(env);
@@ -534,10 +534,10 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_deleteThunk
 /*
  * Class:     suneido_language_jsdi_type_Structure
  * Method:    copyOutDirect
- * Signature: (I[BI)V
+ * Signature: (J[BI)V
  */
 JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutDirect(
-    JNIEnv * env, jclass, jint structAddr, jbyteArray data, jint sizeDirect)
+    JNIEnv * env, jclass, jlong structAddr, jbyteArray data, jint sizeDirect)
 {
     JNI_EXCEPTION_SAFE_BEGIN
     auto ptr(get_struct_ptr(structAddr, sizeDirect));
@@ -553,10 +553,10 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutDirect(
 /*
  * Class:     suneido_language_jsdi_type_Structure
  * Method:    copyOutIndirect
- * Signature: (I[BI[I)V
+ * Signature: (J[BI[I)V
  */
 JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutIndirect(
-    JNIEnv * env, jclass, jint structAddr, jbyteArray data, jint sizeDirect,
+    JNIEnv * env, jclass, jlong structAddr, jbyteArray data, jint sizeDirect,
     jintArray ptrArray)
 {
     JNI_EXCEPTION_SAFE_BEGIN
@@ -575,10 +575,10 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutIndirect
 /*
  * Class:     suneido_language_jsdi_type_Structure
  * Method:    copyOutVariableIndirect
- * Signature: (I[BI[I[Ljava/lang/Object;[I)V
+ * Signature: (J[BI[I[Ljava/lang/Object;[I)V
  */
 JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutVariableIndirect(
-    JNIEnv * env, jclass, jint structAddr, jbyteArray data, jint sizeDirect,
+    JNIEnv * env, jclass, jlong structAddr, jbyteArray data, jint sizeDirect,
     jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
 {
     JNI_EXCEPTION_SAFE_BEGIN
