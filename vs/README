@@ -15,3 +15,10 @@ To get a particular version working:
         includes $JAVA_HOME/jre/bin/client/ or $JAVA_HOME/jre/bin/server/.
         Alternatively, you can copy jvm.dll into the executable's local
         directory.
+
+One issue I have had with the November 2013 CTP is building with /MDd or /MTd
+(multithread debug DLL or multithread debug exe) doesn't work in certain cases, possibly
+because the MS debug STL versions don't adequately implement facets for all character
+set types. So as of 20140520, the "Debug-exe" and "Debug-dll" configurations use
+/MD and /MT, respectively, which means they don't compile or link against the debug
+libraries. TODO: Fix this as soon as MS releases a new Visual Studio version.

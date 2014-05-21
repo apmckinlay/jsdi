@@ -114,6 +114,9 @@
     <ClInclude Include="..\..\..\src\log.h">
       <Filter>Header Files\src</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\version.h">
+      <Filter>Header Files\src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\test_com\test_com.cpp">
@@ -183,6 +186,9 @@
       <Filter>Source Files\src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\log.cpp">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\version.cpp">
       <Filter>Source Files\src</Filter>
     </ClCompile>
   </ItemGroup>

@@ -36,7 +36,21 @@ typedef wchar_t utf16char_t;
 //                              #define UTF16
 //==============================================================================
 
-#define UTF16(string_literal) L ## string_literal
+/** \cond internal */
+#define UTF16_(string_literal) L ## string_literal
+/** \endcond */
+
+/**
+ * \brief Converts a symbol representing an ordinary string literal to a
+ *        UTF-16 string literal
+ * \author Victor Schappert
+ * \since 20140410
+ *
+ * If <code>string_literal</code> is the name of an unexpanded macro, it will be
+ * expanded. Thus, for example, <code>UTF16(__DATE__)</code> gives the expected
+ * result.
+ */
+#define UTF16(string_literal) UTF16_(string_literal)
 
 //==============================================================================
 //                          typedef utf16_streambuf
