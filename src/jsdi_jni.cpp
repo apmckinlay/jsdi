@@ -19,6 +19,7 @@
 #include "stdcall_invoke.h"
 #include "stdcall_thunk.h"
 #include "suneido_protocol.h"
+#include "version.h"
 
 #include <deque>
 #include <mutex>
@@ -203,6 +204,7 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_JSDI_init
 {
     JNI_EXCEPTION_SAFE_BEGIN;
     log_manager::instance().set_path(std::string("jsdi.log"));
+    LOG_TRACE("Initializing JSDI library built " << version::BUILD_DATE);
     JavaVM * vm(nullptr);
     if (JNI_OK == env->GetJavaVM(&vm))
     {
@@ -211,6 +213,7 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_JSDI_init
         // TODO: presently no-one is calling suneido_protocol::unregister_handler()
     }
     else throw std::runtime_error("Failed to obtain JavaVM in JSDI.init()");
+    LOG_TRACE("JSDI library initialized OK");
     JNI_EXCEPTION_SAFE_END(env);
 }
 
@@ -220,7 +223,7 @@ JNIEXPORT jstring JNICALL Java_suneido_language_jsdi_JSDI_when
     jstring result(0);
     JNI_EXCEPTION_SAFE_BEGIN
     jni_utf16_ostream o(env);
-    o << UTF16("todo: make when() result"); // TODO: make when() result
+    o << version::BUILD_DATE;
     result = o.jstr();
     JNI_EXCEPTION_SAFE_END(env);
     return result;
