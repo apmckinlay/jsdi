@@ -14,8 +14,6 @@
  *         rebuilt <em>on every build</em> of the library.
  */
 
-#include "utf16_util.h"
-
 namespace jsdi {
  
 //==============================================================================
@@ -33,7 +31,7 @@ struct version
      * \brief Constant string containing the last date and time the library was
      *        built.
      */
-    static utf16char_t const * const BUILD_DATE;
+    static char const * const BUILD_DATE;
 };
 
 } // namespace jsdi
