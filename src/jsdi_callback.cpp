@@ -56,11 +56,8 @@ jsdi_callback_basic::jsdi_callback_basic(JNIEnv * env, jobject suneido_callback,
 
 jsdi_callback_basic::~jsdi_callback_basic()
 {
-    JNIEnv * env(nullptr);
-    // TODO: What thread is this getting called on? Does it need to be using
-    //       AttachCurrentThread() instead of GetEnv()?
-    if (JNI_OK == d_jni_jvm->GetEnv(reinterpret_cast<void **>(&env),
-                                    JNI_VERSION_1_6))
+    JNIEnv * env(fetch_env());
+    if (env)
     {
         env->DeleteGlobalRef(d_suneido_callback_global_ref);
         env->DeleteGlobalRef(d_suneido_bound_value_global_ref);
@@ -73,6 +70,7 @@ long jsdi_callback_basic::call(const char * args)
     LOG_TRACE("jsdi_callback_basic::call( this => " << this << ", args => "
                                                     << args << " )");
     JNIEnv * const env(fetch_env());
+    if (! env) return 0;
     JNI_EXCEPTION_SAFE_BEGIN
     /* NOTE A: The reason for the exception check immediately below is to ensure
      *         that this callback doesn't execute at all if a JNI exception was
@@ -163,17 +161,19 @@ long jsdi_callback_basic::call(const char * args)
 JNIEnv * jsdi_callback_basic::fetch_env() const
 {
     JNIEnv * env(nullptr);
-    // FIXME: This should use AttachCurrentThread because a callback could
-    //        conceivably be called on a non-attached thread. This could happen,
-    //        for example, where user code creates an OS thread. Suppose you
-    //        do, e.g., mythrd = CreateThread(..., threadfunc). Then threadfunc
-    //        is a callback that's going to get called on a new OS thread that
-    //        the JVM doesn't know about.
-    // SEE ALSO the TODO note in the destructor above.
-    d_jni_jvm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
-    assert(
-        env || !"can't fetch this thread's JNI environment (not attached?)");
-    return env;
+    JavaVMAttachArgs attach_args;
+    attach_args.version = JNI_VERSION_1_6;
+    attach_args.name    = nullptr;
+    attach_args.group   = nullptr;
+    if (JNI_OK == d_jni_jvm->AttachCurrentThread(reinterpret_cast<void **>(&env),
+                                                 &attach_args))
+        return env;
+    else
+    {
+        LOG_FATAL("Failed to get JNI environment with d_jni_jvm => " <<
+                  d_jni_jvm);
+        return nullptr;
+    }
 }
 
 //==============================================================================
@@ -186,6 +186,7 @@ long jsdi_callback_vi::call(const char * args)
     LOG_TRACE("jsdi_callback_vi::call( this => " << this << ", args => "
                                                  << args << " )");
     JNIEnv * const env(fetch_env());
+    if (!env) return 0;
     JNI_EXCEPTION_SAFE_BEGIN
     /** NOTE C: See NOTE A, above. The same argument applies verbatim. */
     JNI_EXCEPTION_CHECK(env);
