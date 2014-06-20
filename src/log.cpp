@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
+#include <thread>
 #include <cassert>
 #include <ctime>
 
@@ -109,7 +110,8 @@ std::ostream& log_manager::stream(log_level level, const char * file_name,
     auto now(std::chrono::system_clock::now());
     time_t now_c(std::chrono::system_clock::to_time_t(now));
     o << std::put_time(std::localtime(&now_c), "%c") << '\t' << level
-      << '\t' << file_name << ':' << line_no << '\t' << func_name << '\t';
+      << '\t' << file_name << ':' << line_no << '\t' << func_name << '\t'
+      << "\tt" << std::this_thread::get_id() << '\t';
     // Return the stream.
     return o;
 }
