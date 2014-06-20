@@ -13,6 +13,7 @@
 
 #include "callback.h"
 #include "heap.h"
+#include "log.h"
 
 #include <stdexcept>
 #include <iostream>
@@ -219,6 +220,8 @@ long __stdcall stdcall_thunk_impl::wrapper(stdcall_thunk_impl * impl,
                                            const char * args)
 {
     long result;
+    LOG_TRACE("stdcall_thunk_impl::wrapper( impl => " << impl << ", args => "
+                                                      << args << ')');
     assert(MAGIC1 == impl->d_magic_1);
     assert(MAGIC2 == impl->d_magic_2);
     // SETUP
@@ -238,9 +241,7 @@ long __stdcall stdcall_thunk_impl::wrapper(stdcall_thunk_impl * impl,
     { result = impl->d_callback->call(args); }
     catch (...)
     {
-        std::cerr << "FATAL ERROR: exception caught in " << __FUNCTION__
-                  << "( " << __FILE__ << " at line " << __LINE__ << ')'
-                  << std::endl;
+        LOG_FATAL("Exception caught");
         std::abort();
         result = 0L; // To shut up the compiler warning
     }
