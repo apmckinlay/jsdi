@@ -21,8 +21,17 @@ VISUAL C++ ISSUES
     - Try to eliminate warnings by eliminating throw(ExceptionType)
     - Squelch constexpr warnings
 
+OUTSTANDING BUGS
+
+    - jsdi_callback.cpp : There's a FIXME where it should use
+                          AttachCurrentThread(), not GetEnv()
+    - JNI thunk allocation interface should use long/jlong, not int/jint. (x64)
+    - Introduce SEH in callbacks
+    - Introduce SEH in native calls
+
 MORE DOXYGEN ISSUES
 
+    - Next fix util.h errors (about 4)
     - Incorrect use of \link \endlink commands
       Correct use is \link <Doxygen link tokens> <text of actual link>  \endlink
       for example \link a::b::c() const Hello, there\endlink would make the text
