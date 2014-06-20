@@ -56,6 +56,8 @@ jsdi_callback_basic::jsdi_callback_basic(JNIEnv * env, jobject suneido_callback,
 jsdi_callback_basic::~jsdi_callback_basic()
 {
     JNIEnv * env(nullptr);
+    // TODO: What thread is this getting called on? Does it need to be using
+    //       AttachCurrentThread() instead of GetEnv()?
     if (JNI_OK == d_jni_jvm->GetEnv(reinterpret_cast<void **>(&env),
                                     JNI_VERSION_1_6))
     {
@@ -158,6 +160,13 @@ long jsdi_callback_basic::call(const char * args)
 JNIEnv * jsdi_callback_basic::fetch_env() const
 {
     JNIEnv * env(nullptr);
+    // FIXME: This should use AttachCurrentThread because a callback could
+    //        conceivably be called on a non-attached thread. This could happen,
+    //        for example, where user code creates an OS thread. Suppose you
+    //        do, e.g., mythrd = CreateThread(..., threadfunc). Then threadfunc
+    //        is a callback that's going to get called on a new OS thread that
+    //        the JVM doesn't know about.
+    // SEE ALSO the TODO note in the destructor above.
     d_jni_jvm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     assert(
         env || !"unable to fetch this thread's JNI environment (not attached?");
