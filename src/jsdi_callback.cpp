@@ -11,6 +11,7 @@
 
 #include "jsdi_callback.h"
 
+#include "log.h"
 #include "marshalling.h"
 
 #include <stdexcept>
@@ -69,6 +70,8 @@ jsdi_callback_basic::~jsdi_callback_basic()
 long jsdi_callback_basic::call(const char * args)
 {
     long result(0);
+    LOG_TRACE("jsdi_callback_basic::call( this => " << this << ", args => "
+                                                    << args << " )");
     JNIEnv * const env(fetch_env());
     JNI_EXCEPTION_SAFE_BEGIN
     /* NOTE A: The reason for the exception check immediately below is to ensure
@@ -169,7 +172,7 @@ JNIEnv * jsdi_callback_basic::fetch_env() const
     // SEE ALSO the TODO note in the destructor above.
     d_jni_jvm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     assert(
-        env || !"unable to fetch this thread's JNI environment (not attached?");
+        env || !"can't fetch this thread's JNI environment (not attached?)");
     return env;
 }
 
@@ -180,6 +183,8 @@ JNIEnv * jsdi_callback_basic::fetch_env() const
 long jsdi_callback_vi::call(const char * args)
 {
     long result(0);
+    LOG_TRACE("jsdi_callback_vi::call( this => " << this << ", args => "
+                                                 << args << " )");
     JNIEnv * const env(fetch_env());
     JNI_EXCEPTION_SAFE_BEGIN
     /** NOTE C: See NOTE A, above. The same argument applies verbatim. */

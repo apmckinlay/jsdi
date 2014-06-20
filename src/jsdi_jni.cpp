@@ -71,7 +71,8 @@ inline jlong call_direct(JNIEnv * env, jlong funcPtr, jint sizeDirect,
 {
     jlong result(0);
     JNI_EXCEPTION_SAFE_BEGIN
-    // TODO: tracing
+    LOG_TRACE("funcPtr => "    << reinterpret_cast<void *>(funcPtr) << ", " <<
+              "sizeDirect => " << sizeDirect);
     // NOTE: I had earlier noted that you could write a critical array version
     //       of jni_array (GetPrimitiveArrayCritical,
     //       ReleasePrimitiveArrayCritical). However, this isn't actually
@@ -98,6 +99,8 @@ inline jlong call_indirect(JNIEnv * env, jlong funcPtr, jint sizeDirect,
 {
     jlong result(0);
     JNI_EXCEPTION_SAFE_BEGIN
+    LOG_TRACE("funcPtr => "    << reinterpret_cast<void *>(funcPtr) << ", " <<
+              "sizeDirect => " << sizeDirect);
     jni_array<jbyte> args_(env, args);
     jni_array_region<jint> ptr_array(env, ptrArray);
     marshalling_roundtrip::ptrs_init(args_.data(), ptr_array.data(), ptr_array.size());
@@ -113,6 +116,8 @@ inline jlong call_vi(JNIEnv * env, jlong funcPtr, jint sizeDirect,
 {
     jlong result(0);
     JNI_EXCEPTION_SAFE_BEGIN
+    LOG_TRACE("funcPtr => "    << reinterpret_cast<void *>(funcPtr) << ", " <<
+              "sizeDirect => " << sizeDirect);
     jni_array<jbyte> args_(env, args);
     jni_array_region<jint> ptr_array(env, ptrArray);
     marshalling_vi_container vi_array_cpp(env->GetArrayLength(viArray), env,
@@ -284,6 +289,7 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_DllFactory_getProcAddress
         // NOTE: There is no GetProcAddressW... GetProcAddress() only accepts
         //       ANSI strings.
     result = reinterpret_cast<jlong>(addr);
+    LOG_DEBUG("GetProcAddress('" << procName_.str() << "') => " << addr);
     JNI_EXCEPTION_SAFE_END(env);
     return result;
 }
@@ -433,6 +439,8 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableInd
     jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
 {
     JNI_EXCEPTION_SAFE_BEGIN
+    LOG_TRACE("funcPtr => "    << reinterpret_cast<void *>(funcPtr) << ", " <<
+              "sizeDirect => " << sizeDirect);
     jni_array<jbyte> args_(env, args);
     jni_array_region<jint> ptr_array(env, ptrArray);
     marshalling_vi_container vi_array_cpp(env->GetArrayLength(viArray), env, viArray);
@@ -543,6 +551,8 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutDirect(
     JNIEnv * env, jclass, jlong structAddr, jbyteArray data, jint sizeDirect)
 {
     JNI_EXCEPTION_SAFE_BEGIN
+    LOG_TRACE("structAddr => "   << reinterpret_cast<void *>(structAddr) <<
+              ", sizeDirect => " << sizeDirect);
     auto ptr(get_struct_ptr(structAddr, sizeDirect));
     // NOTE: In contrast to most other situations, it is safe to use a primitive
     // critical array here because in a struct copy out, we don't call any other
@@ -563,6 +573,8 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutIndirect
     jintArray ptrArray)
 {
     JNI_EXCEPTION_SAFE_BEGIN
+    LOG_TRACE("structAddr => "   << reinterpret_cast<void *>(structAddr) <<
+              ", sizeDirect => " << sizeDirect);
     auto ptr(get_struct_ptr(structAddr, sizeDirect));
     // See note above: critical arrays safe here.
     const jni_array_region<jint> ptr_array(env, ptrArray);
@@ -585,6 +597,8 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutVariable
     jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
 {
     JNI_EXCEPTION_SAFE_BEGIN
+    LOG_TRACE("structAddr => "   << reinterpret_cast<void *>(structAddr) <<
+              ", sizeDirect => " << sizeDirect);
     auto ptr(get_struct_ptr(structAddr, sizeDirect));
     // Can't use critical arrays here because the unmarshalling process isn't
     // guaranteed to follow the JNI critical array function restrictions.
