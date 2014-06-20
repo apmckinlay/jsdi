@@ -9,9 +9,11 @@
  * \file jsdi_windef.h
  * \author Victor Schappert
  * \since 20140406
- * \brief Standard macros to <dfn>#define</dfn> before including a Windows
+ * \brief Standard macros to <code>\#define</code> before including a Windows
  *        header file
  */
+
+/** \cond internal */
 
 #define WIN32_LEAN_AND_MEAN
 #define VC_EXTRALEAN
@@ -26,5 +28,7 @@
 #endif
 #define _WIN32_WINNT 0x0501 // Windows XP or higher
 #endif
+
+/** \endcond internal */
 
 #endif // __INCLUDED_JSDI_WINDEF_H__

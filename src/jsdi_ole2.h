@@ -9,7 +9,7 @@
  * \file jsdi_ole2.h
  * \author Victor Schappert
  * \since 20140406
- * \brief Don't <dfn>#include &lt;ole2.h&gt;</dfn> directly. Instead include
+ * \brief Don't <code>\#include &lt;ole2.h&gt;</code> directly. Instead include
  *        this file.
  */
 

@@ -36,9 +36,9 @@ namespace jsdi {
  */
 struct non_copyable
 {
-    non_copyable() = default;
-    non_copyable(const non_copyable&) = delete;
-    non_copyable& operator=(const non_copyable&) = delete;
+        non_copyable() = default;
+        non_copyable(const non_copyable&) = delete;
+        non_copyable& operator=(const non_copyable&) = delete;
 };
 
 /**
@@ -70,12 +70,27 @@ constexpr size_t array_length(T(&)[N])
  * \see throw_cpp<Exception, void>
  */
 template<typename Exception, typename Arg = void>
-struct throw_cpp
+class throw_cpp
 {
-    const Arg& arg_;
-    throw_cpp(const Arg& arg) : arg_(arg) { }
-    void throw_(const std::string& str) const throw(Exception)
-    { throw Exception(str, arg_); }
+        const Arg& arg_;
+
+    public:
+
+        /**
+         * \brief Constructs the exception thrower.
+         * \param arg Reference to second argument to the exception type's
+         *        constructor.
+         */
+        throw_cpp(const Arg& arg) : arg_(arg) { }
+
+        /**
+         * \brief Throws an instance of the exception type.
+         * \param str First (message string) argument to exception type'sake
+         *            constructor.
+         * \throws Exception
+         */
+        void throw_(const std::string& str) const throw(Exception)
+        { throw Exception(str, arg_); }
 };
 
 /**
@@ -111,6 +126,7 @@ struct throw_cpp<Exception, void>
  * \author Victor Schappert
  * \since 20130627
  * \param o Stream to "insert" into
+ * \param t Exception thrower to "insert"
  * \return The return value is deliberately void because it is a semantic error
  *         to attempt to insert anything after an exception is thrown!
  * \throws std::bad_cast If o is not an output string stream.
@@ -148,9 +164,9 @@ inline void or_and_shift_remainder(uint32_t& x)
  * \brief Determines the smallest power of two that is greater than or equal to
  *        a given number of unsigned integer type, if it can be represented.
  * \param x A number of unsigned integer type
- * \return The smallest power of two which is greater than or equal to \dfn x
- *         and can be represented by the type of x. If there is no such number,
- *         the return value is 0.
+ * \return The smallest power of two which is greater than or equal to
+ *         <code>x</code> and can be represented by the type of x. If there is
+ *         no such number, the return value is 0.
  * \since 20131105
  *
  * Inspiration: http://stackoverflow.com/a/1322548/1911388

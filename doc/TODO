@@ -7,7 +7,7 @@
         -- doxygen
             [ ] Modify header style (include guard, then doxygen docs)
             [ ] Modify auto-generated header style.
-            [ ] Current number of warnings: 187 (up from 149)
+            [ ] Current number of warnings: 163 (up from 149) ... next: util.h
         -- cppcheck
 
 C++ CONFORMANCE LIVE ISSUES

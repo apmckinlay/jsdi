@@ -9,8 +9,8 @@
  * \file jsdi_windows.h
  * \author Victor Schappert
  * \since 20130618
- * \brief Don't <dfn>#include &lt;windows.h&gt;</dfn> directly. Instead include
- *        this file.
+ * \brief Don't <code>\#include &lt;windows.h&gt;</code> directly. Instead
+ *        include this file.
  */
 
 #include "jsdi_windef.h"
