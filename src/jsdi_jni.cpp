@@ -474,16 +474,16 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableInd
 /*
  * Class:     suneido_language_jsdi_ThunkManager
  * Method:    newThunk
- * Signature: (Lsuneido/language/jsdi/type/Callback;Lsuneido/SuValue;II[II[I)V
+ * Signature: (Lsuneido/language/jsdi/type/Callback;Lsuneido/SuValue;II[II[J)V
  */
 JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_newThunk(
     JNIEnv * env, jclass thunkManager, jobject callback, jobject boundValue,
     jint sizeDirect, jint sizeIndirect, jintArray ptrArray,
-    jint variableIndirectCount, jintArray outThunkAddrs)
+    jint variableIndirectCount, jlongArray outThunkAddrs)
 {
     JNI_EXCEPTION_SAFE_BEGIN
     jni_array_region<jint> ptr_array(env, ptrArray);
-    jni_array<jint> out_thunk_addrs(env, outThunkAddrs);
+    jni_array<jlong> out_thunk_addrs(env, outThunkAddrs);
     std::shared_ptr<jsdi::callback> callback_ptr;
     if (variableIndirectCount < 1)
     {
@@ -503,30 +503,30 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_newThunk(
     }
     stdcall_thunk * thunk(new stdcall_thunk(callback_ptr));
     void * func_addr(thunk->func_addr());
-    static_assert(sizeof(stdcall_thunk *) <= sizeof(jint), "fatal data loss");
-    static_assert(sizeof(void *) <= sizeof(jint), "fatal data loss");
+    static_assert(sizeof(stdcall_thunk *) <= sizeof(jlong), "fatal data loss");
+    static_assert(sizeof(void *) <= sizeof(jlong), "fatal data loss");
     out_thunk_addrs[env->GetStaticIntField(
         thunkManager,
         GLOBAL_REFS
             ->suneido_language_jsdi_ThunkManager__f_THUNK_OBJECT_ADDR_INDEX())] =
-        reinterpret_cast<jint>(thunk);
+        reinterpret_cast<jlong>(thunk);
     out_thunk_addrs[env->GetStaticIntField(
         thunkManager,
         GLOBAL_REFS
             ->suneido_language_jsdi_ThunkManager__f_THUNK_FUNC_ADDR_INDEX())] =
-        reinterpret_cast<jint>(func_addr);
+        reinterpret_cast<jlong>(func_addr);
     JNI_EXCEPTION_SAFE_END(env);
 }
 
 /*
  * Class:     suneido_language_jsdi_ThunkManager
  * Method:    deleteThunk
- * Signature: (I)V
+ * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_deleteThunk
-  (JNIEnv * env, jclass, jint thunkObjectAddr)
+  (JNIEnv * env, jclass, jlong thunkObjectAddr)
 {
-    static_assert(sizeof(stdcall_thunk *) <= sizeof(jint), "fatal data loss");
+    static_assert(sizeof(stdcall_thunk *) <= sizeof(jlong), "fatal data loss");
     auto thunk(reinterpret_cast<stdcall_thunk *>(thunkObjectAddr));
     clear_callback(thunk);
 }

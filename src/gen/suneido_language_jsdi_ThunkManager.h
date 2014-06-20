@@ -14,18 +14,18 @@ extern "C" {
 /*
  * Class:     suneido_language_jsdi_ThunkManager
  * Method:    newThunk
- * Signature: (Lsuneido/language/jsdi/type/Callback;Lsuneido/SuValue;II[II[I)V
+ * Signature: (Lsuneido/language/jsdi/type/Callback;Lsuneido/SuValue;II[II[J)V
  */
 JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_newThunk
-  (JNIEnv *, jclass, jobject, jobject, jint, jint, jintArray, jint, jintArray);
+  (JNIEnv *, jclass, jobject, jobject, jint, jint, jintArray, jint, jlongArray);
 
 /*
  * Class:     suneido_language_jsdi_ThunkManager
  * Method:    deleteThunk
- * Signature: (I)V
+ * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_deleteThunk
-  (JNIEnv *, jclass, jint);
+  (JNIEnv *, jclass, jlong);
 
 #ifdef __cplusplus
 }

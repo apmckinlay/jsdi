@@ -74,6 +74,18 @@ struct jni_traits<jint>
 };
 
 template<>
+struct jni_traits<jlong>
+{
+    typedef jlongArray array_type;
+    typedef jlong value_type;
+    typedef jlong const const_value_type;
+    typedef value_type * pointer;
+    typedef const_value_type * const_pointer;
+    typedef value_type & reference;
+    typedef const_value_type & const_reference;
+};
+
+template<>
 struct jni_traits<jboolean>
 {
     typedef jbooleanArray array_type;
@@ -412,6 +424,13 @@ inline jint * jni_array_get_elements<jint>(JNIEnv * env, jintArray array,
     return env->GetIntArrayElements(array, is_copy);
 }
 
+template<>
+inline jlong * jni_array_get_elements<jlong>(JNIEnv * env, jlongArray array,
+                                             jboolean * is_copy)
+{
+    return env->GetLongArrayElements(array, is_copy);
+}
+
 template<typename JNIType>
 inline void jni_array_release_elements(JNIEnv *,
                                        typename jni_traits<JNIType>::array_type,
@@ -430,6 +449,13 @@ inline void jni_array_release_elements<jint>(JNIEnv * env, jintArray array,
                                              jint * elems, jint mode)
 {
     env->ReleaseIntArrayElements(array, elems, mode);
+}
+
+template <>
+inline void jni_array_release_elements<jlong>(JNIEnv * env, jlongArray array,
+                                              jlong * elems, jint mode)
+{
+    env->ReleaseLongArrayElements(array, elems, mode);
 }
 
 template <typename JNIType>
