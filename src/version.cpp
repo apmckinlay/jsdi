@@ -10,7 +10,7 @@ namespace jsdi {
 //                              struct version
 //==============================================================================
 
-utf16char_t const * const version::BUILD_DATE =
-    UTF16(__DATE__) UTF16(" ") UTF16(__TIME__);
+char const * const version::BUILD_DATE = __DATE__ " " __TIME__;
 
 } // namespace jsdi
+
