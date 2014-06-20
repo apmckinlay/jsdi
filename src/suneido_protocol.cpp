@@ -199,7 +199,7 @@ canonicalized_ok:
     // whether it started out as a native thread or a JVM thread.
     JNIEnv * env(nullptr);
     JavaVMAttachArgs attach_args;
-    attach_args.version = JNI_VERSION_1_2;
+    attach_args.version = JNI_VERSION_1_6;
     attach_args.name    = nullptr;
     attach_args.group   = nullptr;
     if (JNI_OK != d_jni_jvm->AttachCurrentThread(reinterpret_cast<void **>(&env),
