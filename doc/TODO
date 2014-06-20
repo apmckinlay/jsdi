@@ -23,7 +23,6 @@ VISUAL C++ ISSUES
 
 OUTSTANDING BUGS
 
-    - JNI thunk allocation interface should use long/jlong, not int/jint. (x64)
     - Introduce SEH in callbacks
     - Introduce SEH in native calls
 
