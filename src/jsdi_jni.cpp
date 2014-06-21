@@ -86,6 +86,13 @@ inline jlong call_direct(JNIEnv * env, jlong funcPtr, jint sizeDirect,
     //       versions *unless* we introduce a further optimization by separating
     //       invocations that might invoke a callback from those which are
     //       guaranteed not to.
+    // NOTE: The *unless* clause above is WRONG. You can never guarantee a
+    //       native call won't trigger a callback because (unless we force the
+    //       user to decorate the 'dll' with metadata) because, for example, the
+    //       native code could store a pointer to the callback in its own state
+    //       and the immediate native call might therefore not take a callback
+    //       parameter ... because to invoke the callback it just needs to look
+    //       at state previously stored.
     jni_array_region<jbyte> args_(env, args, sizeDirect);
     result = invokeFunc(env, sizeDirect, args_.data(), funcPtr);
     JNI_EXCEPTION_SAFE_END(env);
