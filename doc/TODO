@@ -7,7 +7,7 @@
         -- doxygen
             [ ] Modify header style (include guard, then doxygen docs)
             [ ] Modify auto-generated header style.
-            [ ] Current number of warnings: 163 (up from 149) ... next: util.h
+            [ ] Current number of warnings: 158 (up from 149) ... next: jni_exception.h
         -- cppcheck
 
 C++ CONFORMANCE LIVE ISSUES
@@ -21,14 +21,16 @@ VISUAL C++ ISSUES
     - Try to eliminate warnings by eliminating throw(ExceptionType)
     - Squelch constexpr warnings
 
-OUTSTANDING BUGS
+OUTSTANDING BUGS/FEATURES
 
     - Introduce SEH in callbacks
+    - Should jsdi_callback_basic be split into direct and indirect?
     - Introduce SEH in native calls
+    - Add ability to change dynamic log level from within Suneido 
 
 MORE DOXYGEN ISSUES
 
-    - Next fix util.h errors (about 4)
+    - Next fix jni_exception.h errors (about 14)
     - Incorrect use of \link \endlink commands
       Correct use is \link <Doxygen link tokens> <text of actual link>  \endlink
       for example \link a::b::c() const Hello, there\endlink would make the text
