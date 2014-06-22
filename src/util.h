@@ -36,9 +36,11 @@ namespace jsdi {
  */
 struct non_copyable
 {
+        /** \cond internal */
         non_copyable() = default;
         non_copyable(const non_copyable&) = delete;
         non_copyable& operator=(const non_copyable&) = delete;
+        /** \endcond internal */
 };
 
 /**
@@ -85,7 +87,7 @@ class throw_cpp
 
         /**
          * \brief Throws an instance of the exception type.
-         * \param str First (message string) argument to exception type'sake
+         * \param str First (message string) argument to exception type's
          *            constructor.
          * \throws Exception
          */
@@ -117,8 +119,13 @@ class throw_cpp
 template <typename Exception>
 struct throw_cpp<Exception, void>
 {
-    void throw_(const std::string& str) const throw(Exception)
-    { throw Exception(str); }
+        /**
+         * \brief Throws an instance of the exception type.
+         * \param str Message string argument to exception type's constructor.
+         * \throws Exception
+         */
+        void throw_(const std::string& str) const throw(Exception)
+        { throw Exception(str); }
 };
 
 /**
