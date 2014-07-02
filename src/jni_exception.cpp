@@ -29,6 +29,8 @@ jni_exception::jni_exception(const std::string& what_arg,
     , d_jni_except_pending(jni_except_pending)
 { }
 
+// FIXME: I think this constructor may be conceptually flawed. See the \todo
+//        block in the header file.
 jni_exception::jni_exception(const std::string& what_arg, JNIEnv * env)
     : std::runtime_error(what_arg)
     , d_jni_except_pending(env->ExceptionCheck() ? true : false)
