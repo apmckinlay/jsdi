@@ -109,6 +109,9 @@ EXPORT_STDCALL(int64_t) TestRemoveSignFromLong(long a)
            0xffffffffLL;
 }
 
+EXPORT_STDCALL(void) TestCopyInt32Value(const int32_t * src, int32_t * dst)
+{ if (src && dst) *dst = *src; }
+
 EXPORT_STDCALL(signed char) TestSumTwoChars(signed char a, signed char b)
 { return a + b; }
 

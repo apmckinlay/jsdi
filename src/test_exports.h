@@ -15,6 +15,9 @@
 /** \cond internal */
 #include <cstdint>
 
+// TODO: As part of type cleanup, all tests in this file should be re-imagined
+//       as int32_t, int16_t, etc.
+
 extern "C"
 {
 
@@ -84,6 +87,9 @@ EXPORT_STDCALL(float) TestFloat(float a);
 EXPORT_STDCALL(double) TestDouble(double a);
 
 EXPORT_STDCALL(int64_t) TestRemoveSignFromLong(long a);
+
+// TODO: As part of x64 project, this test needs to be tested in jSuneido
+EXPORT_STDCALL(void) TestCopyInt32Value(const int32_t * src, int32_t * dst);
 
 EXPORT_STDCALL(signed char) TestSumTwoChars(signed char a, signed char b);
 
