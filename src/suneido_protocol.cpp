@@ -26,14 +26,6 @@
 
 namespace jsdi {
 
-// TODO: THE NEXT STEPS ARE
-//           (1) Implement the COM handlers and build.
-//           (2) Implement the register/unregister functions.
-//           (3) Run the register/unregister functions in DllMain()
-//           (4) I think the Java interface should return byte[] so C++ doesn't
-//               have to deal too much with that crap.
-//           (5) Test.
-
 namespace {
 
 // =============================================================================
