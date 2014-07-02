@@ -11,6 +11,8 @@
 
 #include "jni_exception.h"
 
+#include "log.h"
+
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
@@ -21,13 +23,14 @@ namespace jsdi {
 //                           class jni_exception
 //==============================================================================
 
-jni_exception::jni_exception(const std::string& str, bool jni_except_pending)
-    : std::runtime_error(str)
+jni_exception::jni_exception(const std::string& what_arg,
+                             bool jni_except_pending)
+    : std::runtime_error(what_arg)
     , d_jni_except_pending(jni_except_pending)
 { }
 
-jni_exception::jni_exception(const std::string& str, JNIEnv * env)
-    : std::runtime_error(str)
+jni_exception::jni_exception(const std::string& what_arg, JNIEnv * env)
+    : std::runtime_error(what_arg)
     , d_jni_except_pending(env->ExceptionCheck() ? true : false)
 { }
 
@@ -35,7 +38,8 @@ void jni_exception::throw_jni(JNIEnv * env) const
 {
     //
     // If JNI already has an exception marked pending, we don't need to do
-    // anything -- just let it happen.
+    // anything -- just let the JVM raise it as soon as control flows back to
+    // Java-land.
     //
     if (d_jni_except_pending)
     {
@@ -53,9 +57,14 @@ void jni_exception::throw_jni(JNIEnv * env) const
         clazz = env->FindClass("suneido/language/jsdi/JSDIException");
         if (! clazz)
         {
+            LOG_ERROR("Unable to find normal exception class");
             clazz = env->FindClass("java/lang/RuntimeException");
+            if (! clazz)
+            {
+                LOG_FATAL("Failed to find ANY exception class");
+                std::abort();
+            }
         }
-        assert(clazz || !"Failed to locate any JNI exception to throw");
         if (0 != env->ThrowNew(clazz, what()))
         {
             std::cerr << "Failed to throw a Java exception from JNI in "
