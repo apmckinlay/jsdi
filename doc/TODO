@@ -7,7 +7,7 @@
         -- doxygen
             [ ] Modify header style (include guard, then doxygen docs)
             [ ] Modify auto-generated header style.
-            [ ] Current number of warnings: 158 (up from 149) ... next: jni_exception.h
+            [ ] Current number of warnings: 144 (down from 149) ... next: test.h
         -- cppcheck
 
 C++ CONFORMANCE LIVE ISSUES
@@ -30,11 +30,11 @@ OUTSTANDING BUGS/FEATURES
 
 MORE DOXYGEN ISSUES
 
-    - Next fix jni_exception.h errors (about 14)
+    - Next fix test.h errors (about 34)
     - Incorrect use of \link \endlink commands
       Correct use is \link <Doxygen link tokens> <text of actual link>  \endlink
       for example \link a::b::c() const Hello, there\endlink would make the text
-      "Hello, therE" a link  to a::b::c() const
+      "Hello, there" a link  to a::b::c() const
 
 ================================================================================
 DLL INTERFACE GRAMMAR CLAMPDOWNS
