@@ -13,25 +13,37 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\test_com">
-      <UniqueIdentifier>{c3ef134d-1cec-43b9-a346-ff016f570b2e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\test_com">
-      <UniqueIdentifier>{a545c59b-7d90-4531-9b4e-7f4b67653f4f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\src">
       <UniqueIdentifier>{b0194200-c4bb-4c2b-b5e0-8e9e9fae499f}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\src">
       <UniqueIdentifier>{4bb2b74c-a0b2-4c57-97b3-b8bce6ae3c3b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\gen">
+    <Filter Include="Source Files\src\abi_x86">
+      <UniqueIdentifier>{50274e5d-d1c2-4eba-9db5-d247bb826f39}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\src\abi_x64">
+      <UniqueIdentifier>{c0536d7c-1d7d-4912-8094-02eb8ae66ec4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\src\abi_x86">
+      <UniqueIdentifier>{0bacb3ff-119d-4e5b-8664-ede8e7d55295}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\src\abi_amd64">
+      <UniqueIdentifier>{f4bcea7b-91db-4b44-964b-e12161b033a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\src\gen">
       <UniqueIdentifier>{aec5e7bd-55d2-4b3d-94af-f71f761a808a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\src\test_com">
+      <UniqueIdentifier>{a545c59b-7d90-4531-9b4e-7f4b67653f4f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\src\test_com">
+      <UniqueIdentifier>{c3ef134d-1cec-43b9-a346-ff016f570b2e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\test_com\test_com.h">
-      <Filter>Header Files\test_com</Filter>
+      <Filter>Header Files\src\test_com</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\callback.h">
       <Filter>Header Files\src</Filter>
@@ -57,9 +69,6 @@
     <ClInclude Include="..\..\..\src\jni_util.h">
       <Filter>Header Files\src</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\jsdi_callback.h">
-      <Filter>Header Files\src</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\jsdi_ole2.h">
       <Filter>Header Files\src</Filter>
     </ClInclude>
@@ -67,15 +76,6 @@
       <Filter>Header Files\src</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jsdi_windows.h">
-      <Filter>Header Files\src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\marshalling.h">
-      <Filter>Header Files\src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\stdcall_invoke.h">
-      <Filter>Header Files\src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\stdcall_thunk.h">
       <Filter>Header Files\src</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\test.h">
@@ -91,22 +91,22 @@
       <Filter>Header Files\src</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_com_COMobject.h">
-      <Filter>Header Files\gen</Filter>
+      <Filter>Header Files\src\gen</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_dll_DllFactory.h">
-      <Filter>Header Files\gen</Filter>
+      <Filter>Header Files\src\gen</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_dll_NativeCall.h">
-      <Filter>Header Files\gen</Filter>
+      <Filter>Header Files\src\gen</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_JSDI.h">
-      <Filter>Header Files\gen</Filter>
+      <Filter>Header Files\src\gen</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_ThunkManager.h">
-      <Filter>Header Files\gen</Filter>
+      <Filter>Header Files\src\gen</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_type_Structure.h">
-      <Filter>Header Files\gen</Filter>
+      <Filter>Header Files\src\gen</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\suneido_protocol.h">
       <Filter>Header Files\src</Filter>
@@ -117,10 +117,22 @@
     <ClInclude Include="..\..\..\src\version.h">
       <Filter>Header Files\src</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\abi_x86\jsdi_callback.h">
+      <Filter>Header Files\src\abi_x86</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\abi_x86\stdcall_invoke.h">
+      <Filter>Header Files\src\abi_x86</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\abi_x86\stdcall_thunk.h">
+      <Filter>Header Files\src\abi_x86</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\abi_x86\marshalling.h">
+      <Filter>Header Files\src\abi_x86</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\test_com\test_com.cpp">
-      <Filter>Source Files\test_com</Filter>
+      <Filter>Source Files\src\test_com</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\callback.cpp">
       <Filter>Source Files\src</Filter>
@@ -146,25 +158,10 @@
     <ClCompile Include="..\..\..\src\jni_util.cpp">
       <Filter>Source Files\src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\jsdi_callback.cpp">
-      <Filter>Source Files\src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jsdi_jni.cpp">
-      <Filter>Source Files\src</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\main_dll.cpp">
       <Filter>Source Files\src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\main_exe.cpp">
-      <Filter>Source Files\src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\marshalling.cpp">
-      <Filter>Source Files\src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\stdcall_invoke.cpp">
-      <Filter>Source Files\src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\stdcall_thunk.cpp">
       <Filter>Source Files\src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\test.cpp">
@@ -180,7 +177,7 @@
       <Filter>Source Files\src</Filter>
     </ClCompile>
     <ClCompile Include="midl_iid.c">
-      <Filter>Header Files\test_com</Filter>
+      <Filter>Header Files\src\test_com</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\suneido_protocol.cpp">
       <Filter>Source Files\src</Filter>
@@ -190,6 +187,24 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\version.cpp">
       <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\abi_x86\jsdi_callback.cpp">
+      <Filter>Source Files\src\abi_x86</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\abi_x86\stdcall_invoke.cpp">
+      <Filter>Source Files\src\abi_x86</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\abi_x86\stdcall_thunk.cpp">
+      <Filter>Source Files\src\abi_x86</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\_jni_interface.cpp">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\abi_x86\_jni_interface_x86.cpp">
+      <Filter>Source Files\src\abi_x86</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\abi_x86\marshalling.cpp">
+      <Filter>Source Files\src\abi_x86</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -202,7 +217,7 @@
   </ItemGroup>
   <ItemGroup>
     <Midl Include="..\..\..\src\test_com\test_com.idl">
-      <Filter>Source Files\test_com</Filter>
+      <Filter>Source Files\src\test_com</Filter>
     </Midl>
   </ItemGroup>
 </Project>

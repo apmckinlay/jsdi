@@ -132,6 +132,10 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\abi_x86\jsdi_callback.h" />
+    <ClInclude Include="..\..\..\src\abi_x86\marshalling.h" />
+    <ClInclude Include="..\..\..\src\abi_x86\stdcall_invoke.h" />
+    <ClInclude Include="..\..\..\src\abi_x86\stdcall_thunk.h" />
     <ClInclude Include="..\..\..\src\callback.h" />
     <ClInclude Include="..\..\..\src\com.h" />
     <ClInclude Include="..\..\..\src\com_util.h" />
@@ -147,13 +151,9 @@
     <ClInclude Include="..\..\..\src\java_enum.h" />
     <ClInclude Include="..\..\..\src\jni_exception.h" />
     <ClInclude Include="..\..\..\src\jni_util.h" />
-    <ClInclude Include="..\..\..\src\jsdi_callback.h" />
     <ClInclude Include="..\..\..\src\jsdi_ole2.h" />
     <ClInclude Include="..\..\..\src\jsdi_windows.h" />
     <ClInclude Include="..\..\..\src\log.h" />
-    <ClInclude Include="..\..\..\src\marshalling.h" />
-    <ClInclude Include="..\..\..\src\stdcall_invoke.h" />
-    <ClInclude Include="..\..\..\src\stdcall_thunk.h" />
     <ClInclude Include="..\..\..\src\suneido_protocol.h" />
     <ClInclude Include="..\..\..\src\test.h" />
     <ClInclude Include="..\..\..\src\test_com\test_com.h" />
@@ -163,6 +163,11 @@
     <ClInclude Include="..\..\..\src\version.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\abi_x86\jsdi_callback.cpp" />
+    <ClCompile Include="..\..\..\src\abi_x86\marshalling.cpp" />
+    <ClCompile Include="..\..\..\src\abi_x86\stdcall_invoke.cpp" />
+    <ClCompile Include="..\..\..\src\abi_x86\stdcall_thunk.cpp" />
+    <ClCompile Include="..\..\..\src\abi_x86\_jni_interface_x86.cpp" />
     <ClCompile Include="..\..\..\src\callback.cpp" />
     <ClCompile Include="..\..\..\src\com.cpp" />
     <ClCompile Include="..\..\..\src\com_util.cpp" />
@@ -181,8 +186,6 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-exe|Win32'">_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-dll|Win32'">_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\jsdi_callback.cpp" />
-    <ClCompile Include="..\..\..\src\jsdi_jni.cpp" />
     <ClCompile Include="..\..\..\src\log.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-exe|Win32'">_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release-dll|Win32'">_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -197,9 +200,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-dll|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-dll|Win32'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\marshalling.cpp" />
-    <ClCompile Include="..\..\..\src\stdcall_invoke.cpp" />
-    <ClCompile Include="..\..\..\src\stdcall_thunk.cpp" />
     <ClCompile Include="..\..\..\src\suneido_protocol.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release-dll|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release-exe|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -225,6 +225,7 @@
     <ClCompile Include="..\..\..\src\utf16_util.cpp" />
     <ClCompile Include="..\..\..\src\util.cpp" />
     <ClCompile Include="..\..\..\src\version.cpp" />
+    <ClCompile Include="..\..\..\src\_jni_interface.cpp" />
     <ClCompile Include="midl_iid.c" />
   </ItemGroup>
   <ItemGroup>
