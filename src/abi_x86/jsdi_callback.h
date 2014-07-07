@@ -19,6 +19,7 @@
 #include "jni_util.h"
 
 namespace jsdi {
+namespace abi_x86 {
 
 //==============================================================================
 //                         class jsdi_callback_basic
@@ -133,6 +134,7 @@ inline jsdi_callback_vi::jsdi_callback_vi(JNIEnv * env,
       )
 { }
 
+} // namespace abi_x86
 } // namespace jsdi
 
 #endif // __INCLUDED_JSDI_CALLBACK_H___

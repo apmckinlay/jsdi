@@ -26,6 +26,7 @@
 #include <cstdlib>
 
 namespace jsdi {
+namespace abi_x86 {
 
 //==============================================================================
 //                             struct stub_code
@@ -294,6 +295,7 @@ stdcall_thunk_state stdcall_thunk::clear()
     return d_impl->d_state;
 }
 
+} // namespace abi_x86
 } // namespace jsdi
 
 //==============================================================================
@@ -307,7 +309,7 @@ stdcall_thunk_state stdcall_thunk::clear()
 #include "marshalling.h"
 #include "stdcall_invoke.h"
 
-using namespace jsdi;
+using namespace jsdi::abi_x86;
 
 static const int EMPTY_PTR_ARRAY[1] = { };
 

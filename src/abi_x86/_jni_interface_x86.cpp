@@ -23,6 +23,7 @@
 #include <cstring>
 
 using namespace jsdi;
+using namespace jsdi::abi_x86;
 
 //==============================================================================
 //                                INTERNALS

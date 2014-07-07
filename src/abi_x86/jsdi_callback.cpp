@@ -17,6 +17,7 @@
 #include <stdexcept>
 
 namespace jsdi {
+namespace abi_x86 {
 
 //==============================================================================
 //                         class jsdi_callback_basic
@@ -239,4 +240,5 @@ long jsdi_callback_vi::call(const char * args)
     return result;
 }
 
+} // namespace abi_x86
 } // namespace jni

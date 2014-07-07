@@ -28,6 +28,7 @@
 #endif
 
 namespace jsdi {
+namespace abi_x86 {
 
 //==============================================================================
 //                      class marshalling_vi_container
@@ -555,6 +556,7 @@ inline unmarshaller_vi::unmarshaller_vi(int size_direct, int size_total,
                            vi_count)
 { }
 
+} // namespace abi_x86
 } // namespace jsdi
 
 #endif // __INCLUDED_MARSHALLING_H___

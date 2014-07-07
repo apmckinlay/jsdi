@@ -13,6 +13,7 @@
 #include "marshalling.h"
 
 namespace jsdi {
+namespace abi_x86 {
 
 //==============================================================================
 //                      class marshalling_vi_container
@@ -359,6 +360,7 @@ void unmarshaller_vi::vi_string_ptr(const char * str, int vi_index,
     }
 }
 
+} // namespace abi_x86
 } // namespace jsdi
 
 //==============================================================================
@@ -373,7 +375,7 @@ void unmarshaller_vi::vi_string_ptr(const char * str, int vi_index,
 
 #include <algorithm>
 
-using namespace jsdi;
+using namespace jsdi::abi_x86;
 
 namespace {
 
