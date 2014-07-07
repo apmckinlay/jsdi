@@ -13,7 +13,7 @@
  *        protocol for IE.
  */
  
- #include <jni.h>
+#include <jni.h>
 
 namespace jsdi {
 
