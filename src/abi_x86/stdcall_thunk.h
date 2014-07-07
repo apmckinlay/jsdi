@@ -19,7 +19,9 @@
 
 namespace jsdi {
 
-class callback;
+class callback; // TODO: Should this move to jsdi::abi_x86??
+
+namespace abi_x86 {
 
 struct stdcall_thunk_impl;
 
@@ -84,7 +86,7 @@ class stdcall_thunk : private non_copyable
         stdcall_thunk_state clear();
 };
 
+} // namespace x86
 } // namespace jsdi
-
 
 #endif // __INCLUDED_STDCALL_THUNK_H___

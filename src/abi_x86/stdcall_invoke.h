@@ -17,6 +17,7 @@
 #include <cstdint>
 
 namespace jsdi {
+namespace abi_x86 {
 
 /**
  * Contains generic functions for invoking other functions according to the
@@ -197,6 +198,7 @@ inline double stdcall_invoke::return_double(int args_size_bytes,
     return result;
 }
 
+} // namespace abi_x86
 } // namespace jsdi
 
 #endif // __INCLUDED_STDCALL_INVOKE_H___

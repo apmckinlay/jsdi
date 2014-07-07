@@ -23,7 +23,7 @@ namespace {
 template<typename FuncPtr>
 int64_t basic_invoke(FuncPtr f, int nlongs, long * args)
 {
-    return static_cast<int64_t>(jsdi::stdcall_invoke::basic(
+    return static_cast<int64_t>(jsdi::abi_x86::stdcall_invoke::basic(
         nlongs * sizeof(long),
         reinterpret_cast<char *>(args),
         reinterpret_cast<void *>(f)
@@ -33,7 +33,7 @@ int64_t basic_invoke(FuncPtr f, int nlongs, long * args)
 template<typename FuncPtr, typename ArgType>
 double float_invoke(FuncPtr f, int nargs, ArgType * args)
 {
-    return jsdi::stdcall_invoke::return_double(
+    return jsdi::abi_x86::stdcall_invoke::return_double(
         nargs * sizeof(ArgType),
         reinterpret_cast<char *>(args),
         reinterpret_cast<void *>(f)
@@ -43,7 +43,7 @@ double float_invoke(FuncPtr f, int nargs, ArgType * args)
 template<typename FuncPtr, typename ArgType>
 double double_invoke(FuncPtr f, int nargs, ArgType * args)
 {
-    return jsdi::stdcall_invoke::return_double(
+    return jsdi::abi_x86::stdcall_invoke::return_double(
         nargs * sizeof(ArgType),
         reinterpret_cast<char *>(args),
         reinterpret_cast<void *>(f)
