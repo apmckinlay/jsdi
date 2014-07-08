@@ -195,56 +195,6 @@ void clear_callback(stdcall_thunk * thunk)
 
 /*
  * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callReturnInt64
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callReturnInt64(
-    JNIEnv *, jclass, jlong funcPtr)
-{
-    // TODO: tracing
-    return reinterpret_cast<jlong(__stdcall *)()>(funcPtr)();
-}
-
-/*
- * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callLLReturnInt64
- * Signature: (JII)J
- */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLReturnInt64(
-    JNIEnv *, jclass, jlong funcPtr, jint arg0)
-{
-    // TODO: tracing
-    return reinterpret_cast<jlong(__stdcall *)(long)>(funcPtr)(arg0);
-}
-
-/*
- * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callLLReturnInt64
- * Signature: (JII)J
- */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLLReturnInt64(
-    JNIEnv *, jclass, jlong funcPtr, jint arg0, jint arg1)
-{
-    // TODO: tracing
-    return reinterpret_cast<jlong(__stdcall *)(long, long)>(funcPtr)(arg0, arg1);
-}
-
-/*
- * Class:     suneido_language_jsdi_dll_NativeCall
- * Method:    callLLLReturnInt64
- * Signature: (JIII)J
- */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callLLLReturnInt64(
-    JNIEnv *, jclass, jlong funcPtr, jint arg0, jint arg1, jint arg2)
-{
-    // TODO: tracing
-    return reinterpret_cast<long(__stdcall *)(long, long, long)>(funcPtr)(arg0,
-                                                                          arg1,
-                                                                          arg2);
-}
-
-/*
- * Class:     suneido_language_jsdi_dll_NativeCall
  * Method:    callDirectReturnInt64
  * Signature: (JI[B)J
  */
