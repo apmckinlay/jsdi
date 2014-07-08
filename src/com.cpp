@@ -120,10 +120,16 @@ jobject jni_make_int64(JNIEnv * env, int64_t value)
 
 jobject jni_make_bigdecimal(JNIEnv * env, double value)
 {
+    jni_auto_local<jobject> MC(env,
+                               env->GetStaticObjectField(
+                                   GLOBAL_REFS->suneido_language_Numbers(),
+                                   GLOBAL_REFS->suneido_language_Numbers__f_MC()
+                               ));
+    JNI_EXCEPTION_CHECK(env);
     jobject result(
         env->NewObject(GLOBAL_REFS->java_math_BigDecimal(),
                        GLOBAL_REFS->java_math_BigDecimal__init(), value,
-                       GLOBAL_REFS->suneido_language_Numbers__f_MC()));
+                       static_cast<jobject>(MC)));
     JNI_EXCEPTION_CHECK(env);
     if (! result) jni_bad_alloc("NewObject", __FUNCTION__);
     return result;
