@@ -375,6 +375,7 @@ void unmarshaller_vi::vi_string_ptr(const char * str, int vi_index,
 
 #include <algorithm>
 
+using jsdi::array_length;
 using namespace jsdi::abi_x86;
 
 namespace {
