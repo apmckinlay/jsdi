@@ -309,6 +309,7 @@ stdcall_thunk_state stdcall_thunk::clear()
 #include "marshalling.h"
 #include "stdcall_invoke.h"
 
+using namespace jsdi;
 using namespace jsdi::abi_x86;
 
 static const int EMPTY_PTR_ARRAY[1] = { };
