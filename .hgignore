@@ -3,8 +3,10 @@ syntax: glob
 doxygen
 vs/*/Debug-*
 vs/*/Release-*
+vs/*/x64
 vs/*/*.*sdf
 vs/*/*.suo
 vs/*/jsdi/Debug-*
 vs/*/jsdi/Release-*
+vs/*/jsdi/x64/*
 vs/*/jsdi/midl*.*

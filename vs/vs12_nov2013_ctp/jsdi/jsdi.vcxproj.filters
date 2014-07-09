@@ -129,6 +129,9 @@
     <ClInclude Include="..\..\..\src\abi_x86\marshalling.h">
       <Filter>Header Files\src\abi_x86</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\abi_amd64\invoke64.h">
+      <Filter>Header Files\src\abi_amd64</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\test_com\test_com.cpp">
@@ -206,6 +209,9 @@
     <ClCompile Include="..\..\..\src\abi_x86\marshalling.cpp">
       <Filter>Source Files\src\abi_x86</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\abi_amd64\invoke64.cpp">
+      <Filter>Source Files\src\abi_x64</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\src\res\suneido.rc">
@@ -219,5 +225,10 @@
     <Midl Include="..\..\..\src\test_com\test_com.idl">
       <Filter>Source Files\src\test_com</Filter>
     </Midl>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="..\..\..\src\abi_amd64\invoke64_ll.asm">
+      <Filter>Source Files\src\abi_x64</Filter>
+    </MASM>
   </ItemGroup>
 </Project>
