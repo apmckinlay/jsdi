@@ -336,7 +336,7 @@ struct stdcall_invoke_basic_callback : public callback
                                d_ptr_array.data() + d_ptr_array.size(),
                                d_vi_count);
         u.unmarshall_vi(data.data(), args, 0, 0, vi_inst_array.data());
-        return static_cast<long>(
+        return static_cast<int32_t>(
             stdcall_invoke::basic(d_size_direct, data.data(), d_func_ptr) &
             0x00000000ffffffffLL
         );
@@ -346,9 +346,9 @@ struct stdcall_invoke_basic_callback : public callback
 template<typename Param1, typename Param2>
 struct Func
 {
-    typedef long(__stdcall * callback_function)(Param1, Param2);
-    typedef long(__stdcall * function)(callback_function, Param1, Param2);
-    static long call(function f, stdcall_thunk& t, Param1 arg1, Param2 arg2)
+    typedef int32_t(__stdcall * callback_function)(Param1, Param2);
+    typedef int32_t(__stdcall * function)(callback_function, Param1, Param2);
+    static int32_t call(function f, stdcall_thunk& t, Param1 arg1, Param2 arg2)
     {
         callback_function c = reinterpret_cast<callback_function>(t
             .func_addr());
@@ -359,9 +359,9 @@ struct Func
 template<typename Param>
 struct Func<Param, void>
 {
-    typedef long(__stdcall * callback_function)(Param);
-    typedef long(__stdcall * function)(callback_function, Param);
-    static long call(function f, stdcall_thunk& t, Param arg)
+    typedef int32_t(__stdcall * callback_function)(Param);
+    typedef int32_t(__stdcall * function)(callback_function, Param);
+    static int32_t call(function f, stdcall_thunk& t, Param arg)
     {
         callback_function c = reinterpret_cast<callback_function>(t
             .func_addr());
@@ -369,37 +369,38 @@ struct Func<Param, void>
     }
 };
 
-TEST(one_long,
+TEST(one_int32,
     std::shared_ptr<callback> cb(
-        new stdcall_invoke_basic_callback(TestLong, sizeof(long), 0,
+        new stdcall_invoke_basic_callback(TestInt32, sizeof(int32_t), 0,
                                           EMPTY_PTR_ARRAY, 0, 0));
     stdcall_thunk thunk(cb);
-    long result = Func<long, void>::call(TestInvokeCallback_Long1, thunk, 10);
+    int32_t result = Func<int32_t, void>::call(TestInvokeCallback_Int32_1,
+                                               thunk, 10);
     thunk.clear();
     assert_equals(10, result);
 );
 
-TEST(sum_two_longs,
+TEST(sum_two_int32s,
     std::shared_ptr<callback> cb(
-        new stdcall_invoke_basic_callback(TestSumTwoLongs, 2 * sizeof(long), 0,
-                                           EMPTY_PTR_ARRAY, 0, 0));
+        new stdcall_invoke_basic_callback(TestSumTwoInt32s, 2 * sizeof(int32_t),
+                                          0, EMPTY_PTR_ARRAY, 0, 0));
     stdcall_thunk thunk(cb);
-    long result = Func<long, long>::call(
-        TestInvokeCallback_Long2, thunk, std::numeric_limits<long>::min() + 3,
-        -2);
+    int32_t result = Func<int32_t, int32_t>::call(
+        TestInvokeCallback_Int32_2, thunk,
+        std::numeric_limits<int32_t>::min() + 3, -2);
     thunk.clear();
-    assert_equals(std::numeric_limits<long>::min() + 1, result);
+    assert_equals(std::numeric_limits<int32_t>::min() + 1, result);
 );
 
 TEST(sum_packed,
-    Packed_CharCharShortLong p_ccsl = { -1, 2, 100, 54321 };
+    Packed_Int8Int8Int16Int32 p_ccsl = { -1, 2, 100, 54321 };
     std::shared_ptr<callback> cb(
-        new stdcall_invoke_basic_callback(TestSumPackedCharCharShortLong,
+        new stdcall_invoke_basic_callback(TestSumPackedInt8Int8Int16Int32,
                                           sizeof(p_ccsl), 0, EMPTY_PTR_ARRAY, 0,
                                           0));
     stdcall_thunk thunk(cb);
-    long result = Func<Packed_CharCharShortLong, void>::call(
-        TestInvokeCallback_Packed_CharCharShortLong, thunk, p_ccsl);
+    int32_t result = Func<Packed_Int8Int8Int16Int32, void>::call(
+        TestInvokeCallback_Packed_Int8Int8Int16Int32, thunk, p_ccsl);
     thunk.clear();
     assert_equals(54422, result);
 );
@@ -440,7 +441,7 @@ TEST(sum_string,
                                       PTR_ARRAY, array_length(PTR_ARRAY),
                                       VI_COUNT));
     stdcall_thunk thunk(cb);
-    long result = Func<Recursive_StringSum *, void>::call(
+    int32_t result = Func<Recursive_StringSum *, void>::call(
         TestInvokeCallback_Recursive_StringSum, thunk, r_ss);
     thunk.clear();
     assert_equals(0+1+2+3+4+5+6+7+8+9+10+11+12+13+14+15+16+17, result);
