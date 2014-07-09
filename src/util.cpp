@@ -55,30 +55,39 @@ TEST(smallest_pow2,
     assert_equals(  0, smallest_pow2(std::numeric_limits<uint32_t>::max()));
     uint16_t x16(10), y16(16);
     uint32_t x32(10), y32(16);
+    uint64_t x64(10), y64(16);
     for (;
          x32 <= static_cast<uint32_t>(std::numeric_limits<int16_t>::max());
-         ++x16, ++x32)
+         ++x16, ++x32, ++x64)
     {
         if (x16 < y16)
         {
             assert_equals(y16, smallest_pow2(x16));
             assert_equals(y32, smallest_pow2(x32));
+            assert_equals(y64, smallest_pow2(x64));
         }
         else
         {
             assert_equals(x16, y16);
             assert_equals(x32, y32);
+            assert_equals(x64, y64);
             assert_equals(y16, smallest_pow2(y16));
             assert_equals(y32, smallest_pow2(y32));
+            assert_equals(y64, smallest_pow2(y64));
             assert_equals(y16 * 2,
                           smallest_pow2(static_cast<uint16_t>(y16 + 1)));
             assert_equals(y32 * 2,
                           smallest_pow2(static_cast<uint32_t>(y32 + 1)));
+            assert_equals(y64 * 2,
+                          smallest_pow2(static_cast<uint64_t>(y64 + 1)));
             y16 *= 2;
             y32 *= 2;
+            y64 *= 2;
         }
     }
     assert_equals(0x40000, smallest_pow2(static_cast<uint32_t>(0x3010a)));
+    assert_equals(0x100000000L,
+                  smallest_pow2(static_cast<uint64_t>(0x0fedcba98L)));
 );
 
 #endif // __NOTEST__

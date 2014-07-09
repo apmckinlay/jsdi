@@ -7,14 +7,21 @@ building jsdi using Visual Studio 12.0 + the Visual C++ November 2013 CTP
 To get a particular version working:
     [ ] Ensure your environment has a JAVA_HOME_X86 variable set which points to
         the root of an x86 JDK.
+    [ ] Ensure your environment has a JAVA_HOME_AMD64 variable set which points
+        to the root of an x64 JDK.
     [ ] Ensure you have the correct Visual Studio and compiler toolchain
         installed.
     [ ] The test executable (jsdi.exe) now uses the JNI invocation API to create
         its own JVM for certain tests. This means that running jsdi.exe now
-        requires a jvm.dll. Preferably, ensure your PATH environment variable
-        includes $JAVA_HOME/jre/bin/client/ or $JAVA_HOME/jre/bin/server/.
-        Alternatively, you can copy jvm.dll into the executable's local
-        directory.
+        requires a jvm.dll. 
+            (*) The test executable will look for a full path to jvm.dll in an
+                environment variable called 'JSDI_JVM_PATH'.
+            (*) Failing the above, it will attempt to load it using standard
+                Windows library search algorithm.
+            (*) Failing both of the above, it will prompt the user to give a
+                full path to jvm.dll.
+        Note that the x86 build requires an x86 jvm.dll and the amd64 build
+        requires an amd64 jvm.dll.
 
 One issue I have had with the November 2013 CTP is building with /MDd or /MTd
 (multithread debug DLL or multithread debug exe) doesn't work in certain cases, possibly

@@ -105,6 +105,8 @@ void heap::free(void * ptr) noexcept
 
 using namespace jsdi;
 
+#if defined(_M_IX86)
+
 // Calls the code block pointed to by 'code', which must simply copy the
 // value 27 into the register 'eax' and return.
 #ifdef __GNUC__
@@ -127,25 +129,34 @@ using namespace jsdi;
 #error Replacement for inline assembler required
 #endif
 
-TEST(heap,
-    heap h1("my heap", false);
+#endif // #if defined(_M_IX86)
+
+TEST(heap_basic,
+    heap h("my heap", false);
     char * str = reinterpret_cast<char *>(
-                     h1.alloc(std::strlen("bonjour monde") + 1));
+                     h.alloc(std::strlen("bonjour monde") + 1));
     assert_true(str);
     std::strcpy(str, "bonjour monde");
     assert_equals(std::string("bonjour monde"), str);
-    h1.free(str);
+    h.free(str);
+);
+
+#if defined(_M_IX86)
+
+TEST(heap_exec_x86,
     constexpr unsigned char CODE[] =
     {
         0xb8, 0x1b, 0x00, 0x00, 0x00, // movl 0x0000001b, %eax
         0xc3                          // ret
     };
-    heap h2("exeheap", true);
-    void * code = h2.alloc(sizeof(CODE));
+    heap h("exeheap", true);
+    void * code = h.alloc(sizeof(CODE));
     std::memcpy(code, CODE, sizeof(CODE));
     int should_be_27(0xffffff00);
     CALL_COPY_27(code, should_be_27);
     assert_equals(27, should_be_27);
 );
+
+#endif // #if defined(_M_IX86)
 
 #endif // #ifndef __NOTEST__

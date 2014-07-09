@@ -13,11 +13,15 @@
 
 #ifndef __NOTEST__
 
+#include "jsdi_windows.h"
 #include "util.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
+#include <cwctype>
 #include <functional>
+#include <iostream>
 #include <map>
 #include <stdexcept>
 
@@ -34,6 +38,56 @@ struct cstr_less
 typedef std::map<const char *, std::shared_ptr<test>, cstr_less> test_map;
 typedef std::map<const char *, test_map, cstr_less> suite_map;
 
+HMODULE load_jvm_library()
+{
+    const char * path_var = getenv("JSDI_JVM_PATH");
+    std::string lib(path_var ? path_var : "jvm.dll");
+    HMODULE jvm_library = LoadLibraryExA(lib.c_str(), NULL, 0);
+    do
+    {
+        if (jvm_library) return jvm_library;
+        std::cerr << "failed to load '" << lib << "' (error code "
+                  << GetLastError() << ')' << std::endl;
+        if (!std::cin) break;
+        std::cout << "enter full path to JVM library (enter to quit): ";
+        std::getline(std::cin, lib);
+        auto i = std::find_if(lib.begin(), lib.end(),
+                              [] (char x) { return std::iswspace(x); });
+        if (lib.end() == i) break;
+        jvm_library = LoadLibraryExA(lib.c_str(), NULL, 0);
+    }
+    while (true);
+    throw test_java_vm_create_error("unable to load JVM library");
+}
+
+void * get_jvm_createfunc(HMODULE hmodule)
+{
+    const char * CREATEFUNC_NAME = "JNI_CreateJavaVM";
+    void * func_ptr = GetProcAddress(hmodule, CREATEFUNC_NAME);
+    if (!func_ptr)
+    {
+        std::ostringstream() << "failed to get address of '" << CREATEFUNC_NAME
+                             << "' within module " << hmodule << " (error code "
+                             << GetLastError() << ')'
+                             << throw_cpp<test_java_vm_create_error>();
+    }
+    return func_ptr;
+}
+
+jint jni_create_java_vm(JavaVM ** vm, JNIEnv ** p_env, JavaVMInitArgs * vm_args)
+{
+    typedef jint(JNICALL * createfunc_t)(JavaVM **, JNIEnv **,
+                                         JavaVMInitArgs *);
+    static createfunc_t createfunc = (nullptr);
+    if (!createfunc)
+    {
+        HMODULE jvm_library = load_jvm_library();
+        createfunc = reinterpret_cast<createfunc_t>(
+                         get_jvm_createfunc(jvm_library));
+    }
+    assert(createfunc);
+    return createfunc(vm, p_env, vm_args);
+}
 
 } // anonymous namespace
 
@@ -284,13 +338,12 @@ test_java_vm::test_java_vm()
             options[k].extraInfo = nullptr;
         }
         JavaVM * vm(nullptr);
-        int result = JNI_CreateJavaVM(&vm, reinterpret_cast<void **>(&d_env),
-                                      &vm_args);
+        jint result = jni_create_java_vm(&vm, &d_env, &vm_args);
         if (JNI_OK == result)
             d_java_vm.reset(vm, std::mem_fn(&JavaVM::DestroyJavaVM));
         else
         {
-            std::ostringstream() << "Failed to create JVM: got error code "
+            std::ostringstream() << "failed to create JVM: got error code "
                                  << result
                                  << throw_cpp<test_java_vm_create_error>();
         }

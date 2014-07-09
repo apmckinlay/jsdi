@@ -118,7 +118,7 @@ struct protocol : public basic_unknown<IInternetProtocol>
             /* [in] */IInternetProtocolSink __RPC_FAR *pOIProtSink,
             /* [in] */IInternetBindInfo __RPC_FAR *pOIBindInfo,
             /* [in] */DWORD grfPI,
-            /* [in] */DWORD dwReserved);
+            /* [in] */HANDLE_PTR dwReserved);
 
         HRESULT __stdcall Continue(
             /* [in] */PROTOCOLDATA __RPC_FAR *pProtocolData);
@@ -161,7 +161,7 @@ struct protocol : public basic_unknown<IInternetProtocol>
 HRESULT __stdcall protocol::Start(LPCWSTR szUrl,
                                   IInternetProtocolSink __RPC_FAR *pOIProtSink,
                                   IInternetBindInfo __RPC_FAR *pOIBindInfo,
-                                  DWORD grfPI, DWORD dwReserved)
+                                  DWORD grfPI, HANDLE_PTR dwReserved)
 {   
     // Decode any %XX sequences in the URL to the actual character. This should
     // never make the URL string longer, but just in case we check to see if a

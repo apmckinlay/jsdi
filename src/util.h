@@ -165,6 +165,14 @@ inline void or_and_shift_remainder(uint32_t& x)
     x |= x >> 010;
     x |= x >> 020;
 }
+
+template <>
+inline void or_and_shift_remainder(uint64_t& x)
+{
+    x |= x >> 010;
+    x |= x >> 020;
+    x |= x >> 040;
+}
 /** \endcond */
 
 /**
