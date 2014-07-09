@@ -15,9 +15,6 @@
 /** \cond internal */
 #include <cstdint>
 
-// TODO: As part of type cleanup, all tests in this file should be re-imagined
-//       as int32_t, int16_t, etc.
-
 extern "C"
 {
 
@@ -28,53 +25,53 @@ extern "C"
 
 #define EXPORT_STDCALL(return_type) __declspec(dllexport) return_type __stdcall
 
-struct Packed_CharCharShortLong
+struct Packed_Int8Int8Int16Int32
 {
-    signed char  a;
-    signed char  b;
-    short        c;
-    long         d;
+    int8_t  a;
+    int8_t  b;
+    int16_t c;
+    int32_t d;
 };
 
-struct Recursive_CharCharShortLong
+struct Recursive_Int8Int8Int16Int32
 {
-    struct Packed_CharCharShortLong x;
-    Recursive_CharCharShortLong   * inner;
+    struct Packed_Int8Int8Int16Int32 x;
+    Recursive_Int8Int8Int16Int32   * inner;
 };
 
 struct Recursive_StringSum
 {
-    struct Packed_CharCharShortLong x[2];
-    const char *                    str;
-    char *                          buffer;
-    long                            len;
-    Recursive_StringSum *           inner;
+    struct Packed_Int8Int8Int16Int32 x[2];
+    const char *                     str;
+    char *                           buffer;
+    int32_t                          len;
+    Recursive_StringSum *            inner;
 };
 
-struct Swap_StringLongLong
+struct Swap_StringInt32Int32
 {
     const char * str;
-    long         a;
-    long         b;
+    int32_t      a;
+    int32_t      b;
 };
 
-typedef long(__stdcall * TestCallback_Long1)(long);
+typedef int32_t(__stdcall * TestCallback_Int32_1)(int32_t);
 
-typedef long(__stdcall * TestCallback_Long2)(long, long);
+typedef int32_t(__stdcall * TestCallback_Int32_2)(int32_t, int32_t);
 
-typedef long(__stdcall * TestCallback_Packed_CharCharShortLong)(
-    struct Packed_CharCharShortLong);
+typedef int32_t(__stdcall * TestCallback_Packed_Int8Int8Int16Int32)(
+    struct Packed_Int8Int8Int16Int32);
 
-typedef long(__stdcall * TestCallback_Recursive_StringSum)(
+typedef int32_t(__stdcall * TestCallback_Recursive_StringSum)(
     struct Recursive_StringSum *);
 
 EXPORT_STDCALL(void) TestVoid();
 
-EXPORT_STDCALL(signed char) TestChar(signed char a);
+EXPORT_STDCALL(int8_t) TestInt8(int8_t a);
 
-EXPORT_STDCALL(short) TestShort(short a);
+EXPORT_STDCALL(int16_t) TestInt16(int16_t a);
 
-EXPORT_STDCALL(long) TestLong(long a);
+EXPORT_STDCALL(int32_t) TestInt32(int32_t a);
 
 EXPORT_STDCALL(int64_t) TestInt64(int64_t a);
 
@@ -86,78 +83,86 @@ EXPORT_STDCALL(float) TestFloat(float a);
 
 EXPORT_STDCALL(double) TestDouble(double a);
 
-EXPORT_STDCALL(int64_t) TestRemoveSignFromLong(long a);
+EXPORT_STDCALL(int64_t) TestRemoveSignFromInt32(int32_t a);
 
-// TODO: As part of x64 project, this test needs to be tested in jSuneido
 EXPORT_STDCALL(void) TestCopyInt32Value(const int32_t * src, int32_t * dst);
 
-EXPORT_STDCALL(signed char) TestSumTwoChars(signed char a, signed char b);
+EXPORT_STDCALL(int8_t) TestSumTwoInt8s(int8_t a, int8_t b);
 
-EXPORT_STDCALL(short) TestSumTwoShorts(short a, short b);
+EXPORT_STDCALL(int16_t) TestSumTwoInt16s(int16_t a, int16_t b);
 
-EXPORT_STDCALL(long) TestSumTwoLongs(long a, long b);
+EXPORT_STDCALL(int32_t) TestSumTwoInt32s(int32_t a, int32_t b);
 
 EXPORT_STDCALL(float) TestSumTwoFloats(float a, float b);
 
 EXPORT_STDCALL(double) TestSumTwoDoubles(double a, double b);
 
-EXPORT_STDCALL(long) TestSumThreeLongs(long a, long b, long c);
+EXPORT_STDCALL(int32_t) TestSumThreeInt32s(int32_t a, int32_t b, int32_t c);
 
-EXPORT_STDCALL(long) TestSumFourLongs(long a, long b, long c, long d);
+EXPORT_STDCALL(int32_t) TestSumFourInt32s(int32_t a, int32_t b, int32_t c,
+                                          int32_t d);
 
-EXPORT_STDCALL(int64_t) TestSumCharPlusInt64(signed char a, int64_t b);
+EXPORT_STDCALL(int32_t) TestSumFiveInt32s(int32_t a, int32_t b, int32_t c,
+                                          int32_t d, int32_t e);
 
-EXPORT_STDCALL(long) TestSumPackedCharCharShortLong(Packed_CharCharShortLong x);
+EXPORT_STDCALL(int64_t) TestSumInt8PlusInt64(int8_t a, int64_t b);
 
-EXPORT_STDCALL(long) TestStrLen(const char * str);
+EXPORT_STDCALL(int32_t) TestSumPackedInt8Int8Int16Int32(
+    Packed_Int8Int8Int16Int32 x);
 
-EXPORT_STDCALL(const char *) TestHelloWorldReturn(long flag);
+EXPORT_STDCALL(int32_t) TestStrLen(const char * str);
+
+EXPORT_STDCALL(const char *) TestHelloWorldReturn(int32_t flag);
 
 EXPORT_STDCALL(void) TestHelloWorldOutParam(const char ** str);
 
-EXPORT_STDCALL(void) TestHelloWorldOutBuffer(char * buffer, long size);
+EXPORT_STDCALL(void) TestHelloWorldOutBuffer(char * buffer, int32_t size);
 
 EXPORT_STDCALL(void) TestNullPtrOutParam(const char ** ptr);
 
 EXPORT_STDCALL(uint64_t) TestReturnPtrPtrPtrDoubleAsUInt64(
     const double * const * const * ptr);
 
-EXPORT_STDCALL(long) TestSumString(Recursive_StringSum * ptr);
+EXPORT_STDCALL(int32_t) TestSumString(Recursive_StringSum * ptr);
 
-EXPORT_STDCALL(long) TestSumResource(const char * res, const char ** pres);
+EXPORT_STDCALL(int32_t) TestSumResource(const char * res, const char ** pres);
 
-EXPORT_STDCALL(long) TestSwap(Swap_StringLongLong * ptr);
+EXPORT_STDCALL(int32_t) TestSwap(Swap_StringInt32Int32 * ptr);
 
 EXPORT_STDCALL(const char *) TestReturnString(const char * str);
 
 EXPORT_STDCALL(const char *) TestReturnPtrString(const char * const * ptr);
 
 EXPORT_STDCALL(char *) TestReturnStringOutBuffer(const char * str,
-                                                 char * buffer, long size);
+                                                 char * buffer, int32_t size);
 
-EXPORT_STDCALL(const struct Packed_CharCharShortLong *)
-TestReturnStatic_Packed_CharCharShortLong(
-    const struct Packed_CharCharShortLong * ptr);
+EXPORT_STDCALL(const struct Packed_Int8Int8Int16Int32 *)
+TestReturnStatic_Packed_Int8Int8Int16Int32(
+    const struct Packed_Int8Int8Int16Int32 * ptr);
 
-EXPORT_STDCALL(const struct Recursive_CharCharShortLong *)
-TestReturnStatic_Recursive_CharCharShortLong(
-    const struct Recursive_CharCharShortLong * ptr);
+EXPORT_STDCALL(const struct Recursive_Int8Int8Int16Int32 *)
+TestReturnStatic_Recursive_Int8Int8Int16Int32(
+    const struct Recursive_Int8Int8Int16Int32 * ptr);
 
 EXPORT_STDCALL(const struct Recursive_StringSum *)
 TestReturnStatic_Recursive_StringSum(const struct Recursive_StringSum * ptr);
 
-EXPORT_STDCALL(long) TestInvokeCallback_Long1(TestCallback_Long1 f, long a);
+EXPORT_STDCALL(int32_t) TestInvokeCallback_Int32_1(TestCallback_Int32_1 f,
+                                                   int32_t a);
 
-EXPORT_STDCALL(long) TestInvokeCallback_Long1_2(TestCallback_Long1 f, long a,
-                                                TestCallback_Long1 g, long b);
+EXPORT_STDCALL(int32_t) TestInvokeCallback_Int32_1_2(TestCallback_Int32_1 f,
+                                                     int32_t a,
+                                                     TestCallback_Int32_1 g,
+                                                     int32_t b);
 
-EXPORT_STDCALL(long) TestInvokeCallback_Long2(TestCallback_Long2 f, long a,
-                                              long b);
+EXPORT_STDCALL(int32_t) TestInvokeCallback_Int32_2(TestCallback_Int32_2 f,
+                                                   int32_t a, int32_t b);
 
-EXPORT_STDCALL(long) TestInvokeCallback_Packed_CharCharShortLong(
-    TestCallback_Packed_CharCharShortLong f, struct Packed_CharCharShortLong a);
+EXPORT_STDCALL(int32_t) TestInvokeCallback_Packed_Int8Int8Int16Int32(
+    TestCallback_Packed_Int8Int8Int16Int32 f,
+    struct Packed_Int8Int8Int16Int32 a);
 
-EXPORT_STDCALL(long) TestInvokeCallback_Recursive_StringSum(
+EXPORT_STDCALL(int32_t) TestInvokeCallback_Recursive_StringSum(
     TestCallback_Recursive_StringSum f, struct Recursive_StringSum * ptr);
 
 } // extern "C"
