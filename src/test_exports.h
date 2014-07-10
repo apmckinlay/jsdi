@@ -23,7 +23,14 @@ extern "C"
 //       zeroes onto the stack, calling any of these functions should behave in
 //       a safe, predictable manner.
 
-#define EXPORT_STDCALL(return_type) __declspec(dllexport) return_type __stdcall
+#if defined(_M_IX86)
+// For x86, don't specify __declspec(dllexport) because these exports are
+// declared in test_exports.defs
+#define EXPORT_STDCALL(return_type) return_type __stdcall
+#else if defined(_M_AMD64)
+// For x64, don't specify __stdcall because, really, there's no such thing.
+#define EXPORT_STDCALL(return_type) __declspec(dllexport) return_type
+#endif
 
 struct Packed_Int8Int8Int16Int32
 {
