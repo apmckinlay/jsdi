@@ -33,6 +33,13 @@ struct Packed_Int8Int8Int16Int32
     int32_t d;
 };
 
+struct Packed_Int8x3
+{
+    int8_t a;
+    int8_t b;
+    int8_t c;
+};
+
 struct Recursive_Int8Int8Int16Int32
 {
     struct Packed_Int8Int8Int16Int32 x;
@@ -105,10 +112,34 @@ EXPORT_STDCALL(int32_t) TestSumFourInt32s(int32_t a, int32_t b, int32_t c,
 EXPORT_STDCALL(int32_t) TestSumFiveInt32s(int32_t a, int32_t b, int32_t c,
                                           int32_t d, int32_t e);
 
+EXPORT_STDCALL(int32_t) TestSumSixInt32s(int32_t a, int32_t b, int32_t c,
+                                         int32_t d, int32_t e, int32_t f);
+
+EXPORT_STDCALL(int32_t) TestSumSevenInt32s(int32_t a, int32_t b, int32_t c,
+                                           int32_t d, int32_t e, int32_t f,
+                                           int32_t g);
+
+EXPORT_STDCALL(int32_t) TestSumEightInt32s(int32_t a, int32_t b, int32_t c,
+                                           int32_t d, int32_t e, int32_t f,
+                                           int32_t g, int32_t h);
+
+EXPORT_STDCALL(int32_t) TestSumNineInt32s(int32_t a, int32_t b, int32_t c,
+                                          int32_t d, int32_t e, int32_t f,
+                                          int32_t g, int32_t h, int32_t i);
+
 EXPORT_STDCALL(int64_t) TestSumInt8PlusInt64(int8_t a, int64_t b);
 
 EXPORT_STDCALL(int32_t) TestSumPackedInt8Int8Int16Int32(
-    Packed_Int8Int8Int16Int32 x);
+    struct Packed_Int8Int8Int16Int32 x);
+
+EXPORT_STDCALL(int32_t) TestSumPackedInt8x3(struct Packed_Int8x3 x);
+
+EXPORT_STDCALL(int64_t) TestSumManyInts(int8_t a, int16_t b, int32_t c,
+                                        Swap_StringInt32Int32 d, int64_t e,
+                                        Packed_Int8Int8Int16Int32 f,
+                                        Packed_Int8x3 g,
+                                        Recursive_StringSum h,
+                                        Recursive_StringSum * i);
 
 EXPORT_STDCALL(int32_t) TestStrLen(const char * str);
 
