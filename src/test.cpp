@@ -78,7 +78,7 @@ jint jni_create_java_vm(JavaVM ** vm, JNIEnv ** p_env, JavaVMInitArgs * vm_args)
 {
     typedef jint(JNICALL * createfunc_t)(JavaVM **, JNIEnv **,
                                          JavaVMInitArgs *);
-    static createfunc_t createfunc = (nullptr);
+    static createfunc_t createfunc(nullptr);
     if (!createfunc)
     {
         HMODULE jvm_library = load_jvm_library();
@@ -288,7 +288,7 @@ void test_manager::run_all()
     }
 }
 
-void test_manager::set_jvm_args(char * const argv[], int argc)
+void test_manager::set_jvm_args(int argc, char * const argv[])
 {
     d_impl->d_jvm_args.clear();
     d_impl->d_jvm_args.reserve(argc);

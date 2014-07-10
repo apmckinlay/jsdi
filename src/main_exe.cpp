@@ -62,8 +62,8 @@ int main(int argc, char * argv[])
     { 
         if ('/' == argv[j][0] && ! std::strcmp(argv[j] + 1, "jvm"))
         {
-            jsdi::test_manager::instance().set_jvm_args(argv + j + 1,
-                                                        argc - j - 1);
+            jsdi::test_manager::instance().set_jvm_args(argc - j - 1,
+                                                        argv + j + 1);
             argc = j;
             break;
         }
