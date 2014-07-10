@@ -18,8 +18,7 @@ PUBLIC    invoke64_basic
 
 comment @
     The "C" function signature is:
-        uint64_t invoke64_basic(size_t args_size_bytes,
-                                const uint64_t * args_ptr,
+        uint64_t invoke64_basic(size_t args_size_bytes, const void * args_ptr,
                                 void * func_ptr);
 
     The incoming register layout is therefore:
@@ -115,7 +114,7 @@ Lbasic_mod0args:            ; Invoked with 4, 8, 12, 16, etc. arguments
     mov     rdx, [r10+r11-24]
     mov     rcx, [r10+r11-32]
     sub     r11, 32         ; Handled 32 bytes more args (NOTE 'sub' sets ZF)
-    jnz     Lbasic_mod0args ; Loop if more arguments remain
+    jnz     Lbasic_loop     ; Loop if more arguments remain
     call    rax
 
 ; Epilogue
