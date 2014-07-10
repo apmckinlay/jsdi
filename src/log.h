@@ -317,7 +317,7 @@ class log_manager : public non_copyable
 
         /**
          * \brief Changes the log file path
-         * \param New log file path
+         * \param log_file_path New log file path
          * \see #path() const
          * \see #set_threshold(log_level)
          *

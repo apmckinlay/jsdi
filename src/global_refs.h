@@ -30,7 +30,7 @@ namespace jsdi {
  *
  * \attention
  * Must be properly initialized &mdash;<em> once, and once only</em> &mdash; by
- * calling #init(JNIEnv *). Use only via the #ptr pointer.
+ * calling #init(JNIEnv *). Use only via the #GLOBAL_REFS pointer.
  *
  * \internal
  * \par
