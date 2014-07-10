@@ -1,0 +1,90 @@
+;  Copyright 2014 (c) Suneido Software Corp. All rights reserved.
+;  Licensed under GPLv2.
+
+
+;===============================================================================
+; file: test_exports.def
+; auth: Victor Schappert
+; date: 20140710
+; desc: Windows x86 module definition file to clean away __stdcall decorations
+;       so names exported are the same in x86 and amd64
+;===============================================================================
+
+; TL;DR EXPLANATION:
+; Keep this file in sync with the functions declared in test_exports.h.
+
+; LONG EXPLANATION:
+; Microsoft's compiler/linker decorates x86 __stdcall functions with a leading
+; underscore prefix and a suffix consisting of an '@' sign followed by the
+; number of bytes the called function will pop from the stack on return. On
+; AMD64, Microsoft thankfully went to a single calling convention without any
+; such decorative nonsense. However, this means that an exported __stdcall
+; function has different names in the binary's symbol table depending on whether
+; it is x86 or amd64.
+;
+;     e.g. __declspec(dllexport) int __stdcall f(int x)
+;          on x86   => _f@4
+;          on amd64 => f        // Really __stdcall is meaningless in x64
+;
+; So the purpose of this file, which is only included as a linker /DEF option in
+; the x86 builds, is to undecorate x86 __stdcall function names. Thus it has to
+; be kept in sync with test_exports.h.
+
+EXPORTS
+    ; ==========================[test_com/test_com.h]===========================
+    ; DESIRED EXPORT NAME                         = INTERNAL NAME
+    ; ==========================================================================
+
+    TestCreateComObject                           = _TestCreateComObject@0
+
+    ; ============================[test_exports.h]==============================
+    ; DESIRED EXPORT NAME                         = INTERNAL NAME
+    ; ==========================================================================
+
+    TestVoid                                      = _TestVoid@0
+    TestInt8                                      = _TestInt8@4
+    TestInt16                                     = _TestInt16@4
+    TestInt32                                     = _TestInt32@4
+    TestInt64                                     = _TestInt64@8
+    TestReturn1_0Float                            = _TestReturn1_0Float@0
+    TestReturn1_0Double                           = _TestReturn1_0Double@0
+    TestFloat                                     = _TestFloat@4
+    TestDouble                                    = _TestDouble@8
+    TestRemoveSignFromInt32                       = _TestRemoveSignFromInt32@4
+    TestCopyInt32Value                            = _TestCopyInt32Value@8
+    TestSumTwoInt8s                               = _TestSumTwoInt8s@8
+    TestSumTwoInt16s                              = _TestSumTwoInt16s@8
+    TestSumTwoInt32s                              = _TestSumTwoInt32s@8
+    TestSumTwoFloats                              = _TestSumTwoFloats@8
+    TestSumTwoDoubles                             = _TestSumTwoDoubles@16
+    TestSumThreeInt32s                            = _TestSumThreeInt32s@12
+    TestSumFourInt32s                             = _TestSumFourInt32s@16
+    TestSumFiveInt32s                             = _TestSumFiveInt32s@20
+    TestSumSixInt32s                              = _TestSumSixInt32s@24
+    TestSumSevenInt32s                            = _TestSumSevenInt32s@28
+    TestSumEightInt32s                            = _TestSumEightInt32s@32
+    TestSumNineInt32s                             = _TestSumNineInt32s@36
+    TestSumInt8PlusInt64                          = _TestSumInt8PlusInt64@12
+    TestSumPackedInt8Int8Int16Int32               = _TestSumPackedInt8Int8Int16Int32@8
+    TestSumPackedInt8x3                           = _TestSumPackedInt8x3@4
+    TestSumManyInts                               = _TestSumManyInts@80
+    TestStrLen                                    = _TestStrLen@4
+    TestHelloWorldReturn                          = _TestHelloWorldReturn@4
+    TestHelloWorldOutParam                        = _TestHelloWorldOutParam@4
+    TestHelloWorldOutBuffer                       = _TestHelloWorldOutBuffer@8
+    TestNullPtrOutParam                           = _TestNullPtrOutParam@4
+    TestReturnPtrPtrPtrDoubleAsUInt64             = _TestReturnPtrPtrPtrDoubleAsUInt64@4
+    TestSumString                                 = _TestSumString@4
+    TestSumResource                               = _TestSumResource@8
+    TestSwap                                      = _TestSwap@4
+    TestReturnString                              = _TestReturnString@4
+    TestReturnPtrString                           = _TestReturnPtrString@4
+    TestReturnStringOutBuffer                     = _TestReturnStringOutBuffer@12
+    TestReturnStatic_Packed_Int8Int8Int16Int32    = _TestReturnStatic_Packed_Int8Int8Int16Int32@4
+    TestReturnStatic_Recursive_Int8Int8Int16Int32 = _TestReturnStatic_Recursive_Int8Int8Int16Int32@4
+    TestReturnStatic_Recursive_StringSum          = _TestReturnStatic_Recursive_StringSum@4
+    TestInvokeCallback_Int32_1                    = _TestInvokeCallback_Int32_1@8
+    TestInvokeCallback_Int32_1_2                  = _TestInvokeCallback_Int32_1_2@16
+    TestInvokeCallback_Int32_2                    = _TestInvokeCallback_Int32_2@12
+    TestInvokeCallback_Packed_Int8Int8Int16Int32  = _TestInvokeCallback_Packed_Int8Int8Int16Int32@12
+    TestInvokeCallback_Recursive_StringSum        = _TestInvokeCallback_Recursive_StringSum@8

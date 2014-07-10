@@ -14,14 +14,13 @@
 
 #include "../jsdi_windows.h"
 #include "../jsdi_ole2.h"
+#include "../test_exports.h" // For EXPORT_STDCALL
 
 // This file is generated from test_com.idl by the MIDL compiler.
 #include "midl.h"
 
 extern "C"
 {
-
-#define EXPORT_STDCALL(return_type) __declspec(dllexport) return_type __stdcall
 
 EXPORT_STDCALL(ITestJSDICom *) TestCreateComObject();
 

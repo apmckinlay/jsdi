@@ -231,4 +231,9 @@
       <Filter>Source Files\src\abi_x64</Filter>
     </MASM>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\src\test_exports.def">
+      <Filter>Header Files\src</Filter>
+    </None>
+  </ItemGroup>
 </Project>

@@ -5,7 +5,11 @@
     <JavaDir>$(JAVA_HOME_X86)</JavaDir>
   </PropertyGroup>
   <PropertyGroup />
-  <ItemDefinitionGroup />
+  <ItemDefinitionGroup>
+    <Link>
+      <ModuleDefinitionFile>$(SrcDir)\test_exports.def</ModuleDefinitionFile>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <BuildMacro Include="JavaDir">
       <Value>$(JavaDir)</Value>
