@@ -17,8 +17,6 @@
 #include "stdcall_invoke.h"
 #include "stdcall_thunk.h"
 
-#include <deque>
-#include <mutex>
 #include <cassert>
 #include <cstring>
 
@@ -144,41 +142,7 @@ inline const char * get_struct_ptr(jlong struct_addr, jint size_direct)
     return reinterpret_cast<const char *>(struct_addr);
 }
 
-constexpr size_t CLEARED_LIST_DELETE_THRESHOLD = 10;
-std::mutex callback_list_lock;
-std::deque<stdcall_thunk *> callback_clearing_list;
-std::deque<stdcall_thunk *> callback_cleared_list;
-
-void clear_callback(stdcall_thunk * thunk)
-{
-    std::lock_guard<std::mutex> lock(callback_list_lock);
-    switch (thunk->clear())
-    {
-        case stdcall_thunk_state::CLEARED:
-            callback_cleared_list.push_back(thunk);
-            break;
-        case stdcall_thunk_state::CLEARING:
-            callback_clearing_list.push_back(thunk);
-            break;
-        default:
-            assert(!"invalid callback state");
-            break;
-    }
-    // Don't let the cleared list grow indefinitely
-    if (CLEARED_LIST_DELETE_THRESHOLD < callback_cleared_list.size())
-    {
-        assert(thunk != callback_cleared_list.front());
-        delete callback_cleared_list.front();
-        callback_cleared_list.pop_front();
-    }
-    // Don't let the clearing list grow indefinitely
-    if (1 < callback_clearing_list.size() &&
-        stdcall_thunk_state::CLEARED == callback_clearing_list.front()->state())
-    {
-        callback_cleared_list.push_back(callback_clearing_list.front());
-        callback_clearing_list.pop_front();
-    }
-}
+thunk_clearing_list clearing_list;
 
 } // anonymous namespace
 
@@ -322,7 +286,7 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_newThunk(
     JNI_EXCEPTION_SAFE_BEGIN
     jni_array_region<jint> ptr_array(env, ptrArray);
     jni_array<jlong> out_thunk_addrs(env, outThunkAddrs);
-    std::shared_ptr<jsdi::callback> callback_ptr;
+    std::shared_ptr<jsdi::callback<uint32_t>> callback_ptr;
     if (variableIndirectCount < 1)
     {
         callback_ptr.reset(
@@ -366,7 +330,7 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_deleteThunk
 {
     static_assert(sizeof(stdcall_thunk *) <= sizeof(jlong), "fatal data loss");
     auto thunk(reinterpret_cast<stdcall_thunk *>(thunkObjectAddr));
-    clear_callback(thunk);
+    clearing_list.clear_thunk(thunk);
 }
 
 //==============================================================================
