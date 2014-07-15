@@ -65,9 +65,9 @@ jsdi_callback_basic::~jsdi_callback_basic()
     }
 }
 
-long jsdi_callback_basic::call(const char * args)
+uint32_t jsdi_callback_basic::call(const uint32_t * args)
 {
-    long result(0);
+    uint32_t result(0);
     LOG_TRACE("jsdi_callback_basic::call( this => " << this << ", args => "
                                                     << args << " )");
     JNIEnv * const env(fetch_env());
@@ -138,7 +138,10 @@ long jsdi_callback_basic::call(const char * args)
             d_size_total);
         unmarshaller_indirect u(d_size_direct, d_size_total, d_ptr_array.data(),
                                 d_ptr_array.data() + d_ptr_array.size());
-        u.unmarshall_indirect(reinterpret_cast<char *>(out.data()), args);
+        // FIXME: The reinterpret_cast<> on 'args', below, should be taken out
+        //        and the marshalling code templatized correctly...
+        u.unmarshall_indirect(reinterpret_cast<char *>(out.data()),
+                              reinterpret_cast<const char *>(args));
     }
     //
     // CALL
@@ -181,9 +184,9 @@ JNIEnv * jsdi_callback_basic::fetch_env() const
 //                            class jsdi_callback_vi
 //==============================================================================
 
-long jsdi_callback_vi::call(const char * args)
+uint32_t jsdi_callback_vi::call(const uint32_t * args)
 {
-    long result(0);
+    uint32_t result(0);
     LOG_TRACE("jsdi_callback_vi::call( this => " << this << ", args => "
                                                  << args << " )");
     JNIEnv * const env(fetch_env());
@@ -221,8 +224,11 @@ long jsdi_callback_vi::call(const char * args)
             d_size_total);
         unmarshaller_vi u(d_size_direct, d_size_total, d_ptr_array.data(),
                           d_ptr_array.data() + d_ptr_array.size(), d_vi_count);
+        // FIXME: The reinterpret_cast<> on 'args', below, should be taken out
+        //        and the marshalling code templatized correctly...
         u.unmarshall_vi(
-            reinterpret_cast<char *>(out.data()), args, env,
+            reinterpret_cast<char *>(out.data()),
+            reinterpret_cast<const char *>(args), env,
             static_cast<jobjectArray>(static_cast<jobject>(out_vi_jarray)),
             d_vi_inst_array.data());
     }

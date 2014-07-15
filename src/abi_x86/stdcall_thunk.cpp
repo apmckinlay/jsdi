@@ -15,15 +15,12 @@
 #include "heap.h"
 #include "log.h"
 
+#include <cassert>
+#include <functional>
+#include <limits>
 #include <stdexcept>
-#include <iostream>
 #include <sstream>
 #include <vector>
-#include <limits>
-#include <mutex>
-#include <cassert>
-#include <cstring>
-#include <cstdlib>
 
 namespace jsdi {
 namespace abi_x86 {
@@ -81,8 +78,7 @@ static_assert(0x77 == INSTRUCTIONS[CODE_RET_POP_SIZE_OFFSET+0], "check code");
 static_assert(0x77 == INSTRUCTIONS[CODE_RET_POP_SIZE_OFFSET+1], "check code");
 #endif
 
-
-typedef long (__stdcall * wrapper_func)(stdcall_thunk_impl *, const char *);
+typedef uint32_t (__stdcall * wrapper_func)(stdcall_thunk_impl *, uint32_t *);
 
 struct stub_code
 {
@@ -111,7 +107,7 @@ stub_code::stub_code(stdcall_thunk_impl * impl_addr, wrapper_func thunk_wrapper,
         0 == args_size_bytes % 4
             || !"argument size must be a multiple of 4 bytes");
     static_assert(4 == sizeof(impl_addr), "check code");
-    // Replace the placeholder bytes for the second argument to the wrapper
+    // Replace the placeholder bytes for the first argument to the wrapper
     // function with the address of the thunk implementation.
     std::memcpy(d_instructions + CODE_IMPL_POINTER_OFFSET, &impl_addr,
                 sizeof(impl_addr));
@@ -148,10 +144,7 @@ namespace {
 
 heap impl_heap("stdcall_thunk_impl", true);
 
-enum { MAGIC1 = 0x18741130, MAGIC2 = 0x1baddeed };
-
 } // anonymous namespace
-
 
 struct stdcall_thunk_impl
 {
@@ -159,27 +152,24 @@ struct stdcall_thunk_impl
     // DATA
     //
 
-    int                         d_magic_1;
-    stub_code                   d_code;
-    std::shared_ptr<callback>   d_callback;
-    std::mutex                  d_mutex;
-    int                         d_num_ongoing_calls;
-    stdcall_thunk_state         d_state;
-    int                         d_magic_2;
+    stub_code                                  d_code;
+    std::function<void()>                      d_setup;
+    std::shared_ptr<stdcall_thunk::callback_t> d_callback;
+    std::function<void()>                      d_teardown;
 
     //
     // CONSTRUCTORS
     //
 
-    stdcall_thunk_impl(const std::shared_ptr<callback>& callback_ptr);
-
-    ~stdcall_thunk_impl();
+    stdcall_thunk_impl(const std::function<void()>&,
+                       const std::shared_ptr<stdcall_thunk::callback_t>&,
+                       const std::function<void()>&);
 
     //
     // STATIC FUNCTIONS
     //
 
-    static long __stdcall wrapper(stdcall_thunk_impl *, const char *);
+    static uint32_t __stdcall wrapper(stdcall_thunk_impl *, uint32_t *);
 
     //
     // OPERATORS
@@ -189,78 +179,47 @@ struct stdcall_thunk_impl
 
     void operator delete(void *);
 
-    private: void * operator new[](size_t);
-    private: void operator delete[](void *);
+    void * operator new[](size_t) = delete;
+    void operator delete[](void *) = delete;
 };
 
 stdcall_thunk_impl::stdcall_thunk_impl(
-    const std::shared_ptr<callback>& callback_ptr)
-    : d_magic_1(MAGIC1)
-    , d_code(this, wrapper, callback_ptr->size_direct())
-    , d_callback(callback_ptr)
-    , d_num_ongoing_calls(0)
-    , d_state(READY)
-    , d_magic_2(MAGIC2)
-{ assert(callback_ptr || "callback pointer may not be null"); }
+    const std::function<void()>& setup,
+    const std::shared_ptr<stdcall_thunk::callback_t>& callback,
+    const std::function<void()>& teardown)
+    : d_code(this, wrapper, callback->size_direct())
+    , d_setup(setup)
+    , d_callback(callback)
+    , d_teardown(teardown)
+{ }
 
-stdcall_thunk_impl::~stdcall_thunk_impl()
+uint32_t __stdcall stdcall_thunk_impl::wrapper(stdcall_thunk_impl * impl,
+                                               uint32_t * args)
 {
-#ifndef NDEBUG
-    {
-        std::lock_guard<std::mutex> lock(d_mutex);
-        assert(CLEARED == d_state);
-        assert(0 == d_num_ongoing_calls);
-    }
-#endif
-    d_state = DELETED;
-    d_magic_1 = ~MAGIC1;
-    d_magic_2 = ~MAGIC2;
-}
-
-long __stdcall stdcall_thunk_impl::wrapper(stdcall_thunk_impl * impl,
-                                           const char * args)
-{
-    long result;
+    uint32_t result(0);
     LOG_TRACE("stdcall_thunk_impl::wrapper( impl => " << impl << ", args => "
-                                                      << args << ')');
-    assert(MAGIC1 == impl->d_magic_1);
-    assert(MAGIC2 == impl->d_magic_2);
-    // SETUP
-    {
-        std::lock_guard<std::mutex> lock(impl->d_mutex);
-        assert(READY == impl->d_state || !"callback already cleared");
-        ++impl->d_num_ongoing_calls; // No RAII guard is OK b/c of catch (...)
-    }
-    //
-    // CALL
-    //
+                                                      << args << " )");
+    impl->d_setup();
     // NOTE: It is [C++] callback's responsibility to ensure that no C++
     //       exceptions propagate out to this level. Furthermore, C++ callback
     //       is responsible for stopping execution and returning the moment a
     //       JNI exception occurs.
     try
-    { result = impl->d_callback->call(args); }
+    {
+        // TODO: Put in SEH blocks here (catch, teardown(), rethrow)
+        result = impl->d_callback->call(args);
+    }
+    catch (const std::exception& e)
+    {
+        LOG_FATAL("Exception escaped callback: '" << e.what() << '\'');
+        std::abort();
+    }
     catch (...)
     {
-        LOG_FATAL("Exception caught");
+        LOG_FATAL("Exception escaped callback");
         std::abort();
-        result = 0L; // To shut up the compiler warning
     }
-    //
-    // TEARDOWN
-    //
-    {
-        std::lock_guard<std::mutex> lock(impl->d_mutex);
-        --impl->d_num_ongoing_calls;
-        assert(MAGIC1 == impl->d_magic_1);
-        assert(MAGIC2 == impl->d_magic_2);
-        assert(READY == impl->d_state || CLEARING == impl->d_state);
-        if (CLEARING == impl->d_state && ! impl->d_num_ongoing_calls)
-            impl->d_state = CLEARED;
-    }
-    //
-    // RETURN CALLBACK RESULT
-    //
+    impl->d_teardown();
     return result;
 }
 
@@ -274,26 +233,17 @@ void stdcall_thunk_impl::operator delete(void * ptr)
 //                            class stdcall_thunk
 //==============================================================================
 
-stdcall_thunk::stdcall_thunk(const std::shared_ptr<callback>& callback_ptr)
-    : d_impl(new stdcall_thunk_impl(callback_ptr))
+stdcall_thunk::stdcall_thunk(
+    const std::shared_ptr<callback_t>& callback_ptr)
+    : thunk(callback_ptr)
+    , d_impl(new stdcall_thunk_impl(
+          std::bind(std::mem_fn(&stdcall_thunk::setup_call), this),
+          callback_ptr,
+          std::bind(std::mem_fn(&stdcall_thunk::teardown_call), this)))
 { }
-
-stdcall_thunk::~stdcall_thunk() { delete d_impl; }
 
 void * stdcall_thunk::func_addr()
 { return d_impl->d_code.d_instructions; }
-
-stdcall_thunk_state stdcall_thunk::state() const
-{ return d_impl->d_state; }
-
-stdcall_thunk_state stdcall_thunk::clear()
-{
-    std::lock_guard<std::mutex> lock(d_impl->d_mutex);
-    assert(READY == d_impl->d_state);
-    assert(0 <= d_impl->d_num_ongoing_calls);
-    d_impl->d_state = 0 == d_impl->d_num_ongoing_calls ? CLEARED : CLEARING;
-    return d_impl->d_state;
-}
 
 } // namespace abi_x86
 } // namespace jsdi
@@ -314,8 +264,10 @@ using namespace jsdi::abi_x86;
 
 static const int EMPTY_PTR_ARRAY[1] = { };
 
+typedef callback<uint32_t> callback_t;
+
 // callback that can invoke a stdcall func and return its value
-struct stdcall_invoke_basic_callback : public callback
+struct stdcall_invoke_basic_callback : public callback_t
 {
     void * d_func_ptr;
     template<typename FuncPtr>
@@ -326,7 +278,7 @@ struct stdcall_invoke_basic_callback : public callback
                    vi_count)
         , d_func_ptr(reinterpret_cast<void *>(func_ptr))
     { }
-    virtual long call(const char * args)
+    virtual uint32_t call(const uint32_t * args)
     {
         std::vector<char> data(d_size_total, 0);
         std::vector<int> vi_inst_array(
@@ -335,8 +287,11 @@ struct stdcall_invoke_basic_callback : public callback
         unmarshaller_vi_test u(d_size_direct, d_size_total, d_ptr_array.data(),
                                d_ptr_array.data() + d_ptr_array.size(),
                                d_vi_count);
-        u.unmarshall_vi(data.data(), args, 0, 0, vi_inst_array.data());
-        return static_cast<int32_t>(
+        u.unmarshall_vi(data.data(),
+                        // FIXME: The reinterpret_cast below should go away
+                        reinterpret_cast<const char *>(args), 0, 0,
+                        vi_inst_array.data());
+        return static_cast<uint32_t>(
             stdcall_invoke::basic(d_size_direct, data.data(), d_func_ptr) &
             0x00000000ffffffffLL
         );
@@ -348,7 +303,7 @@ struct Func
 {
     typedef int32_t(__stdcall * callback_function)(Param1, Param2);
     typedef int32_t(__stdcall * function)(callback_function, Param1, Param2);
-    static int32_t call(function f, stdcall_thunk& t, Param1 arg1, Param2 arg2)
+    static uint32_t call(function f, stdcall_thunk& t, Param1 arg1, Param2 arg2)
     {
         callback_function c = reinterpret_cast<callback_function>(t
             .func_addr());
@@ -361,7 +316,7 @@ struct Func<Param, void>
 {
     typedef int32_t(__stdcall * callback_function)(Param);
     typedef int32_t(__stdcall * function)(callback_function, Param);
-    static int32_t call(function f, stdcall_thunk& t, Param arg)
+    static uint32_t call(function f, stdcall_thunk& t, Param arg)
     {
         callback_function c = reinterpret_cast<callback_function>(t
             .func_addr());
@@ -370,18 +325,18 @@ struct Func<Param, void>
 };
 
 TEST(one_int32,
-    std::shared_ptr<callback> cb(
+    std::shared_ptr<callback_t> cb(
         new stdcall_invoke_basic_callback(TestInt32, sizeof(int32_t), 0,
                                           EMPTY_PTR_ARRAY, 0, 0));
     stdcall_thunk thunk(cb);
     int32_t result = Func<int32_t, void>::call(TestInvokeCallback_Int32_1,
                                                thunk, 10);
     thunk.clear();
-    assert_equals(10, result);
+    assert_equals(10, int32_t(result));
 );
 
 TEST(sum_two_int32s,
-    std::shared_ptr<callback> cb(
+    std::shared_ptr<callback_t> cb(
         new stdcall_invoke_basic_callback(TestSumTwoInt32s, 2 * sizeof(int32_t),
                                           0, EMPTY_PTR_ARRAY, 0, 0));
     stdcall_thunk thunk(cb);
@@ -394,7 +349,7 @@ TEST(sum_two_int32s,
 
 TEST(sum_packed,
     Packed_Int8Int8Int16Int32 p_ccsl = { -1, 2, 100, 54321 };
-    std::shared_ptr<callback> cb(
+    std::shared_ptr<callback_t> cb(
         new stdcall_invoke_basic_callback(TestSumPackedInt8Int8Int16Int32,
                                           sizeof(p_ccsl), 0, EMPTY_PTR_ARRAY, 0,
                                           0));
@@ -436,7 +391,7 @@ TEST(sum_string,
         SIZE_DIRECT + sizeof(r_ss[0]) + STR_OFFSET, SIZE_TOTAL + 2,
         SIZE_DIRECT + sizeof(r_ss[0]) + BUF_OFFSET, SIZE_TOTAL + 3,
     };
-    std::shared_ptr<callback> cb(
+    std::shared_ptr<callback_t> cb(
     new stdcall_invoke_basic_callback(TestSumString, SIZE_DIRECT, SIZE_INDIRECT,
                                       PTR_ARRAY, array_length(PTR_ARRAY),
                                       VI_COUNT));

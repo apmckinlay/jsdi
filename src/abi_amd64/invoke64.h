@@ -2,8 +2,8 @@
  * Licensed under GPLv2.
  */
 
-#ifndef __INCLUDED_ABI_AMD64_INVOKE64_H___
-#define __INCLUDED_ABI_AMD64_INVOKE64_H___
+#ifndef __INCLUDED_INVOKE64_H___
+#define __INCLUDED_INVOKE64_H___
 
 /**
  * \file invoke64.h
@@ -58,4 +58,4 @@ uint64_t invoke64_basic(size_t args_size_bytes, const void * args_ptr,
 
 } // extern "C"
 
-#endif // __INCLUDED_ABI_AMD64_INVOKE64_H___
+#endif // __INCLUDED_INVOKE64_H___

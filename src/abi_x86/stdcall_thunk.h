@@ -13,49 +13,30 @@
  *        that wraps a callback function
  */
 
-#include "util.h"
-
-#include <memory>
+#include "thunk.h"
 
 namespace jsdi {
 
-class callback; // TODO: Should this move to jsdi::abi_x86??
+template<typename ParamType>
+class callback;
 
 namespace abi_x86 {
 
 struct stdcall_thunk_impl;
 
 /**
- * \brief Enumerates the possible states in which a thunk can be.
- * \author Victor Schappert
- * \since 20130826
- * \see stdcall_thunk#state() const
- */
-enum stdcall_thunk_state
-{
-    READY       /**< The only state in which a thunk may validly be called */,
-    CLEARING    /**< The thunk is in the process of being cleared. It is an
-                 *   error to attempt to call it. */,
-    CLEARED     /**< The thunk has been cleared and is ready to delete. It is
-                 *   an error to attempt to call it. */,
-    DELETED     /**< The thunk has been deleted. No live pointer or reference
-                 *   to a thunk should ever have this state. */
-};
-
-/**
- * \brief TODO
+ * \brief Thunk for the x86 <code>__stdcall</code> calling convention
  * \author Victor Schappert
  * \since 20130802
  * \see stdcall_invoke
- * \see stdcall_thunk_state
  */
-class stdcall_thunk : private non_copyable
+class stdcall_thunk : public thunk<uint32_t>
 {
         //
         // DATA
         //
 
-        stdcall_thunk_impl * d_impl;
+        std::unique_ptr<stdcall_thunk_impl> d_impl;
 
         //
         // CONSTRUCTORS
@@ -63,27 +44,25 @@ class stdcall_thunk : private non_copyable
 
     public:
 
-        stdcall_thunk(const std::shared_ptr<callback>& callback_ptr);
-
-        ~stdcall_thunk();
+        /**
+         * \brief Constructs a <code>__stdcall</code> thunk
+         * \param callback_ptr Valid pointer to the callback to invoke when
+         *        #func_addr() is called
+         */
+        stdcall_thunk(const std::shared_ptr<callback<uint32_t>>& callback_ptr);
 
         //
-        // ACCESSORS
+        // ANCESTOR CLASS: thunk<uint32_t>
         //
 
     public:
 
+        /**
+         * \brief Returns the address of the dynamically-generated
+         *        <code>__stdcall</code> thunk function
+         * \return Thunk function address
+         */
         void * func_addr();
-
-        stdcall_thunk_state state() const;
-
-        //
-        // MUTATORS
-        //
-
-    public:
-
-        stdcall_thunk_state clear();
 };
 
 } // namespace x86
