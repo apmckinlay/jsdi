@@ -69,7 +69,8 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_JSDI_init
 {
     JNI_EXCEPTION_SAFE_BEGIN;
     log_manager::instance().set_path(std::string("jsdi.log"));
-    LOG_TRACE("Initializing JSDI library built " << version::BUILD_DATE);
+    LOG_TRACE("Initializing JSDI library built " << version::BUILD_DATE
+                                                 << " for " << version::PLATFORM);
     JavaVM * vm(nullptr);
     if (JNI_OK == env->GetJavaVM(&vm))
     {
@@ -88,7 +89,7 @@ JNIEXPORT jstring JNICALL Java_suneido_language_jsdi_JSDI_when
     jstring result(0);
     JNI_EXCEPTION_SAFE_BEGIN
     jni_utf16_ostream o(env);
-    o << version::BUILD_DATE;
+    o << version::BUILD_DATE << " (" << version::PLATFORM << ')';
     result = o.jstr();
     JNI_EXCEPTION_SAFE_END(env);
     return result;

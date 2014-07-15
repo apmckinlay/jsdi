@@ -29,9 +29,15 @@ struct version
 {
     /**
      * \brief Constant string containing the last date and time the library was
-     *        built.
+     *        built
      */
     static char const * const BUILD_DATE;
+
+    /**
+     * \brief Constant string indicating the target platform the library was
+     *        built for
+     */
+    static char const * const PLATFORM;
 };
 
 } // namespace jsdi

@@ -12,5 +12,13 @@ namespace jsdi {
 
 char const * const version::BUILD_DATE = __DATE__ " " __TIME__;
 
+char const * const version::PLATFORM =
+#if defined(_M_AMD64_)
+"amd64"
+#else if defined(_M_IX86)
+"x86"
+#endif
+;
+
 } // namespace jsdi
 
