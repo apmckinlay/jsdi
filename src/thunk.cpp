@@ -13,7 +13,6 @@
 
 #include "log.h"
 
-#include <algorithm>
 #include <deque>
 #include <mutex>
 #include <sstream>
@@ -152,13 +151,11 @@ struct thunk_clearing_list_impl
     ~thunk_clearing_list_impl()
     {
         LOG_TRACE("Emptying cleared list (" << d_cleared_list.size()
-                                            << " thunks");
-        std::for_each(d_cleared_list.begin(),
-                      d_cleared_list.end(), [](auto x) { delete x; });
+                                            << " thunks" << ')');
+        for (thunk_base * x : d_cleared_list) delete x;
         LOG_TRACE("Emptying clearing list (" << d_clearing_list.size()
-                                             << " thunks");
-        std::for_each(d_clearing_list.begin(),
-                      d_clearing_list.end(), [](auto x) { delete x; });
+                                             << " thunks" << ')');
+        for (thunk_base * x : d_clearing_list) delete x;
     }
     void clear_thunk(thunk_base * thunk_)
     {
