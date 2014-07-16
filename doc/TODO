@@ -7,7 +7,7 @@
         -- doxygen
             [ ] Modify header style (include guard, then doxygen docs)
             [ ] Modify auto-generated header style.
-            [ ] Current number of warnings: 107 (down from 149) ... next: jni_util, utf16_util
+            [ ] Current number of warnings: 103 (down from 149) ... next: jni_util, utf16_util
         -- cppcheck
 
 C++ CONFORMANCE LIVE ISSUES

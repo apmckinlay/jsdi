@@ -29,18 +29,19 @@ namespace abi_x86 {
 struct stdcall_invoke
 {
         /**
-         * \brief Invokes a <dfn>__stdcall</dfn> function which expects all
+         * \brief Invokes a <code>__stdcall</code> function which expects all
          * parameters on the stack and which places its return value in the
          * EAX/EDX pair.
          * \param args_size_bytes Number of bytes pointed to by
-         * <dfn>args_ptr</dfn> &mdash; <em>must be a multiple of 4 bytes!</em>
+         * <code>args_ptr</code> &mdash; <em>must be a multiple of 4 bytes!</em>
          * \param args_ptr Pointer to the arguments to push on the stack
-         * \param func_ptr Pointer to the <dfn>__stdcall</dfn> function to call
+         * \param func_ptr Pointer to the <code>__stdcall</code> function to
+         * call
          * \return A 64-bit unsigned integer in which the low-order 32 bits are
-         * the contents of EAX after invoking <dfn>func_ptr</dfn> and the
+         * the contents of EAX after invoking <code>func_ptr</code> and the
          * high-order 32 bits are the content of EDX after invoking
-         * <dfn>func_ptr</dfn>
-         * \see #return_double(int, const char *, void *)
+         * <code>func_ptr</code>
+         * \see #return_double(int, char *, void *)
          * \since 20130805
          *
          * This function is very limited in capability. In particular, it cannot:
@@ -60,25 +61,25 @@ struct stdcall_invoke
                               void * func_ptr);
 
         /**
-         * \brief Invokes a <dfn>__stdcall</dfn> function which expects all
+         * \brief Invokes a <code>__stdcall</code> function which expects all
          * parameters on the stack and which places its return value at the
          * top of the floating-point stack (ST0).
          * \param args_size_bytes Number of bytes pointed to by
-         * <dfn>args_ptr</dfn> &mdash; <em>must be a multiple of 4 bytes!</em>
+         * <code>args_ptr</code> &mdash; <em>must be a multiple of 4 bytes!</em>
          * \param args_ptr Pointer to the arguments to push on the stack
-         * \param func_ptr Pointer to the <dfn>__stdcall</dfn> function to call
-         * \return The `double` returned by calling <dfn>func_ptr</dfn>
-         * \see #basic(int, const char *, void *)
+         * \param func_ptr Pointer to the <code>__stdcall</code> function to call
+         * \return The `double` returned by calling <code>func_ptr</code>
+         * \see #basic(int, char *, void *)
          * \since 20130808
          *
-         * Note that this invoker should be used for <dfn>stdcall</dfn>
-         * functions which specify <dfn>float</dfn> as their return type as well
-         * as those which indicate <dfn>double</dfn>. Since the return value
-         * comes off of the top floating point register (which has higher
-         * precision than either <dfn>float</dfn> or <dfn>double</dfn>), we
-         * might as well take the <dfn>double</dfn> option.
+         * Note that this invoker should be used for <code>stdcall</code>
+         * functions which specify <code>float</code> as their return type as
+         * well as those which indicate <code>double</code>. Since the return
+         * value comes off of the top floating point register (which has higher
+         * precision than either <code>float</code> or <code>double</code>), we
+         * might as well take the <code>double</code> option.
          */
-        static double return_double(int arg_size_bytes, char * args_ptr,
+        static double return_double(int args_size_bytes, char * args_ptr,
                                     void * func_ptr);
 };
 
