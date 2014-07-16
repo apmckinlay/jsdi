@@ -13,18 +13,24 @@
  *        x64 ABI
  */
 
+#include "register64.h"
+
 #include <cstdint>
 
 extern "C" {
 
 /**
- * \brief Invokes a function using the Windows x64 ABI calling convention
+ * \brief Invokes a function using the Windows x64 ABI calling convention where
+ *        none of the first four parameters have type <code>double</code> or
+ *        <code>float</code>
  * \author Victor Schappert
  * \since 20140708
  * \param args_size_bytes Size of the arguments pointed-to by
  *                        <code>args_ptr</code> <em>must be a multiple of 8</em>
  * \param args_ptr Pointer to the arguments <em>must be 8-byte aligned</em>
  * \param func_ptr Pointer to the function to call
+ * \see invoke64_fp(size_t, const void *, void *,
+ *                  jsdi::abi_amd64::param_register_types)
  *
  * \warning
  * Please use this function with care as failure to follow the contract will
@@ -55,6 +61,32 @@ extern "C" {
  */
 uint64_t invoke64_basic(size_t args_size_bytes, const void * args_ptr,
                         void * func_ptr);
+
+/**
+ * \brief Invokes a function using the Windows x64 ABI calling convention where
+ *        one or more of the first four parameters have type <code>double</code>
+ *        or <code>float</code>
+ * \author Victor Schappert
+ * \since 20140715
+ * \param args_size_bytes Size of the arguments pointed-to by
+ *                        <code>args_ptr</code> <em>must be a multiple of 8</em>
+ * \param args_ptr Pointer to the arguments <em>must be 8-byte aligned</em>
+ * \param func_ptr Pointer to the function to call
+ * \param register_types Register types required for the first four parameters
+ * \see invoke64_basic(size_t, const void *, void *)
+ *
+ * This function may be used to invoke a <code>func_ptr</code> meeting the
+ * following constraints:
+ *
+ * - it does not return a floating-point primitive.
+ *
+ * The arguments in <code>args_ptr</code> must meet the criteria for
+ * <code>args_ptr</code> described in the documentation for 
+ * \link invoke64_basic(size_t, const void *, void *)\endlink.
+ */
+uint64_t invoke64_fp(size_t args_size_bytes, const void * args_ptr,
+                     void * func_ptr,
+                     jsdi::abi_amd64::param_register_types register_types);
 
 } // extern "C"
 
