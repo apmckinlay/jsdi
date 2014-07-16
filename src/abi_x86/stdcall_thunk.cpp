@@ -256,6 +256,7 @@ void * stdcall_thunk::func_addr()
 
 #include "test.h"
 #include "test_exports.h"
+
 #include "marshalling.h"
 #include "stdcall_invoke.h"
 
@@ -264,7 +265,7 @@ using namespace jsdi::abi_x86;
 
 static const int EMPTY_PTR_ARRAY[1] = { };
 
-typedef callback<uint32_t> callback_t;
+typedef stdcall_thunk::callback_t callback_t;
 
 // callback that can invoke a stdcall func and return its value
 struct stdcall_invoke_basic_callback : public callback_t
