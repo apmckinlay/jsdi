@@ -22,6 +22,11 @@
  
  struct thunk64_impl;
  
+ /**
+  * \brief Shim invoked via Windows x64 ABI that wraps a callback function
+  * \author Victor Schappert
+  * \since 20140710
+  */
  class thunk64 : public thunk<uint64_t>
  {
         //
@@ -40,6 +45,10 @@
          * \brief Constructs an x64 ABI thunk
          * \param callback_ptr Valid pointer to the callback to invoke when
          *        #func_addr() is called
+         * \param num_param_registers Number of parameters that will be passed
+         *        to the thunk in registers <em>must be in the range
+         *        [0..NUM_PARAM_REGISTERS]
+         * \param register_types Register types of the parameter registers
          */
         thunk64(const std::shared_ptr<callback_t>& callback_ptr,
                 size_t num_param_registers,

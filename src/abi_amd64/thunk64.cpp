@@ -385,8 +385,34 @@ void * thunk64::func_addr()
 #ifndef __NOTEST__
 
 #include "test.h"
+#include "invoke64.h"
 
 using namespace jsdi::abi_amd64;
+
+static const int EMPTY_PTR_ARRAY[1] = { };
+
+typedef thunk64::callback_t callback_t;
+
+// callback that can invoke a function using direct data (arguments) only and
+// return its result
+struct direct_callback : public callback_t
+{
+    void *               d_func_ptr;
+    param_register_types d_register_types;
+    template<typename FuncPtr>
+    direct_callback(FuncPtr func_ptr, int size_direct,
+                    param_register_types register_types)
+        : callback(size_direct, 0, EMPTY_PTR_ARRAY, 0, 0)
+        , d_func_ptr(reinterpret_cast<void *>(func_ptr))
+    { }
+    virtual uint64_t call(const uint64_t * args)
+    {
+        const size_t args_size_bytes(static_cast<size_t>(d_size_direct));
+        return d_register_types.has_fp()
+            ? invoke64_basic(args_size_bytes, args, d_func_ptr)
+            : invoke64_fp(args_size_bytes, args, d_func_ptr, d_register_types);
+    }
+};
 
 
 #endif // __NOTEST__
