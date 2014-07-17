@@ -193,6 +193,7 @@ invoke64_fp     PROC FRAME
     mov     r11, rcx        ; Preserve 'args_size_bytes' in r11
     movd    xmm4, r8        ; Preserve 'func_ptr' in xmm4
                             ;     http://stackoverflow.com/q/24789339/1911388
+                            ;     http://goo.gl/JWB2Dl
     mov     rax, r9         ; Preserve 'register_types' in rax
 
 ; Calculate jump table index ... The instructions below are computing a function
@@ -344,6 +345,7 @@ Lfp_1float:
 
 Lfp_jtbl_0:
     movd    rax, xmm4       ; http://stackoverflow.com/q/24789339/1911388
+                            ; http://goo.gl/JWB2Dl
     call    rax
 
 ; Epilogue
