@@ -150,12 +150,8 @@ struct thunk_clearing_list_impl
     std::mutex               d_mutex;
     ~thunk_clearing_list_impl()
     {
-        LOG_TRACE("Emptying cleared list (" << d_cleared_list.size()
-                                            << " thunks" << ')');
         for (thunk_base * x : d_cleared_list) delete x;
-        LOG_TRACE("Emptying clearing list (" << d_clearing_list.size()
-                                             << " thunks" << ')');
-        for (thunk_base * x : d_clearing_list) delete x;
+        for (thunk_base * y : d_clearing_list) delete y;
     }
     void clear_thunk(thunk_base * thunk_)
     {

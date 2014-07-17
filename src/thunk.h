@@ -227,6 +227,7 @@ class thunk_clearing_list
         //
 
         std::shared_ptr<thunk_clearing_list_impl> d_impl;
+            // A std::unique_ptr would be better, but see http://goo.gl/NV3gZ2
 
         //
         // CONSTRUCTORS
