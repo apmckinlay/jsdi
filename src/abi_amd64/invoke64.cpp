@@ -11,6 +11,10 @@
 
 #include "invoke64.h"
 
+//==============================================================================
+//                                  TESTS
+//==============================================================================
+
 #ifndef __NOTEST__
 
 #include "test.h"
@@ -18,6 +22,8 @@
 
 #include "jsdi_windows.h"
 #include "util.h"
+
+using namespace jsdi::abi_amd64;
 
 namespace {
 
@@ -33,6 +39,14 @@ static bool copy_to(const T& src, uint64_t * dst, size_t capacity /* in uint64_t
     }
     return false;
 }
+
+} // anonymous namespace
+
+//==============================================================================
+//                         TESTS : invoke64_basic()
+//==============================================================================
+
+namespace {
 
 // EXTRA TEST FUNCTIONS
 
@@ -175,6 +189,62 @@ TEST(basic_seh,
              EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)
     { caught = true; }
     assert_true(caught);
+);
+
+//==============================================================================
+//                           TESTS : invoke64_fp()
+//==============================================================================
+
+#include "test64.h"
+
+#include <algorithm>
+#include <iostream> // TODO: uncomment me
+
+int breakpoint()
+{
+int x = 4;
+return x;
+}
+
+TEST(fp_thorough,
+    std::vector<uint64_t> args;
+    std::for_each(
+        test64::FP_FUNCTIONS.begin, test64::FP_FUNCTIONS.end,
+        [this, &args](auto f)
+        {
+            assert_true(param_register_type::UINT64 == f->return_type);
+            size_t sum(0);
+            args.resize(f->nargs);
+            for (size_t i = 0; i < f->nargs; ++i)
+            {
+                sum += i;
+                switch (f->arg_types[i])
+                {
+                    case param_register_type::UINT64:
+                        args[i] = static_cast<uint64_t>(i);
+                        break;
+                    case param_register_type::DOUBLE:
+                        copy_to(static_cast<double>(i), &args[i], 1);
+                        break;
+                    case param_register_type::FLOAT:
+                        copy_to(static_cast<float>(i), &args[i], 1);
+                        break;
+                    default:
+                        assert(false || !"control should never pass here");
+                }
+            } // for(args)
+            uint64_t result = invoke64_fp(f->nargs * sizeof(uint64_t), &args[0],
+                                          f->func_ptr, f->register_types);
+            if (result != sum) // TODO: delete me
+            {
+                std::cerr << result << "!=" << sum << " for " << f->signature << std::endl; // TODO: delete me
+                breakpoint(); // TODO: Delete me
+                result = invoke64_fp(f->nargs * sizeof(uint64_t), &args[0],
+                    f->func_ptr, f->register_types);
+            }
+//            assert_equals(sum, result);// TODO: uncomment me
+        } // lambda
+    ); // std::for_each(FP_FUNCTIONS)
 );
 
 #endif // __NOTEST__

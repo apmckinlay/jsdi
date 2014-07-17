@@ -138,6 +138,9 @@
     <ClInclude Include="..\..\..\src\abi_amd64\register64.h">
       <Filter>Header Files\src\abi_amd64</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\abi_amd64\test64.h">
+      <Filter>Header Files\src\abi_amd64</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\test_com\test_com.cpp">
@@ -226,6 +229,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\thunk.cpp">
       <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\abi_amd64\test64.cpp">
+      <Filter>Source Files\src\abi_x64</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
