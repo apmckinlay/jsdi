@@ -94,6 +94,9 @@
  *             insertion operator (e.g. <dfn>"str literal"</dfn> or
  *             <dfn>"strlit1" "strlit2" << 14 << std::endl</dfn>)
  *
+ * \warning
+ * Do not log during static initialization or static destruction phases.
+ *
  * See the documentation for LOG_INFO(expr) for an explanation of how and when
  * this macro will generate log output.
  */
@@ -104,6 +107,9 @@
  *             insertion operator (e.g. <dfn>"str literal"</dfn> or
  *             <dfn>"strlit1" "strlit2" << 14 << std::endl</dfn>)
  *
+ * \warning
+ * Do not log during static initialization or static destruction phases.
+ *
  * See the documentation for LOG_INFO(expr) for an explanation of how and when
  * this macro will generate log output.
  */
@@ -113,6 +119,9 @@
  * \param expr Any expression that can appear on the left side of a stream
  *             insertion operator (e.g. <dfn>"str literal"</dfn> or
  *             <dfn>"strlit1" "strlit2" << 14 << std::endl</dfn>)
+ *
+ * \warning
+ * Do not log during static initialization or static destruction phases.
  *
  * See the documentation for LOG_INFO(expr) for an explanation of how and when
  * this macro will generate log output.
@@ -129,6 +138,9 @@
  * \see LOG_DEBUG(expr)
  * \see LOG_TRACE(expr)
  *
+ * \warning
+ * Do not log during static initialization or static destruction phases.
+ *
  * If STATIC_LOG_THRESHOLD is set to a value less than LOG_LEVEL_INFO, this macro
  * expands to a null expression. There will thus only be log output if two
  * conditions are met: (1) the STATIC_LOG_THRESHOLD is at least LOG_LEVEL_INFO;
@@ -143,15 +155,21 @@
  *             insertion operator (e.g. <dfn>"str literal"</dfn> or
  *             <dfn>"strlit1" "strlit2" << 14 << std::endl</dfn>)
  *
+ * \warning
+ * Do not log during static initialization or static destruction phases.
+ *
  * See the documentation for LOG_INFO(expr) for an explanation of how and when
  * this macro will generate log output.
  */
 #define LOG_DEBUG(expr) (nullptr)
 /**
- * \brief Logs a trace  message at the current location.
+ * \brief Logs a trace message at the current location.
  * \param expr Any expression that can appear on the left side of a stream
  *             insertion operator (e.g. <dfn>"str literal"</dfn> or
  *             <dfn>"strlit1" "strlit2" << 14 << std::endl</dfn>)
+ *
+ * \warning
+ * Do not log during static initialization or static destruction phases.
  *
  * See the documentation for LOG_INFO(expr) for an explanation of how and when
  * this macro will generate log output.
@@ -249,7 +267,7 @@ struct log_manager_impl;
  * \author Victor Schappert
  * \since 20140517
  */
-class log_manager : public non_copyable
+class log_manager : private non_copyable
 {
         //
         // FRIENDSHIPS
@@ -350,6 +368,10 @@ class log_manager : public non_copyable
         /**
          * \brief Returns the singleton instance
          * \return Singleton log manager
+         *
+         * \warning
+         * Do not call this function during static initialization or static
+         * destruction.
          */
         static log_manager& instance();
 };
