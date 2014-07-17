@@ -144,8 +144,12 @@ log_manager& log_manager::instance()
     //       compiler release on this December 12, 2013 blog posting
     //       http://goo.gl/eyRS4i entitled "C++11/14 Core Language Features in
     //       VS 2013 and the Nov 2013 CTP".
-    static log_manager manager;
-    return manager;
+    static log_manager * manager(new log_manager);
+    // Reason for using a pointer is that order of static object destruction
+    // among translation units is undefined in C++. Since any translation unit
+    // may use the log during its static destruction phase, the log should never
+    // be deleted.
+    return *manager;
 }
 
 } // jsdi
