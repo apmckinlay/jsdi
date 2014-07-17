@@ -138,7 +138,7 @@ class thunk_base : private non_copyable
          * \warning
          * <em>As soon as</em> any thread calls this function, <em>and before
          * this function returns</em>, the thunk will be moved to
-         * #thunk_state::CLEARED and no other thread may attempt to call
+         * thunk_state#CLEARED and no other thread may attempt to call
          * #func_addr().
          *
          * \warning

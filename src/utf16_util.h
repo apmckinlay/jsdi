@@ -75,7 +75,18 @@ typedef std::basic_streambuf<utf16char_t> utf16_streambuf;
 typedef std::basic_ostream<utf16char_t, std::char_traits<utf16char_t>>
     utf16_ostream;
 
-utf16_ostream& operator<<(utf16_ostream&, const char *);
+/**
+ * \brief Inserts a zero-terminated string of 8-bit characters into a
+ *        \link utf16_ostream\endlink
+ * \author Victor Schappert
+ * \param o Target stream
+ * \param str Valid zero-terminated string
+ *
+ * The characters of <code>str</code> are transformed into
+ * <code>utf16_char_t</code> through the use of <code>o</code>'s
+ * <code>std::ios::widen(char) const</code> member function.
+ */
+utf16_ostream& operator<<(utf16_ostream& o, const char * str);
 
 } // jsdi
 
