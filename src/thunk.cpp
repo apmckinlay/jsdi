@@ -103,7 +103,7 @@ thunk_base::thunk_base()
 #endif // _NDEBUG
       d_clearing(false)
     , d_state(thunk_state::READY)
-{ LOG_DEBUG("New thunk " << this); }
+{ LOG_DEBUG("New thunk " << static_cast<void *>(this)); }
 
 thunk_base::~thunk_base()
 {
@@ -177,7 +177,8 @@ struct thunk_clearing_list_impl
         if (10 < d_clearing_list.size())
         {
             assert(thunk_ != d_clearing_list.front());
-            LOG_DEBUG("Deleting thunk " << d_clearing_list.front());
+            LOG_DEBUG("Deleting thunk " << static_cast<void *>(
+                                               d_clearing_list.front()));
             delete d_clearing_list.front();
             d_clearing_list.pop_front();
         }
