@@ -210,12 +210,12 @@ invoke64_fp     PROC FRAME
 
 ; Otherwise, compute g(x : 8 < x).
 
-    mov     rdx, rcx        ; rdx := 'x'
-    and     rdx, 3          ; rdx := (x % 4)
-    lea     rcx, [rdx+4]    ; rcx := (x % 4) + 4
-    test    rdx, rdx        ; zf := !((x % 4) + 4)
-    mov     eax, 8
-    cmovz   ecx, eax        ; Conditional move 8 into rcx if !((x % 4)+4)
+    mov     r9, rcx         ; r9 := 'x'
+    and     r9, 3           ; r9 := (x % 4)
+    lea     rcx, [r9+4]     ; rcx := (x % 4) + 4
+    test    r9, r9          ; zf := !((x % 4) + 4)
+    mov     edx, 8
+    cmovz   ecx, edx        ; Conditional move 8 into rcx if !((x % 4)+4)
 
 ; Jump based on the index g(x) contained in rcx
 
@@ -239,52 +239,53 @@ Lfp_jtbl_6:
     mov     rdx, [r10+r11]
     mov     [rsp+8], rdx
 Lfp_jtbl_5:
-    sub     rsp, 32
     sub     r11, 8
     mov     rcx, [r10+r11]
+    mov     [rsp], rcx
+    sub     rsp, 32
     cmp     r11, 32
     jg      Lfp_loop
 Lfp_jtbl_4:
     dec     al
     jz      Lfp_4double
     jg      Lfp_4float
-    mov     r9, [r11+24]
-    shl     rax, 8
+    mov     r9, [r10+24]
+    shr     rax, 8
     dec     al
     jz      Lfp_3double
     jg      Lfp_3float
 Lfp_3int:
-    mov     r8, [r11+16]
-    shl     rax, 8
+    mov     r8, [r10+16]
+    shr     rax, 8
     dec     al
     jz      Lfp_2double
     jg      Lfp_2float
 Lfp_2int:
-    mov     rdx, [r11+8]
-    shl     rax, 8
+    mov     rdx, [r10+8]
+    shr     rax, 8
     dec     al
     jz      Lfp_1double
-    jz      Lfp_1float
+    jg      Lfp_1float
 Lfp_1int:
-    mov     rcx, [r11]
+    mov     rcx, [r10]
     jmp     Lfp_jtbl_0
 
 ; Out-of-loop jump targets for 1..3 arguments (x in [1..3])
     
 Lfp_jtbl_3:
-    shl     rax, 8
+    shr     rax, 8
     dec     al
     jl      Lfp_3int
     jz      Lfp_3double
     jmp     Lfp_3float
 Lfp_jtbl_2:
-    shl     rax, 16
+    shr     rax, 16
     dec     al
     jl      Lfp_2int
     jz      Lfp_2double
     jmp     Lfp_2float
 Lfp_jtbl_1:
-    shl     rax, 24
+    shr     rax, 24
     dec     al
     jl      Lfp_1int
     jz      Lfp_1double
@@ -293,49 +294,49 @@ Lfp_jtbl_1:
 ; Handlers for putting "double" values into the appropriate xmm registers.
 
 Lfp_4double:
-    movsd   xmm3, QWORD PTR [r11+24]
-    shl     rax, 8
+    movsd   xmm3, QWORD PTR [r10+24]
+    shr     rax, 8
     dec     al
     jl      Lfp_3int
     jg      Lfp_3float
 Lfp_3double:
-    movsd   xmm2, QWORD PTR [r11+16]
-    shl     rax, 8
+    movsd   xmm2, QWORD PTR [r10+16]
+    shr     rax, 8
     dec     al
     jl      Lfp_2int
     jg      Lfp_2float
 Lfp_2double:
-    movsd   xmm1, QWORD PTR [r11+8]
-    shl     rax, 8
+    movsd   xmm1, QWORD PTR [r10+8]
+    shr     rax, 8
     dec     al
     jl      Lfp_1int
     jg      Lfp_1float
 Lfp_1double:
-    movsd   xmm0, QWORD PTR [r11]
+    movsd   xmm0, QWORD PTR [r10]
     jmp     Lfp_jtbl_0
 
 ; Handlers for putting "single" values into the appropriate xmm registers.
 
 Lfp_4float:
-    movss   xmm3, DWORD PTR [r11+24]
-    shl     rax, 8
+    movss   xmm3, DWORD PTR [r10+24]
+    shr     rax, 8
     dec     al
     jl      Lfp_3int
     jz      Lfp_3double
 Lfp_3float:
-    movss   xmm2, DWORD PTR [r11+16]
-    shl     rax, 8
+    movss   xmm2, DWORD PTR [r10+16]
+    shr     rax, 8
     dec     al
     jl      Lfp_2int
     jz      Lfp_2double
 Lfp_2float:
-    movss   xmm1, DWORD PTR [r11+8]
-    shl     rax, 8
+    movss   xmm1, DWORD PTR [r10+8]
+    shr     rax, 8
     dec     al
     jl      Lfp_1int
     jz      Lfp_1double
 Lfp_1float:    
-    movss   xmm0, DWORD PTR [r11]
+    movss   xmm0, DWORD PTR [r10]
 
 ; Call the function
 

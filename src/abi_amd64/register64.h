@@ -115,7 +115,7 @@ inline param_register_types::param_register_types(param_register_type param0,
                                                   param_register_type param1,
                                                   param_register_type param2,
                                                   param_register_type param3)
-    : d_data(param3 | (param2 << 010) | (param1 << 020) | (param0 << 030))
+    : d_data((param0 << 030) | (param1 << 020) | (param2 << 010) | param3)
 {
     assert(0 <= param0 && param0 < NUM_PARAM_REGISTER_TYPES);
     assert(0 <= param1 && param1 < NUM_PARAM_REGISTER_TYPES);
