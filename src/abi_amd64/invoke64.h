@@ -27,7 +27,9 @@ extern "C" {
  * \since 20140708
  * \param args_size_bytes Size of the arguments pointed-to by
  *                        <code>args_ptr</code> <em>must be a multiple of 8</em>
- * \param args_ptr Pointer to the arguments <em>must be 8-byte aligned</em>
+ * \param args_ptr Pointer to the arguments <em>must be 8-byte aligned</em>,
+ *                 may be <code>null</code> <em>only</code> if
+ *                 <code>args_size_bytes</code> is 0
  * \param func_ptr Pointer to the function to call
  * \see invoke64_fp(size_t, const void *, void *,
  *                  jsdi::abi_amd64::param_register_types)
@@ -70,7 +72,9 @@ uint64_t invoke64_basic(size_t args_size_bytes, const void * args_ptr,
  * \since 20140715
  * \param args_size_bytes Size of the arguments pointed-to by
  *                        <code>args_ptr</code> <em>must be a multiple of 8</em>
- * \param args_ptr Pointer to the arguments <em>must be 8-byte aligned</em>
+ * \param args_ptr Pointer to the arguments <em>must be 8-byte aligned</em>,
+ *                 may be <code>null</code> <em>only</code> if
+ *                 <code>args_size_bytes</code> is 0
  * \param func_ptr Pointer to the function to call
  * \param register_types Register types required for the first four parameters
  * \see invoke64_basic(size_t, const void *, void *)

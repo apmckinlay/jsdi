@@ -83,11 +83,20 @@ class param_register_types
          * \param param1 Register type for the second parameter
          * \param param2 Register type for the third parameter
          * \param param3 Register type for the fourth parameter
+         * \see #param_register_types()
          */
         param_register_types(param_register_type param0,
                              param_register_type param1,
                              param_register_type param2,
                              param_register_type param3);
+
+        /**
+         * \brief Initializes all four register parameter types to
+         *        param_register_type#UINT64
+         * \see #param_register_types(param_register_type, param_register_type,
+         *                            param_register_type, param_register_type)
+         */
+        param_register_types();
 
         //
         // ACCESSORS
@@ -122,6 +131,10 @@ inline param_register_types::param_register_types(param_register_type param0,
     assert(0 <= param2 && param2 < NUM_PARAM_REGISTER_TYPES);
     assert(0 <= param3 && param3 < NUM_PARAM_REGISTER_TYPES);
 }
+
+inline param_register_types::param_register_types()
+    : param_register_types(UINT64, UINT64, UINT64, UINT64)
+{ }
 
 inline param_register_type param_register_types::operator[](
     size_t param_num) const
