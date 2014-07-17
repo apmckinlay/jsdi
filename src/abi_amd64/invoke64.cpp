@@ -198,15 +198,12 @@ TEST(basic_seh,
 #include "test64.h"
 
 #include <algorithm>
-#include <iostream> // TODO: uncomment me
 
-int breakpoint()
-{
-int x = 4;
-return x;
-}
+TEST(fp_noargs,
+    invoke64_fp(0, nullptr, TestVoid, param_register_types());
+);
 
-TEST(fp_thorough,
+TEST(fp_comprehensive,
     std::vector<uint64_t> args;
     std::for_each(
         test64::FP_FUNCTIONS.begin, test64::FP_FUNCTIONS.end,
@@ -224,10 +221,10 @@ TEST(fp_thorough,
                         args[i] = static_cast<uint64_t>(i);
                         break;
                     case param_register_type::DOUBLE:
-                        copy_to(static_cast<double>(i), &args[i], 1);
+                        assert_true(copy_to(static_cast<double>(i), &args[i], 1));
                         break;
                     case param_register_type::FLOAT:
-                        copy_to(static_cast<float>(i), &args[i], 1);
+                        assert_true(copy_to(static_cast<float>(i), &args[i], 1));
                         break;
                     default:
                         assert(false || !"control should never pass here");
@@ -235,16 +232,22 @@ TEST(fp_thorough,
             } // for(args)
             uint64_t result = invoke64_fp(f->nargs * sizeof(uint64_t), &args[0],
                                           f->func_ptr, f->register_types);
-            if (result != sum) // TODO: delete me
-            {
-                std::cerr << result << "!=" << sum << " for " << f->signature << std::endl; // TODO: delete me
-                breakpoint(); // TODO: Delete me
-                result = invoke64_fp(f->nargs * sizeof(uint64_t), &args[0],
-                    f->func_ptr, f->register_types);
-            }
-//            assert_equals(sum, result);// TODO: uncomment me
+            assert_equals(sum, result);
         } // lambda
     ); // std::for_each(FP_FUNCTIONS)
+);
+
+TEST(fp_seh,
+    // This test ensures that on a basic level, the invoke64_fp() function works
+    // with Windows structured exception handling.
+    uint64_t a[] = { 0, 0 };
+    bool caught = false;
+    __try
+    { invoke64_fp(sizeof(a), a, divide, param_register_types()); } 
+    __except(GetExceptionCode() == EXCEPTION_INT_DIVIDE_BY_ZERO ? 
+             EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)
+    { caught = true; }
+    assert_true(caught);
 );
 
 #endif // __NOTEST__
