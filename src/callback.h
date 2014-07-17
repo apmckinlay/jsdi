@@ -39,10 +39,12 @@ class callback
 
     protected:
 
+        /** \cond internal */
         std::vector<int> d_ptr_array;
         int              d_size_direct;
         int              d_size_total;
         int              d_vi_count;
+        /** \endcond internal */
 
         //
         // CONSTRUCTORS
@@ -78,7 +80,6 @@ class callback
          * \brief Returns the size of the callback's on-stack arguments in
          *  bytes
          * \return Direct argument size in bytes
-         * \see #set_unmarshall_info(int, int, const int *, int, int)
          */
         int size_direct() const;
 
@@ -94,9 +95,8 @@ class callback
          * \param args Points to the address on the execution stack that is the
          * base of the on-stack arguments in <dfn>stdcall</dfn> format
          * \return Return value of the callback function
-         * \see #call(const callback_args&)
          */
-        virtual ParamType call(const ParamType *) = 0;
+        virtual ParamType call(const ParamType * args) = 0;
 };
 
 template<typename ParamType>

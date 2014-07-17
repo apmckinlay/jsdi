@@ -47,7 +47,7 @@
          *        #func_addr() is called
          * \param num_param_registers Number of parameters that will be passed
          *        to the thunk in registers <em>must be in the range
-         *        [0..NUM_PARAM_REGISTERS]
+         *        [0..#NUM_PARAM_REGISTERS]</em>
          * \param register_types Register types of the parameter registers
          */
         thunk64(const std::shared_ptr<callback_t>& callback_ptr,

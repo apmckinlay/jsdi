@@ -77,8 +77,21 @@ std::streamsize jni_utf16_output_streambuf::xsputn(const utf16char_t * s,
 }
 
 //==============================================================================
-//                          class jni_utf16_ostream
+//                 stream insertion operators for JNI types
 //==============================================================================
+
+utf16_ostream& operator<<(utf16_ostream& o, jstring jstr) throw(std::bad_cast)
+{
+    auto& o2(dynamic_cast<jni_utf16_ostream&>(o)); // may throw std::bad_cast
+    return o2 << jstr;
+}
+
+utf16_ostream& operator<<(utf16_ostream& o, const jni_utf16_string_region& str)
+{
+    utf16_ostream::sentry sentry(o);
+    if (sentry) o.write(str.str(), str.size());
+    return o;
+}
 
 jni_utf16_ostream& operator<<(jni_utf16_ostream& o, jstring jstr)
 {
@@ -117,19 +130,6 @@ jstring make_jstring(JNIEnv * env, const char * sz)
     JNI_EXCEPTION_CHECK(env);
     if (! result) throw jni_bad_alloc("NewString", __FUNCTION__);
     return result;
-}
-
-utf16_ostream& operator<<(utf16_ostream& o, jstring jstr) throw(std::bad_cast)
-{
-    auto& o2(dynamic_cast<jni_utf16_ostream&>(o)); // may throw std::bad_cast
-    return o2 << jstr;
-}
-
-utf16_ostream& operator<<(utf16_ostream& o, const jni_utf16_string_region& str)
-{
-    utf16_ostream::sentry sentry(o);
-    if (sentry) o.write(str.str(), str.size());
-    return o;
 }
 
 } // namespace jsdi

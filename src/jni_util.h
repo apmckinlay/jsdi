@@ -1548,6 +1548,7 @@ inline jni_utf8_string_region::const_pointer
  * \see jni_utf8_string_region
  * \see jni_utf16_ostream
  * \see jni_array_region
+ * \see operator<<(utf16_ostream&, const jni_utf16_string_region&)
  *
  * On construction, the string region appends a UTF-16 null character to the end
  * of the Java characters. The string region is therefore zero-terminated.
@@ -1690,13 +1691,45 @@ inline jni_utf16_string_region::const_iterator jni_utf16_string_region::end() co
 //                 stream insertion operators for JNI types
 //==============================================================================
 
-utf16_ostream& operator<<(utf16_ostream&, jstring) throw(std::bad_cast);
+/**
+ * \brief Inserts a <code>jstring</code> into a \link utf16_ostream\endlink
+ * \param o Target stream
+ * \param str Valid Java string to insert into <code>o</code>
+ * \throws std::bad_cast If <code>o</code> is not a
+ *         \link jni_utf16_ostream\endlink
+ * \see operator<<(utf16_ostream&, const jni_utf16_string_region&)
+ * \see operator<<(jni_utf16_ostream&, jstring)
+ *
+ * This function assumes <code>o</code> has type
+ * \link jni_utf16_ostream\endlink
+ * and uses \link operator<<(jni_utf16_ostream&, jstring)\endlink to perform the
+ * actual insertion.
+ */
+utf16_ostream& operator<<(utf16_ostream& o, jstring str) throw(std::bad_cast);
 
-utf16_ostream& operator<<(utf16_ostream&, const jni_utf16_string_region&);
+/**
+ * \brief Inserts a \link jni_utf16_string_region\endlink into a
+ *        \link utf16_ostream\endlink
+ * \param o Target stream
+ * \param str String region to insert
+ * \see operator<<(utf16_ostream&, jstring)
+ * \see operator<<(jni_utf16_ostream&, jstring)
+ */
+utf16_ostream& operator<<(utf16_ostream& o, const jni_utf16_string_region& str);
 
 class jni_utf16_ostream;
 
-jni_utf16_ostream& operator<<(jni_utf16_ostream&, jstring);
+/**
+ * \brief Inserts a <code>jstring</code> into a \link jni_utf16_ostream\endlink
+ * \param o Target stream
+ * \param str Valid Java string to insert into <code>o</code>
+ * \see operator<<(utf16_ostream&, const jni_utf16_string_region&)
+ * \see operator<<(jni_utf16_ostream&, jstring)
+ *
+ * The string <code>str</code> must share the same JNI environment as the
+ * stream <code>o</code>.
+ */
+jni_utf16_ostream& operator<<(jni_utf16_ostream& o, jstring str);
 
 //==============================================================================
 //                     class jni_utf16_output_streambuf
@@ -1760,6 +1793,7 @@ inline std::streamsize jni_utf16_output_streambuf::size() const
  * \brief Output stream for generating immutable Java strings.
  * \author Victor Schappert
  * \since 20130701 (Happy Canada Day!)
+ * \see operator<<(jni_utf16_ostream&, jstring)
  *
  * The values inserted into this stream should be compatible with JNI's
  * &quot;modified UTF-8&quot; format in order to ensure that the strings sent to
