@@ -12,9 +12,11 @@
 ; List of exported functions 
 PUBLIC    invoke64_basic
 PUBLIC    invoke64_fp
+PUBLIC    invoke64_return_double
+PUBLIC    invoke64_return_float
 
 ;===============================================================================
-;                               invoke64_basic
+;                              invoke64_basic()
 ;===============================================================================
 
 comment @
@@ -39,7 +41,7 @@ comment @
         r11              : Cached value of 'args_ptr'
 @
 
-_TEXT   SEGMENT
+_TEXT SEGMENT
 
 invoke64_basic      PROC FRAME
 
@@ -144,20 +146,20 @@ invoke64_basic  ENDP
 _TEXT ENDS
 
 ;===============================================================================
-;                                 invoke64_fp
+;                                invoke64_fp()
 ;===============================================================================
 
 comment @
     The "C" function signature is:
         uint64_t invoke64_fp(size_t args_size_bytes, const void * args_ptr,
-                             void * func_ptr, uint8_t register_types);
+                             void * func_ptr, param_register_types register_types);
 
     The incoming register layout is therefore:
         - rcx : Contains the 'args_size_bytes' counter, which must be a multiple
                 of 8 bytes or the program will crash
         - rdx : Contains the 'args_ptr' pointer
         - r8  : Contains the 'func_ptr' to invoke
-        - r9  : Contains the 'register_types' encoded in the low-order 8 bits
+        - r9  : Contains the 'register_types' encoded in the low-order 32 bits
 
     The only non-volatile register used by this function is 'rbp', which is used
     as a frame pointer and needs to be preserved across calls. The overall
@@ -171,7 +173,7 @@ comment @
         rax              : Cached value of 'register_types'
 @
 
-_TEXT   SEGMENT
+_TEXT SEGMENT
 
 invoke64_fp     PROC FRAME
 
@@ -367,6 +369,46 @@ Lfp_jumptbl:
     DQ      Lfp_jtbl_8      ; g(x) = 8
     
 invoke64_fp     ENDP
+
+_TEXT ENDS
+
+;===============================================================================
+;                          invoke64_return_double()
+;===============================================================================
+
+comment @
+    The "C" signature for this function differs from invoke64_fp() only in its
+    return value. However, since the return value of invoke64_fp() is actually
+    provided by the invoked function ('func_ptr'), at a machine code level they
+    are the same function. The only difference is how the caller of this
+    function interprets the return value. Hence, we can implement 100% of the
+    required functionality by simply jumping to invoke64_fp(). (The only thing
+    to keep in mind is that since this function doesn't set up a stack frame,
+    for debugging purposes it will appear to "be" invoke64_fp()).
+@
+
+_TEXT SEGMENT
+
+invoke64_return_double  PROC
+    jmp     invoke64_fp
+invoke64_return_double  ENDP
+
+_TEXT ENDS
+
+;===============================================================================
+;                          invoke64_return_float()
+;===============================================================================
+
+comment @
+    The comments above in invoke64_return_double() apply equally to this
+    function.
+@
+
+_TEXT SEGMENT
+
+invoke64_return_float   PROC
+    jmp     invoke64_fp
+invoke64_return_float   ENDP
 
 _TEXT ENDS
 

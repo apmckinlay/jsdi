@@ -250,4 +250,52 @@ TEST(fp_seh,
     assert_true(caught);
 );
 
+//==============================================================================
+//                     TESTS : invoke64_return_double()
+//==============================================================================
+
+TEST(return_double,
+    static double args_double[2] = { -2300.5, -2.0 };
+    static uint64_t args[2];
+    assert_true(copy_to(args_double[0], &args[0], 1));
+    assert_true(copy_to(args_double[1], &args[1], 1));
+    param_register_types rt(
+        DOUBLE, DOUBLE,
+        param_register_type::UINT64, param_register_type::UINT64);
+    assert_equals(1.0, invoke64_return_double(0, args, TestReturn1_0Double, rt));
+    assert_equals(
+        -2300.5,
+        invoke64_return_double(sizeof(uint64_t), args, TestDouble, rt));
+    assert_equals(
+        -2.0,
+        invoke64_return_double(sizeof(uint64_t), args + 1, TestDouble, rt));
+    assert_equals(
+        -2302.5,
+        invoke64_return_double(
+            2 * sizeof(uint64_t), args, TestSumTwoDoubles, rt));
+);
+
+//==============================================================================
+//                     TESTS : invoke64_return_float()
+//==============================================================================
+
+TEST(return_float,
+    static float args_float[2] = { 10.0f, -1.0f };
+    static uint64_t args[2];
+    assert_true(copy_to(args_float[0], &args[0], 1));
+    assert_true(copy_to(args_float[1], &args[1], 1));
+    param_register_types rt(
+        param_register_type::FLOAT, param_register_type::FLOAT,
+        param_register_type::UINT64, param_register_type::UINT64);
+    assert_equals(1.0f, invoke64_return_float(0, args, TestReturn1_0Float, rt));
+    assert_equals(
+        10.0f, invoke64_return_float(sizeof(uint64_t), args, TestFloat, rt));
+    assert_equals(
+        -1.0, invoke64_return_float(sizeof(uint64_t), args + 1, TestFloat, rt));
+    assert_equals(
+        9.0,
+        invoke64_return_float(
+            2 * sizeof(uint64_t), args, TestSumTwoFloats, rt));
+);
+
 #endif // __NOTEST__

@@ -28,7 +28,7 @@ extern "C" {
  * \param args_size_bytes Size of the arguments pointed-to by
  *                        <code>args_ptr</code> <em>must be a multiple of 8</em>
  * \param args_ptr Pointer to the arguments <em>must be 8-byte aligned</em>,
- *                 may be <code>null</code> <em>only</code> if
+ *                 may be <code>null</code> <em>only</em> if
  *                 <code>args_size_bytes</code> is 0
  * \param func_ptr Pointer to the function to call
  * \see invoke64_fp(size_t, const void *, void *,
@@ -73,11 +73,15 @@ uint64_t invoke64_basic(size_t args_size_bytes, const void * args_ptr,
  * \param args_size_bytes Size of the arguments pointed-to by
  *                        <code>args_ptr</code> <em>must be a multiple of 8</em>
  * \param args_ptr Pointer to the arguments <em>must be 8-byte aligned</em>,
- *                 may be <code>null</code> <em>only</code> if
+ *                 may be <code>null</code> <em>only</em> if
  *                 <code>args_size_bytes</code> is 0
  * \param func_ptr Pointer to the function to call
  * \param register_types Register types required for the first four parameters
  * \see invoke64_basic(size_t, const void *, void *)
+ * \see invoke64_return_double(size_t, const void *, void *,
+ *                             jsdi::abi_amd64::param_register_types)
+ * \see invoke64_return_float(size_t, const void *, void *,
+ *                            jsdi::abi_amd64::param_register_types)
  *
  * This function may be used to invoke a <code>func_ptr</code> meeting the
  * following constraints:
@@ -86,11 +90,61 @@ uint64_t invoke64_basic(size_t args_size_bytes, const void * args_ptr,
  *
  * The arguments in <code>args_ptr</code> must meet the criteria for
  * <code>args_ptr</code> described in the documentation for 
- * \link invoke64_basic(size_t, const void *, void *)\endlink.
+ * \link invoke64_basic(size_t, const void *, void *) invoke64_basic()\endlink.
  */
 uint64_t invoke64_fp(size_t args_size_bytes, const void * args_ptr,
                      void * func_ptr,
                      jsdi::abi_amd64::param_register_types register_types);
+
+/**
+ * \brief Invokes a function using the Windows x64 ABI calling convention where
+ *        one or more of the first four parameters have type <code>double</code>
+ *        or <code>float</code> and the return type is <code>double</code>
+ * \author Victor Schappert
+ * \since 20140717
+ * \param args_size_bytes Size of the arguments pointed-to by
+ *                        <code>args_ptr</code> <em>must be a multiple of 8</em>
+ * \param args_ptr Pointer to the arguments <em>must be 8-byte aligned</em>,
+ *                 may be <code>null</code> <em>only</em> if
+ *                 <code>args_size_bytes</code> is 0
+ * \param func_ptr Pointer to the function to call
+ * \param register_types Register types required for the first four parameters
+ * \see invoke64_return_float(size_t, const void *, void *,
+ *                            jsdi::abi_amd64::param_register_types)
+ *
+ * This function behaves identically to
+ * \link invoke64_fp(size_t, const void *, void *, jsdi::abi_amd64::param_register_types)
+ * invoke64_fp()\endlink except that it must be used to invoke functions whose
+ * return type is <code>double</code>.
+ */
+double invoke64_return_double(size_t args_size_bytes, const void * args_ptr,
+                              void * func_ptr,
+                              jsdi::abi_amd64::param_register_types register_types);
+
+/**
+ * \brief Invokes a function using the Windows x64 ABI calling convention where
+ *        one or more of the first four parameters have type <code>double</code>
+ *        or <code>float</code> and the return type is <code>float</code>
+ * \author Victor Schappert
+ * \since 20140717
+ * \param args_size_bytes Size of the arguments pointed-to by
+ *                        <code>args_ptr</code> <em>must be a multiple of 8</em>
+ * \param args_ptr Pointer to the arguments <em>must be 8-byte aligned</em>,
+ *                 may be <code>null</code> <em>only</em> if
+ *                 <code>args_size_bytes</code> is 0
+ * \param func_ptr Pointer to the function to call
+ * \param register_types Register types required for the first four parameters
+ * \see invoke64_return_double(size_t, const void *, void *,
+ *                            jsdi::abi_amd64::param_register_types)
+ *
+ * This function behaves identically to
+ * \link invoke64_fp(size_t, const void *, void *, jsdi::abi_amd64::param_register_types)
+ * invoke64_fp()\endlink except that it must be used to invoke functions whose
+ * return type is <code>float</code>.
+ */
+float invoke64_return_float(size_t args_size_bytes, const void * args_ptr,
+                            void * func_ptr,
+                            jsdi::abi_amd64::param_register_types register_types);
 
 } // extern "C"
 
