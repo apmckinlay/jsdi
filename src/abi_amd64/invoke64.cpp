@@ -23,24 +23,10 @@
 #include "jsdi_windows.h"
 #include "util.h"
 
+#include "test64.h"
+
 using namespace jsdi::abi_amd64;
-
-namespace {
-
-// HELPER FUNCTIONS
-
-template <typename T>
-static bool copy_to(const T& src, uint64_t * dst, size_t capacity /* in uint64_t */)
-{
-    if (sizeof(src) <= sizeof(uint64_t) * capacity)
-    {
-        std::memcpy(dst, &src, sizeof(src));
-        return true;
-    }
-    return false;
-}
-
-} // anonymous namespace
+using namespace jsdi::abi_amd64::test64;
 
 //==============================================================================
 //                         TESTS : invoke64_basic()
@@ -195,8 +181,6 @@ TEST(basic_seh,
 //                           TESTS : invoke64_fp()
 //==============================================================================
 
-#include "test64.h"
-
 #include <algorithm>
 
 TEST(fp_noargs,
@@ -209,13 +193,13 @@ TEST(fp_comprehensive,
         test64::FP_FUNCTIONS.begin, test64::FP_FUNCTIONS.end,
         [this, &args](auto f)
         {
-            assert_true(param_register_type::UINT64 == f->return_type);
+            assert_true(param_register_type::UINT64 == f->func.ret_type);
             size_t sum(0);
-            args.resize(f->nargs);
-            for (size_t i = 0; i < f->nargs; ++i)
+            args.resize(f->func.nargs);
+            for (size_t i = 0; i < f->func.nargs; ++i)
             {
                 sum += i;
-                switch (f->arg_types[i])
+                switch (f->func.arg_types[i])
                 {
                     case param_register_type::UINT64:
                         args[i] = static_cast<uint64_t>(i);
@@ -230,8 +214,9 @@ TEST(fp_comprehensive,
                         assert(false || !"control should never pass here");
                 }
             } // for(args)
-            uint64_t result = invoke64_fp(f->nargs * sizeof(uint64_t), &args[0],
-                                          f->func_ptr, f->register_types);
+            uint64_t result = invoke64_fp(f->func.nargs * sizeof(uint64_t),
+                                          &args[0], f->func.ptr,
+                                          f->func.register_types);
             assert_equals(sum, result);
         } // lambda
     ); // std::for_each(FP_FUNCTIONS)

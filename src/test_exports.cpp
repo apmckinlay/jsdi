@@ -143,6 +143,13 @@ EXPORT_STDCALL(int32_t) TestSumSixInt32s(int32_t a, int32_t b, int32_t c,
                                          int32_t d, int32_t e, int32_t f)
 { return TestSumFiveInt32s(a, b, c, d, e) + f; }
 
+EXPORT_STDCALL(int32_t) TestSumSixMixed(double a, int8_t b, float c, int16_t d,
+                                        float e, int64_t f)
+{
+    return static_cast<int32_t>(a) + b + static_cast<int32_t>(c) + d +
+           static_cast<int32_t>(e) + static_cast<int32_t>(f);
+}
+
 EXPORT_STDCALL(int32_t) TestSumSevenInt32s(int32_t a, int32_t b, int32_t c,
                                            int32_t d, int32_t e, int32_t f,
                                            int32_t g)
@@ -335,14 +342,14 @@ TestReturnStatic_Recursive_StringSum(const struct Recursive_StringSum * ptr)
 
 EXPORT_STDCALL(int32_t) TestInvokeCallback_Int32_1(TestCallback_Int32_1 f,
                                                    int32_t a)
-{ return f ? f(a) : 0L; }
+{ return f ? f(a) : 0; }
 
 EXPORT_STDCALL(int32_t) TestInvokeCallback_Int32_1_2(TestCallback_Int32_1 f,
                                                      int32_t a,
                                                      TestCallback_Int32_1 g,
                                                      int32_t b)
 {
-    int count(0);
+    int32_t count(0);
     if (f) f(a), ++count;
     if (g) g(b), ++count;
     return count;
@@ -350,15 +357,21 @@ EXPORT_STDCALL(int32_t) TestInvokeCallback_Int32_1_2(TestCallback_Int32_1 f,
 
 EXPORT_STDCALL(int32_t) TestInvokeCallback_Int32_2(TestCallback_Int32_2 f,
                                                    int32_t a, int32_t b)
-{ return f ? f(a, b) : 0L; }
+{ return f ? f(a, b) : 0; }
+
+EXPORT_STDCALL(int32_t) TestInvokeCallback_Mixed_6(TestCallback_Mixed_6 g,
+                                                   double a, int8_t b, float c,
+                                                   int16_t d, float e,
+                                                   int64_t f)
+{ return g ? g(a, b, c, d, e, f) : 0; }
 
 EXPORT_STDCALL(int32_t) TestInvokeCallback_Packed_Int8Int8Int16Int32(
     TestCallback_Packed_Int8Int8Int16Int32 f, Packed_Int8Int8Int16Int32 a)
-{ return f ? f(a) : 0L; }
+{ return f ? f(a) : 0; }
 
 EXPORT_STDCALL(int32_t) TestInvokeCallback_Recursive_StringSum(
     TestCallback_Recursive_StringSum f, struct Recursive_StringSum * ptr)
-{ return f ? f(ptr) : 0L; }
+{ return f ? f(ptr) : 0; }
 
 } // extern "C"
 
