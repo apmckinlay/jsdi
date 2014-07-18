@@ -219,6 +219,13 @@ struct thunk_clearing_list_impl;
  *        debugging
  * \author Victor Schappert
  * \since 20140714
+ *
+ * \warning
+ * This class is <em>guaranteed</em> to <strong>leak</strong> a small amount of
+ * memory as it will likely own a small number of undeleted thunks when it is
+ * destroyed and it does not delete this small number of objects. Thus only one
+ * instance of this class will preferably be instantiated over the lifetime of
+ * the program.
  */
 class thunk_clearing_list
 {

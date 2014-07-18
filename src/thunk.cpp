@@ -148,11 +148,8 @@ struct thunk_clearing_list_impl
     std::deque<thunk_base *> d_cleared_list;
     std::deque<thunk_base *> d_clearing_list;
     std::mutex               d_mutex;
-    ~thunk_clearing_list_impl()
-    {
-        for (thunk_base * x : d_cleared_list) delete x;
-        for (thunk_base * y : d_clearing_list) delete y;
-    }
+    // Use default destructor. Thus it will leak whatever is on the lists at
+    // time of destruction.
     void clear_thunk(thunk_base * thunk_)
     {
         assert(thunk_ || !"thunk cannot be null");
