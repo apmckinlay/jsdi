@@ -421,6 +421,8 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-exe|x64'">_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-dll|Win32'">_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-dll|x64'">_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release-dll|Win32'">MinSpace</Optimization>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release-dll|x64'">MinSpace</Optimization>
     </ClCompile>
     <ClCompile Include="..\..\..\src\test_exports.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-dll|Win32'">_WINDLL;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
@@ -431,6 +433,8 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release-exe|x64'">_WINDLL;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-exe|Win32'">_WINDLL;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-exe|x64'">_WINDLL;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release-dll|Win32'">MinSpace</Optimization>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release-dll|x64'">MinSpace</Optimization>
     </ClCompile>
     <ClCompile Include="..\..\..\src\thunk.cpp" />
     <ClCompile Include="..\..\..\src\utf16_util.cpp" />
