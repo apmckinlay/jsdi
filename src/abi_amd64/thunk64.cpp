@@ -127,12 +127,15 @@ const uint8_t UNWIND_INFO[UNWIND_INFO_SIZE] =
             of UNWIND_CODE's, the last being unused if unnecessary) */
 };
 
+typedef uint64_t (* wrapper_func)(thunk64_impl *, const uint64_t *);
+
 struct stub_code
 {
     //
     // DATA
     //
     alignas(16) uint8_t             d_instructions[CODE_SIZE_MAX_TOTAL];
+                wrapper_func        d_wrapper_addr;
     alignas(8)  RUNTIME_FUNCTION    d_exception_data;
                                     // MSFT says RUNTIME_FUNCTION must be DWORD
                                     // aligned: http://msdn.microsoft.com/en-us/library/ft9x1kdx.aspx
@@ -142,30 +145,27 @@ struct stub_code
     //
     // CONSTRUCTORS
     //
-    stub_code(thunk64_impl *, void * wrapper_func_indirect_addr, size_t,
+    stub_code(thunk64_impl *, wrapper_func wrapper_addr, size_t,
               param_register_types);
     ~stub_code();
     //
     // HELPERS
     //
     int32_t rip_rel_addr_offset(uint8_t *, uint8_t *);
-    void compile(thunk64_impl *, void * wrapper_func_indirect_addr, size_t,
-                 param_register_types);
+    void compile(thunk64_impl *, size_t, param_register_types);
     void register_exception_data();
 };
 
-stub_code::stub_code(thunk64_impl * impl_addr,
-                     void * wrapper_func_indirect_addr,
+stub_code::stub_code(thunk64_impl * impl_addr, wrapper_func wrapper_addr,
                      size_t num_param_registers,
                      param_register_types register_types)
+    : d_wrapper_addr(wrapper_addr)
 {
     assert(impl_addr || !"thunk implementation cannot be NULL");
-    assert(wrapper_func_indirect_addr ||
-        !"wrapper function indirect address cannot be NULL");
+    assert(wrapper_addr || !"wrapper function address cannot be NULL");
     assert(0 <= num_param_registers && num_param_registers <= NUM_PARAM_REGISTERS);
     // "Compile" the stub code
-    compile(impl_addr, wrapper_func_indirect_addr, num_param_registers,
-            register_types);
+    compile(impl_addr, num_param_registers, register_types);
     // Create Windows exception unwind data
     register_exception_data();
 }
@@ -194,9 +194,7 @@ int32_t stub_code::rip_rel_addr_offset(uint8_t * addr_addr,
     return static_cast<int32_t>(offset);
 }
 
-void stub_code::compile(thunk64_impl * impl_addr,
-                        void * wrapper_func_indirect_addr,
-                        size_t num_param_registers,
+void stub_code::compile(thunk64_impl * impl_addr, size_t num_param_registers,
                         param_register_types register_types)
 {
     uint8_t * cursor(d_instructions);
@@ -222,18 +220,19 @@ void stub_code::compile(thunk64_impl * impl_addr,
     // Replace the placeholder bytes for the first argument to the wrapper
     // function with the address of the thunk implementation.
     static_assert(8 == sizeof(impl_addr), "check code");
-    std::copy(fixed_start + CODE_OFFSET_FIXED_BODY_IMPL_POINTER,
-              fixed_start + CODE_OFFSET_FIXED_BODY_IMPL_POINTER + 8,
-              reinterpret_cast<uint8_t *>(&impl_addr));
+    std::copy(reinterpret_cast<uint8_t *>(&impl_addr),
+              reinterpret_cast<uint8_t *>(&impl_addr) + sizeof(impl_addr),
+              fixed_start + CODE_OFFSET_FIXED_BODY_IMPL_POINTER);
     // Replace the placeholder bytes for the rip-relative offset to the memory
     // location containing the wrapper function (thunk64_impl::wrapper)
     // with the actual offset.
-    std::copy(fixed_start + CODE_OFFSET_FIXED_BODY_CALL_ADDR,
-              fixed_start + CODE_OFFSET_FIXED_BODY_CALL_ADDR + 4,
-              reinterpret_cast<uint8_t *>(
-                  rip_rel_addr_offset(
-                      static_cast<uint8_t *>(wrapper_func_indirect_addr),
-                      fixed_start + CODE_OFFSET_FIXED_BODY_CALL_ADDR + 4)));
+    int32_t addr_offset = rip_rel_addr_offset(
+        reinterpret_cast<uint8_t *>(&d_wrapper_addr),
+        fixed_start + CODE_OFFSET_FIXED_BODY_CALL_ADDR + 4);
+    static_assert(4 == sizeof(addr_offset), "check code");
+    std::copy(reinterpret_cast<uint8_t *>(&addr_offset),
+              reinterpret_cast<uint8_t *>(&addr_offset) + sizeof(addr_offset),
+              fixed_start + CODE_OFFSET_FIXED_BODY_CALL_ADDR);
 }
 
 void stub_code::register_exception_data()
@@ -295,7 +294,6 @@ struct thunk64_impl
     //
 
     static uint64_t wrapper(thunk64_impl *, const uint64_t *);
-    static void * wrapper_addr;
 
     //
     // OPERATORS
@@ -309,15 +307,12 @@ struct thunk64_impl
     void operator delete[](void *) = delete;
 };
 
-// Pointer-to-function-pointer required for indirect 'call' instruction.
-void * thunk64_impl::wrapper_addr(thunk64_impl::wrapper);
-
 thunk64_impl::thunk64_impl(
     size_t num_param_registers, param_register_types register_types,
     const std::function<void()>& setup,
     const std::shared_ptr<thunk64::callback_t>& callback,
     const std::function<void()>& teardown)
-    : d_code(this, &wrapper_addr, num_param_registers, register_types)
+    : d_code(this, wrapper, num_param_registers, register_types)
     , d_setup(setup)
     , d_callback(callback)
     , d_teardown(teardown)
@@ -385,13 +380,23 @@ void * thunk64::func_addr()
 #ifndef __NOTEST__
 
 #include "test.h"
+#include "test_exports.h"
+
 #include "invoke64.h"
+#include "test64.h"
+
+#include <algorithm>
 
 using namespace jsdi::abi_amd64;
+using namespace jsdi::abi_amd64::test64;
+
+namespace {
 
 static const int EMPTY_PTR_ARRAY[1] = { };
+static const param_register_types DEFAULT_REGISTERS;
 
 typedef thunk64::callback_t callback_t;
+typedef std::shared_ptr<callback_t> callback_ptr;
 
 // callback that can invoke a function using direct data (arguments) only and
 // return its result
@@ -400,19 +405,128 @@ struct direct_callback : public callback_t
     void *               d_func_ptr;
     param_register_types d_register_types;
     template<typename FuncPtr>
-    direct_callback(FuncPtr func_ptr, int size_direct,
+    direct_callback(FuncPtr func_ptr, size_t size_direct,
                     param_register_types register_types)
-        : callback(size_direct, 0, EMPTY_PTR_ARRAY, 0, 0)
+        : callback(static_cast<int>(size_direct), 0, EMPTY_PTR_ARRAY, 0, 0)
         , d_func_ptr(reinterpret_cast<void *>(func_ptr))
+        , d_register_types(register_types)
     { }
     virtual uint64_t call(const uint64_t * args)
     {
         const size_t args_size_bytes(static_cast<size_t>(d_size_direct));
         return d_register_types.has_fp()
-            ? invoke64_basic(args_size_bytes, args, d_func_ptr)
-            : invoke64_fp(args_size_bytes, args, d_func_ptr, d_register_types);
+            ? invoke64_fp(args_size_bytes, args, d_func_ptr, d_register_types)
+            : invoke64_basic(args_size_bytes, args, d_func_ptr);
     }
 };
 
+template<typename ... Params>
+struct invoker
+{
+    typedef int32_t(* callback_function)(Params...);
+    typedef int32_t(* invoke_function)(callback_function, Params...);
+    static int32_t call(invoke_function f, thunk64& t, Params... args)
+    {
+        callback_function c = reinterpret_cast<callback_function>(t.
+            func_addr());
+        return f(c, args...);
+    }
+};
+
+} // anonymous namespace
+
+TEST(one_int32,
+    callback_ptr cb(new direct_callback(TestInt32, sizeof(uint64_t),
+                                        DEFAULT_REGISTERS));
+    thunk64 thunk(cb, 1, DEFAULT_REGISTERS);
+    int32_t result = invoker<int32_t>::call(TestInvokeCallback_Int32_1, thunk,
+                                            0x19800725);
+    thunk.clear();
+    assert_equals(0x19800725, result);
+);
+
+TEST(sum_two_int32s,
+    callback_ptr cb(new direct_callback(TestSumTwoInt32s, 2 * sizeof(uint64_t),
+                                        DEFAULT_REGISTERS));
+    thunk64 thunk(cb, 2, DEFAULT_REGISTERS);
+    int32_t result = invoker<int32_t, int32_t>::call(
+        TestInvokeCallback_Int32_2, thunk, std::numeric_limits<int32_t>::min(),
+        std::numeric_limits<int32_t>::max());
+    thunk.clear();
+    assert_equals(-1, result);
+);
+
+TEST(sum_six_mixed,
+    const param_register_types registers(
+        param_register_type::DOUBLE, param_register_type::UINT64,
+        param_register_type::FLOAT, param_register_type::UINT64);
+    callback_ptr cb(new direct_callback(TestSumSixMixed, 6 * sizeof(uint64_t),
+                                        registers));
+    thunk64 thunk(cb, 4, registers);
+    int32_t result = 
+    invoker<double, int8_t, float, int16_t, float, int64_t>::call(
+        TestInvokeCallback_Mixed_6, thunk, -3.0, 5, -3.0f, 5, -3.0f, 5);
+    thunk.clear();
+    assert_equals(6, result);
+);
+
+TEST(sum_packed,
+    const Packed_Int8Int8Int16Int32 packed = { -1, 2, 100, 54321 };
+    assert_equals(sizeof(uint64_t), sizeof(packed));
+    callback_ptr cb(new direct_callback(TestSumPackedInt8Int8Int16Int32,
+                                        sizeof(uint64_t), DEFAULT_REGISTERS));
+    thunk64 thunk(cb, 1, DEFAULT_REGISTERS);
+    int32_t result = invoker<Packed_Int8Int8Int16Int32>::call(
+        TestInvokeCallback_Packed_Int8Int8Int16Int32, thunk, packed);
+    thunk.clear();
+    assert_equals(54422, result);
+);
+
+TEST(fp_thorough,
+    std::vector<uint64_t> args;
+    std::for_each(
+        test64::FP_FUNCTIONS.begin, test64::FP_FUNCTIONS.end,
+        [this, &args](auto f)
+        {
+            // Set up the callback and thunk
+            callback_ptr cb(new direct_callback(
+                f->func.ptr, sizeof(uint64_t) * f->func.nargs,
+                f->func.register_types));
+            thunk64 thunk(cb, std::min(f->func.nargs, NUM_PARAM_REGISTERS),
+                          f->func.register_types);
+            // Invoke the callback very indirectly: use the invoke64 API to
+            // invoke f's invoker function, passing it the thunk as the
+            // function to invoke; the invoker function invokes the thunk,
+            // which invokes the callback, which calls f's main function...
+            assert_true(param_register_type::UINT64 == f->func.ret_type);
+            size_t sum(0);
+            args.resize(f->invoker.nargs);
+            assert_true(copy_to(f->func.ptr, &args[0], 1));
+            for (size_t i = 1; i < f->invoker.nargs; ++i)
+            {
+                sum += i;
+                switch (f->invoker.arg_types[i])
+                {
+                    case param_register_type::UINT64:
+                        args[i] = static_cast<uint64_t>(i);
+                        break;
+                    case param_register_type::DOUBLE:
+                        assert_true(copy_to(static_cast<double>(i), &args[i], 1));
+                        break;
+                    case param_register_type::FLOAT:
+                        assert_true(copy_to(static_cast<float>(i), &args[i], 1));
+                        break;
+                    default:
+                        assert(false || !"control should never pass here");
+                }
+            } // for(args)
+            uint64_t result = invoke64_fp(f->invoker.nargs * sizeof(uint64_t),
+                                          &args[0], f->invoker.ptr,
+                                          f->invoker.register_types);
+            thunk.clear();
+            assert_equals(sum, result);
+        } // lambda
+    ); // std::for_each(FP_FUNCTIONS)
+);
 
 #endif // __NOTEST__

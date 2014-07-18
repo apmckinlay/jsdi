@@ -35,8 +35,8 @@ template<typename T>
 struct param_register_typeof
 {
     static const param_register_type value = param_register_type::UINT64;
-    static_assert(std::is_integral<T>::value,
-                  "template parameter must be an integer type");
+    static_assert(std::is_integral<T>::value || std::is_pointer<T>::value,
+                  "template parameter must be integer type or pointer");
 };
 
 template<>
@@ -54,12 +54,16 @@ struct param_register_typeof<float>
 template<typename ReturnType, typename ... ArgTypes>
 struct f : public function
 {
-    f() : function(reinterpret_cast<void *>(&actual_function),
+    typedef ReturnType(* func_t)(ArgTypes ...);
+    f() : function(reinterpret_cast<void *>(&func),
                    param_register_typeof<ReturnType>::value,
-                   { param_register_typeof<ArgTypes>::value... })
+                   { param_register_typeof<ArgTypes>::value... },
+                   reinterpret_cast<void *>(&invoker))
     { }
-    static ReturnType actual_function(ArgTypes ... args)
+    static ReturnType func(ArgTypes ... args)
     { return sum({ static_cast<ReturnType>(args)... }); }
+    static ReturnType invoker(func_t g, ArgTypes ... args)
+    { return g(args...); }
 };
 
 template<typename ... ArgTypes>
@@ -273,8 +277,8 @@ std::ostream& operator<<(std::ostream& o, param_register_type t)
 void make_signature(function& f)
 {
     std::ostringstream o;
-    o << f.return_type << "(*)(";
-    auto i = f.arg_types.begin(), e = f.arg_types.end();
+    o << f.func.ret_type << "(*)(";
+    auto i = f.func.arg_types.begin(), e = f.func.arg_types.end();
     if (i != e)
     {
         o << *i;
@@ -299,7 +303,15 @@ param_register_types make_register_types(
     );
 }
 
-
+void fix_invoker(function_data& fd)
+{
+    // Insert argument for pointer to invokee function
+    fd.arg_types.insert(fd.arg_types.begin(), param_register_type::UINT64);
+    ++fd.nargs;
+    assert(fd.nargs == fd.arg_types.size());
+    // Fix register types
+    fd.register_types = make_register_types(fd.arg_types);
+}
 
 } // anonymous namespace
 
@@ -309,14 +321,26 @@ const function_list FP_FUNCTIONS =
     FP_FUNCTIONS_ + jsdi::array_length(FP_FUNCTIONS_)
 };
 
-function::function(void * func_ptr_, param_register_type return_type_,
-                   const std::initializer_list<param_register_type>& arg_types_)
-    : func_ptr(func_ptr_)
+function_data::function_data(
+    void * ptr_, param_register_type ret_type_,
+    const std::initializer_list<param_register_type>& arg_types_)
+    : ptr(ptr_)
     , nargs(arg_types_.size())
-    , return_type(return_type_)
+    , ret_type(ret_type_)
     , arg_types(arg_types_)
     , register_types(make_register_types(arg_types))
-{ make_signature(*this); }
+{ }
+
+function::function(
+    void * func_ptr, param_register_type ret_type_,
+    const std::initializer_list<param_register_type>& arg_types_,
+    void * invoker_ptr)
+    : func(func_ptr, ret_type_, arg_types_)
+    , invoker(invoker_ptr, ret_type_, arg_types_)
+{
+    make_signature(*this);
+    fix_invoker(invoker);
+}
 
 } // namespace test64
 } // namespace abi_amd64

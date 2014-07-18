@@ -73,6 +73,9 @@ typedef int32_t(__stdcall * TestCallback_Int32_1)(int32_t);
 
 typedef int32_t(__stdcall * TestCallback_Int32_2)(int32_t, int32_t);
 
+typedef int32_t(__stdcall * TestCallback_Mixed_6)(double, int8_t, float,
+                                                  int16_t, float, int64_t);
+
 typedef int32_t(__stdcall * TestCallback_Packed_Int8Int8Int16Int32)(
     struct Packed_Int8Int8Int16Int32);
 
@@ -121,6 +124,9 @@ EXPORT_STDCALL(int32_t) TestSumFiveInt32s(int32_t a, int32_t b, int32_t c,
 
 EXPORT_STDCALL(int32_t) TestSumSixInt32s(int32_t a, int32_t b, int32_t c,
                                          int32_t d, int32_t e, int32_t f);
+
+EXPORT_STDCALL(int32_t) TestSumSixMixed(double a, int8_t b, float c, int16_t d,
+                                        float e, int64_t f);
 
 EXPORT_STDCALL(int32_t) TestSumSevenInt32s(int32_t a, int32_t b, int32_t c,
                                            int32_t d, int32_t e, int32_t f,
@@ -195,6 +201,11 @@ EXPORT_STDCALL(int32_t) TestInvokeCallback_Int32_1_2(TestCallback_Int32_1 f,
 
 EXPORT_STDCALL(int32_t) TestInvokeCallback_Int32_2(TestCallback_Int32_2 f,
                                                    int32_t a, int32_t b);
+
+EXPORT_STDCALL(int32_t) TestInvokeCallback_Mixed_6(TestCallback_Mixed_6 g,
+                                                   double a, int8_t b, float c,
+                                                   int16_t d, float e,
+                                                   int64_t f);
 
 EXPORT_STDCALL(int32_t) TestInvokeCallback_Packed_Int8Int8Int16Int32(
     TestCallback_Packed_Int8Int8Int16Int32 f,

@@ -24,16 +24,36 @@ namespace jsdi {
 namespace abi_amd64 {
 namespace test64 {
 
-struct function
+template <typename T>
+static bool copy_to(const T& src, uint64_t * dst,
+                    size_t capacity /* in uint64_t */)
 {
-    void *                           func_ptr;
+    if (sizeof(src) <= sizeof(uint64_t) * capacity)
+    {
+        std::memcpy(dst, &src, sizeof(src));
+        return true;
+    }
+    return false;
+}
+
+struct function_data
+{
+    void *                           ptr;
     size_t                           nargs;
-    param_register_type              return_type;
+    param_register_type              ret_type;
     std::vector<param_register_type> arg_types;
     param_register_types             register_types;
-    char                             signature[256];
+    function_data(void *, param_register_type,
+                  const std::initializer_list<param_register_type>&);
+};
+
+struct function
+{
+    function_data   func;
+    function_data   invoker;
+    char            signature[256]; // signature of 'func'
     function(void *, param_register_type,
-             const std::initializer_list<param_register_type>&);
+             const std::initializer_list<param_register_type>&, void *);
 };
 
 struct function_list

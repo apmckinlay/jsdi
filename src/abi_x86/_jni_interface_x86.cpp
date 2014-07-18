@@ -142,6 +142,9 @@ inline const char * get_struct_ptr(jlong struct_addr, jint size_direct)
     return reinterpret_cast<const char *>(struct_addr);
 }
 
+// FIXME: The thunks are being allocated on a heap that has static storage
+//        duration, so this can't well have it too or there's likely to be some
+//        subtle static initialization trouble happening.
 thunk_clearing_list clearing_list;
 
 } // anonymous namespace

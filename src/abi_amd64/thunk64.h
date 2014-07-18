@@ -71,5 +71,4 @@
  } // namespace abi_amd64
  } // namespace jsdi
  
- 
-#endif // __INCLUDED_THUNK64_H___
+ #endif // __INCLUDED_THUNK64_H___
