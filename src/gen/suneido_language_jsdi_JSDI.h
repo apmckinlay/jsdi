@@ -23,22 +23,6 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_JSDI_init
 JNIEXPORT jstring JNICALL Java_suneido_language_jsdi_JSDI_when
   (JNIEnv *, jclass);
 
-/*
- * Class:     suneido_language_jsdi_JSDI
- * Method:    isTraceEnabled
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL Java_suneido_language_jsdi_JSDI_isTraceEnabled
-  (JNIEnv *, jobject);
-
-/*
- * Class:     suneido_language_jsdi_JSDI
- * Method:    setTraceEnabled
- * Signature: (Z)V
- */
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_JSDI_setTraceEnabled
-  (JNIEnv *, jobject, jboolean);
-
 #ifdef __cplusplus
 }
 #endif

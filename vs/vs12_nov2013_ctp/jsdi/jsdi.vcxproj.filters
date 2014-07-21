@@ -40,6 +40,9 @@
     <Filter Include="Source Files\src\test_com">
       <UniqueIdentifier>{c3ef134d-1cec-43b9-a346-ff016f570b2e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\src\gen\abi_x86">
+      <UniqueIdentifier>{59304c6a-98e5-43ab-aedc-44a6be7fa3d6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\test_com\test_com.h">
@@ -93,19 +96,7 @@
     <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_com_COMobject.h">
       <Filter>Header Files\src\gen</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_dll_DllFactory.h">
-      <Filter>Header Files\src\gen</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_dll_NativeCall.h">
-      <Filter>Header Files\src\gen</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_JSDI.h">
-      <Filter>Header Files\src\gen</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_ThunkManager.h">
-      <Filter>Header Files\src\gen</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_type_Structure.h">
       <Filter>Header Files\src\gen</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\suneido_protocol.h">
@@ -140,6 +131,18 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\abi_amd64\test64.h">
       <Filter>Header Files\src\abi_amd64</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_abi_x86_NativeCallX86.h">
+      <Filter>Header Files\src\gen\abi_x86</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_abi_x86_StructureX86.h">
+      <Filter>Header Files\src\gen\abi_x86</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_DllFactory.h">
+      <Filter>Header Files\src\gen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_abi_x86_ThunkManagerX86.h">
+      <Filter>Header Files\src\gen\abi_x86</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
