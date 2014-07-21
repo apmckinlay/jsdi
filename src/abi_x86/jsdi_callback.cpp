@@ -148,9 +148,7 @@ uint32_t jsdi_callback_basic::call(const uint32_t * args)
     //
     result = env->CallIntMethodA(
         d_suneido_callback_global_ref,
-        GLOBAL_REFS->suneido_language_jsdi_type_Callback__m_invoke(),
-        out_args
-    );
+        GLOBAL_REFS->suneido_jsdi_type_Callback__m_invoke(), out_args);
     /* NOTE B: The above JNI call need not be followed by a JNI_EXCEPTION_CHECK
      *         as long as it is the the last non-exception-handling code in the
      *         function. However, as explained in NOTE A, the JNI call should
@@ -236,7 +234,7 @@ uint32_t jsdi_callback_vi::call(const uint32_t * args)
     //
     result = env->CallIntMethodA(
         d_suneido_callback_global_ref,
-        GLOBAL_REFS->suneido_language_jsdi_type_Callback__m_invokeVariableIndirect(),
+        GLOBAL_REFS->suneido_jsdi_type_Callback__m_invokeVariableIndirect(),
         out_args
     );
     /** NOTE D: See NOTE B, above. The same argument applies verbatim. */

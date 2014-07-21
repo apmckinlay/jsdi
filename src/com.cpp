@@ -72,8 +72,7 @@ com_managed_bstr jstr_to_bstr(jstring jstr, JNIEnv * env)
 void throw_com_exception(JNIEnv * env, const char * message)
 {
     assert(env);
-    if (!env->ThrowNew(GLOBAL_REFS->suneido_language_jsdi_com_COMException(),
-                       message))
+    if (!env->ThrowNew(GLOBAL_REFS->suneido_jsdi_com_COMException(), message))
         throw jni_exception(message, true /* pending */);
     else
         throw std::runtime_error("failed to throw COMException");
@@ -85,8 +84,8 @@ void throw_com_exception(JNIEnv * env, jstring message)
     jni_auto_local<jthrowable> exception(
         env,
         static_cast<jthrowable>(env->NewObject(
-            GLOBAL_REFS->suneido_language_jsdi_com_COMException(),
-            GLOBAL_REFS->suneido_language_jsdi_com_COMException__init(),
+            GLOBAL_REFS->suneido_jsdi_com_COMException(),
+            GLOBAL_REFS->suneido_jsdi_com_COMException__init(),
             message)));
     JNI_EXCEPTION_CHECK(env);
     if (! exception) throw jni_bad_alloc("NewObject", __FUNCTION__);
@@ -225,8 +224,8 @@ jobject jni_make_comobject(JNIEnv * env, IUnknown * iunk)
     com_managed_interface<IUnknown> managed_iunk(iunk);
     // Create the COMobject.
     jobject result = env->NewObject(
-        GLOBAL_REFS->suneido_language_jsdi_com_COMobject(),
-        GLOBAL_REFS->suneido_language_jsdi_com_COMobject__init(),
+        GLOBAL_REFS->suneido_jsdi_com_COMobject(),
+        GLOBAL_REFS->suneido_jsdi_com_COMobject__init(),
         static_cast<jstring>(nullptr), reinterpret_cast<jlong>(iunk),
         JNI_FALSE);
     JNI_EXCEPTION_CHECK(env);
@@ -244,8 +243,8 @@ jobject jni_make_comobject(JNIEnv * env, IDispatch * idisp)
     jni_auto_local<jstring> progid(env, com::get_progid(idisp, env));
     // Create the COMobject.
     jobject result = env->NewObject(
-        GLOBAL_REFS->suneido_language_jsdi_com_COMobject(),
-        GLOBAL_REFS->suneido_language_jsdi_com_COMobject__init(),
+        GLOBAL_REFS->suneido_jsdi_com_COMobject(),
+        GLOBAL_REFS->suneido_jsdi_com_COMobject__init(),
         static_cast<jstring>(progid), reinterpret_cast<jlong>(idisp),
         JNI_TRUE);
     JNI_EXCEPTION_CHECK(env);
@@ -325,8 +324,7 @@ VARIANT& jsuneido_to_com(JNIEnv * env, jobject in, VARIANT& out)
         V_VT(&out) = VT_DATE;
         V_DATE(&out) = java_date_to_com_date(env, in);
     }
-    else if (env->IsInstanceOf(
-        in, GLOBAL_REFS->suneido_language_jsdi_com_COMobject()))
+    else if (env->IsInstanceOf(in, GLOBAL_REFS->suneido_jsdi_com_COMobject()))
     {
         // We need to get a live reference to the appropriate COM interface
         // in a thread-safe manner, so we need the equivalent of a Java
@@ -347,16 +345,15 @@ VARIANT& jsuneido_to_com(JNIEnv * env, jobject in, VARIANT& out)
         jni_auto_monitor(env, in);
         env->CallNonvirtualVoidMethod(
             in,
-            GLOBAL_REFS->suneido_language_jsdi_com_COMobject(),
-            GLOBAL_REFS
-                ->suneido_language_jsdi_com_COMobject__m_verifyNotReleased());
+            GLOBAL_REFS->suneido_jsdi_com_COMobject(),
+            GLOBAL_REFS->suneido_jsdi_com_COMobject__m_verifyNotReleased());
         JNI_EXCEPTION_CHECK(env); // Will throw if verifyNotReleased() fails
         jlong ptr = env->GetLongField(
-            in, GLOBAL_REFS->suneido_language_jsdi_com_COMobject__f_ptr());
+            in, GLOBAL_REFS->suneido_jsdi_com_COMobject__f_ptr());
         jboolean is_disp = env->CallNonvirtualBooleanMethod(
             in,
-            GLOBAL_REFS->suneido_language_jsdi_com_COMobject(),
-            GLOBAL_REFS->suneido_language_jsdi_com_COMobject__m_isDispatch());
+            GLOBAL_REFS->suneido_jsdi_com_COMobject(),
+            GLOBAL_REFS->suneido_jsdi_com_COMobject__m_isDispatch());
         assert(ptr || !"COMobject cannot contain a NULL pointer");
         if (is_disp)
         {

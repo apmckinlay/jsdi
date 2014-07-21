@@ -56,7 +56,7 @@ void jni_exception::throw_jni(JNIEnv * env) const
     {
         jclass clazz(0);
         // Try to get access to the JSDI exception class;
-        clazz = env->FindClass("suneido/language/jsdi/JSDIException");
+        clazz = env->FindClass("suneido/jsdi/JSDIException");
         if (! clazz)
         {
             LOG_ERROR("Unable to find normal exception class");

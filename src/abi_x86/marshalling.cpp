@@ -133,7 +133,7 @@ void marshalling_roundtrip::ptrs_finish_vi(
     {
         const marshalling_vi_container::tuple& tuple(vi_array_cpp.d_arrays[k]);
         switch (ordinal_enum_to_cpp<
-            suneido_language_jsdi_VariableIndirectInstruction>(vi_inst_array[k])
+            suneido_jsdi_VariableIndirectInstruction>(vi_inst_array[k])
         )
         {
             case NO_ACTION:
@@ -321,7 +321,7 @@ void unmarshaller_vi::vi_string_ptr(const char * str, int vi_index,
     assert(env || !"JNI environment cannot be NULL");
     assert(env || !"vi_array cannot be NULL");
     switch (ordinal_enum_to_cpp<
-        suneido_language_jsdi_VariableIndirectInstruction>(vi_inst)
+        suneido_jsdi_VariableIndirectInstruction>(vi_inst)
     )
     {
         case NO_ACTION:

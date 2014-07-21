@@ -93,12 +93,6 @@
     <ClInclude Include="..\..\..\src\util.h">
       <Filter>Header Files\src</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_com_COMobject.h">
-      <Filter>Header Files\src\gen</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_JSDI.h">
-      <Filter>Header Files\src\gen</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\suneido_protocol.h">
       <Filter>Header Files\src</Filter>
     </ClInclude>
@@ -132,16 +126,22 @@
     <ClInclude Include="..\..\..\src\abi_amd64\test64.h">
       <Filter>Header Files\src\abi_amd64</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_abi_x86_NativeCallX86.h">
-      <Filter>Header Files\src\gen\abi_x86</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_abi_x86_StructureX86.h">
-      <Filter>Header Files\src\gen\abi_x86</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_DllFactory.h">
+    <ClInclude Include="..\..\..\src\gen\suneido_jsdi_JSDI.h">
       <Filter>Header Files\src\gen</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_abi_x86_ThunkManagerX86.h">
+    <ClInclude Include="..\..\..\src\gen\suneido_jsdi_com_COMobject.h">
+      <Filter>Header Files\src\gen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\gen\suneido_jsdi_DllFactory.h">
+      <Filter>Header Files\src\gen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\gen\suneido_jsdi_abi_x86_NativeCallX86.h">
+      <Filter>Header Files\src\gen\abi_x86</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\gen\suneido_jsdi_abi_x86_StructureX86.h">
+      <Filter>Header Files\src\gen\abi_x86</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\gen\suneido_jsdi_abi_x86_ThunkManagerX86.h">
       <Filter>Header Files\src\gen\abi_x86</Filter>
     </ClInclude>
   </ItemGroup>

@@ -54,17 +54,17 @@ void check_array_atleast_1(const char * array_name, JNIEnv * env, jarray array)
 extern "C" {
 
 //==============================================================================
-//                  JAVA CLASS: suneido.language.jsdi.JSDI
+//                      JAVA CLASS: suneido.jsdi.JSDI
 //==============================================================================
 
-#include "gen/suneido_language_jsdi_JSDI.h"
+#include "gen/suneido_jsdi_JSDI.h"
     // This #include isn't strictly necessary -- the only caller of these
     // functions is the JVM. However, it is useful to have the generated code
     // around. Also, because you can only have one extern "C" symbol with the
     // same name, including the header allows the compiler to find prototype
     // declaration/definition conflicts.
 
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_JSDI_init
+JNIEXPORT void JNICALL Java_suneido_jsdi_JSDI_init
   (JNIEnv * env, jclass)
 {
     JNI_EXCEPTION_SAFE_BEGIN;
@@ -83,7 +83,7 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_JSDI_init
     JNI_EXCEPTION_SAFE_END(env);
 }
 
-JNIEXPORT jstring JNICALL Java_suneido_language_jsdi_JSDI_when
+JNIEXPORT jstring JNICALL Java_suneido_jsdi_JSDI_when
   (JNIEnv * env, jclass)
 {
     jstring result(0);
@@ -96,10 +96,10 @@ JNIEXPORT jstring JNICALL Java_suneido_language_jsdi_JSDI_when
 }
 
 //==============================================================================
-//               JAVA CLASS: suneido.language.jsdi.DllFactory
+//                    JAVA CLASS: suneido.jsdi.DllFactory
 //==============================================================================
 
-#include "gen/suneido_language_jsdi_DllFactory.h"
+#include "gen/suneido_jsdi_DllFactory.h"
     // This #include isn't strictly necessary -- the only caller of these
     // functions is the JVM. However, it is useful to have the generated code
     // around. Also, because you can only have one extern "C" symbol with the
@@ -107,11 +107,11 @@ JNIEXPORT jstring JNICALL Java_suneido_language_jsdi_JSDI_when
     // declaration/definition conflicts.
 
 /*
- * Class:     suneido_language_jsdi_DllFactory
+ * Class:     suneido_jsdi_DllFactory
  * Method:    loadLibrary
  * Signature: (Ljava/lang/String;)J
  */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_DllFactory_loadLibrary
+JNIEXPORT jlong JNICALL Java_suneido_jsdi_DllFactory_loadLibrary
   (JNIEnv * env, jclass, jstring libraryName)
 {
     jlong result(0);
@@ -126,11 +126,11 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_DllFactory_loadLibrary
 }
 
 /*
- * Class:     suneido_language_jsdi_DllFactory
+ * Class:     suneido_jsdi_DllFactory
  * Method:    freeLibrary
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_DllFactory_freeLibrary
+JNIEXPORT void JNICALL Java_suneido_jsdi_DllFactory_freeLibrary
   (JNIEnv * env, jclass, jlong hModule)
 {
     HMODULE hmodule = reinterpret_cast<HMODULE>(hModule);
@@ -139,11 +139,11 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_DllFactory_freeLibrary
 }
 
 /*
- * Class:     suneido_language_jsdi_DllFactory
+ * Class:     suneido_jsdi_DllFactory
  * Method:    getProcAddress
  * Signature: (JLjava/lang/String;)J
  */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_DllFactory_getProcAddress
+JNIEXPORT jlong JNICALL Java_suneido_jsdi_DllFactory_getProcAddress
   (JNIEnv * env, jclass, jlong hModule, jstring procName)
 {
     jlong result(0);
@@ -160,10 +160,10 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_DllFactory_getProcAddress
 }
 
 //==============================================================================
-//             JAVA CLASS: suneido.language.jsdi.com.COMobject
+//                  JAVA CLASS: suneido.jsdi.com.COMobject
 //==============================================================================
 
-#include "gen/suneido_language_jsdi_com_COMobject.h"
+#include "gen/suneido_jsdi_com_COMobject.h"
     // This #include isn't strictly necessary -- the only caller of these
     // functions is the JVM. However, it is useful to have the generated code
     // around. Also, because you can only have one extern "C" symbol with the
@@ -171,11 +171,11 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_DllFactory_getProcAddress
     // declaration/definition conflicts.
 
 /*
- * Class:     suneido_language_jsdi_com_COMobject
+ * Class:     suneido_jsdi_com_COMobject
  * Method:    queryIDispatchAndProgId
  * Signature: (J[Ljava/lang/String;)J
  */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_com_COMobject_queryIDispatchAndProgId(
+JNIEXPORT jlong JNICALL Java_suneido_jsdi_com_COMobject_queryIDispatchAndProgId(
     JNIEnv * env, jclass, jlong ptrToIUnknown,
     jobjectArray /* String[] */ progid)
 {
@@ -195,11 +195,11 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_com_COMobject_queryIDispatchA
 }
 
 /*
- * Class:     suneido_language_jsdi_com_COMobject
+ * Class:     suneido_jsdi_com_COMobject
  * Method:    coCreateFromProgId
  * Signature: (Ljava/lang/String;[J)Z
  */
-JNIEXPORT jboolean JNICALL Java_suneido_language_jsdi_com_COMobject_coCreateFromProgId(
+JNIEXPORT jboolean JNICALL Java_suneido_jsdi_com_COMobject_coCreateFromProgId(
     JNIEnv * env, jclass, jstring progid, jlongArray ptrPair)
 {
     jboolean did_create_object(false);
@@ -223,11 +223,11 @@ JNIEXPORT jboolean JNICALL Java_suneido_language_jsdi_com_COMobject_coCreateFrom
 }
 
 /*
- * Class:     suneido_language_jsdi_com_COMobject
+ * Class:     suneido_jsdi_com_COMobject
  * Method:    release
  * Signature: (JJ)V
  */
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_com_COMobject_release
+JNIEXPORT void JNICALL Java_suneido_jsdi_com_COMobject_release
  (JNIEnv * env, jclass, jlong ptrToIDispatch, jlong ptrToIUnknown)
 {
     JNI_EXCEPTION_SAFE_BEGIN
@@ -239,11 +239,11 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_com_COMobject_release
 }
 
 /*
- * Class:     suneido_language_jsdi_com_COMobject
+ * Class:     suneido_jsdi_com_COMobject
  * Method:    getPropertyByName
  * Signature: (JLjava/lang/String;[I)Ljava/lang/Object;
  */
-JNIEXPORT jobject JNICALL Java_suneido_language_jsdi_com_COMobject_getPropertyByName(
+JNIEXPORT jobject JNICALL Java_suneido_jsdi_com_COMobject_getPropertyByName(
     JNIEnv * env, jclass, jlong ptrToIDispatch, jstring name, jintArray dispid)
 {
     jobject result(0);
@@ -261,11 +261,11 @@ JNIEXPORT jobject JNICALL Java_suneido_language_jsdi_com_COMobject_getPropertyBy
 }
 
 /*
- * Class:     suneido_language_jsdi_com_COMobject
+ * Class:     suneido_jsdi_com_COMobject
  * Method:    getPropertyByDispId
  * Signature: (JI)Ljava/lang/Object;
  */
-JNIEXPORT jobject JNICALL Java_suneido_language_jsdi_com_COMobject_getPropertyByDispId(
+JNIEXPORT jobject JNICALL Java_suneido_jsdi_com_COMobject_getPropertyByDispId(
     JNIEnv * env, jclass, jlong ptrToIDispatch, jint dispid)
 {
     jobject result(0);
@@ -277,11 +277,11 @@ JNIEXPORT jobject JNICALL Java_suneido_language_jsdi_com_COMobject_getPropertyBy
 }
 
 /*
- * Class:     suneido_language_jsdi_com_COMobject
+ * Class:     suneido_jsdi_com_COMobject
  * Method:    putPropertyByName
  * Signature: (JLjava/lang/String;Ljava/lang/Object;)I
  */
-JNIEXPORT jint JNICALL Java_suneido_language_jsdi_com_COMobject_putPropertyByName(
+JNIEXPORT jint JNICALL Java_suneido_jsdi_com_COMobject_putPropertyByName(
     JNIEnv * env, jclass, jlong ptrToIDispatch, jstring name, jobject value)
 {
     DISPID dispid(0);
@@ -294,11 +294,11 @@ JNIEXPORT jint JNICALL Java_suneido_language_jsdi_com_COMobject_putPropertyByNam
 }
 
 /*
- * Class:     suneido_language_jsdi_com_COMobject
+ * Class:     suneido_jsdi_com_COMobject
  * Method:    putPropertyByDispId
  * Signature: (JILjava/lang/Object;)V
  */
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_com_COMobject_putPropertyByDispId(
+JNIEXPORT void JNICALL Java_suneido_jsdi_com_COMobject_putPropertyByDispId(
     JNIEnv * env, jclass, jlong ptrToIDispatch, jint dispid, jobject value)
 {
     JNI_EXCEPTION_SAFE_BEGIN
@@ -308,11 +308,11 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_com_COMobject_putPropertyByDis
 }
 
 /*
- * Class:     suneido_language_jsdi_com_COMobject
+ * Class:     suneido_jsdi_com_COMobject
  * Method:    callMethodByName
  * Signature: (JLjava/lang/String;[Ljava/lang/Object;[I)Ljava/lang/Object;
  */
-JNIEXPORT jobject JNICALL Java_suneido_language_jsdi_com_COMobject_callMethodByName(
+JNIEXPORT jobject JNICALL Java_suneido_jsdi_com_COMobject_callMethodByName(
     JNIEnv * env, jclass, jlong ptrToIDispatch, jstring name, jobjectArray args,
     jintArray dispid)
 {
@@ -331,11 +331,11 @@ JNIEXPORT jobject JNICALL Java_suneido_language_jsdi_com_COMobject_callMethodByN
 }
 
 /*
- * Class:     suneido_language_jsdi_com_COMobject
+ * Class:     suneido_jsdi_com_COMobject
  * Method:    callMethodByDispId
  * Signature: (JI[Ljava/lang/Object;)Ljava/lang/Object;
  */
-JNIEXPORT jobject JNICALL Java_suneido_language_jsdi_com_COMobject_callMethodByDispId(
+JNIEXPORT jobject JNICALL Java_suneido_jsdi_com_COMobject_callMethodByDispId(
     JNIEnv * env, jclass, jlong ptrToIDispatch, jint dispid, jobjectArray args)
 {
     jobject result(0);
