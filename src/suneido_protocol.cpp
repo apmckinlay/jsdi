@@ -206,8 +206,8 @@ canonicalized_ok:
                                      url_len);
     // Invoke Suneido with the URL
     jni_auto_local<jobject> data(env, env->CallStaticObjectMethod(
-        GLOBAL_REFS->suneido_language_jsdi_suneido_protocol_InternetProtocol(),
-        GLOBAL_REFS->suneido_language_jsdi_suneido_protocol_InternetProtocol__m_start(),
+        GLOBAL_REFS->suneido_jsdi_suneido_protocol_InternetProtocol(),
+        GLOBAL_REFS->suneido_jsdi_suneido_protocol_InternetProtocol__m_start(),
         static_cast<jstring>(url_java)));
     if (env->ExceptionCheck())
     {

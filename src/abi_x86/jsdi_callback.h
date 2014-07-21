@@ -130,7 +130,7 @@ inline jsdi_callback_vi::jsdi_callback_vi(JNIEnv * env,
     , d_vi_inst_array(
           vi_count,
           static_cast<int>(
-              suneido_language_jsdi_VariableIndirectInstruction::RETURN_JAVA_STRING)
+              suneido_jsdi_VariableIndirectInstruction::RETURN_JAVA_STRING)
       )
 { }
 
