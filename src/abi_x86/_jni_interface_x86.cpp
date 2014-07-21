@@ -67,7 +67,7 @@ inline jlong call_direct(JNIEnv * env, jlong funcPtr, jint sizeDirect,
     jlong result(0);
     JNI_EXCEPTION_SAFE_BEGIN
     LOG_TRACE("funcPtr => "    << reinterpret_cast<void *>(funcPtr) << ", " <<
-              "sizeDirect => " << sizeDirect);
+              "sizeDirect => " << sizeDirect << ", args => " << args);
     // NOTE: I had earlier noted that you could write a critical array version
     //       of jni_array (GetPrimitiveArrayCritical,
     //       ReleasePrimitiveArrayCritical). However, this isn't actually
@@ -150,10 +150,10 @@ thunk_clearing_list clearing_list;
 } // anonymous namespace
 
 //==============================================================================
-//             JAVA CLASS: suneido.language.jsdi.dll.NativeCall
+//          JAVA CLASS: suneido.language.jsdi.abi.x86.NativeCallX86
 //==============================================================================
 
-#include "gen/suneido_language_jsdi_dll_NativeCall.h"
+#include "gen/suneido_language_jsdi_abi_x86_NativeCallX86.h"
     // This #include isn't strictly necessary -- the only caller of these
     // functions is the JVM. However, it is useful to have the generated code
     // around. Also, because you can only have one extern "C" symbol with the
@@ -161,20 +161,20 @@ thunk_clearing_list clearing_list;
     // declaration/definition conflicts.
 
 /*
- * Class:     suneido_language_jsdi_dll_NativeCall
+ * Class:     suneido_language_jsdi_abi_x86_NativeCallX86
  * Method:    callDirectReturnInt64
  * Signature: (JI[B)J
  */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callDirectReturnInt64(
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_abi_x86_NativeCallX86_callDirectReturnInt64(
     JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jbyteArray args)
 { return call_direct(env, funcPtr, sizeDirect, args, invoke_stdcall_basic); }
 
 /*
- * Class:     suneido_language_jsdi_dll_NativeCall
+ * Class:     suneido_language_jsdi_abi_x86_NativeCallX86
  * Method:    callIndirectReturnInt64
  * Signature: (JI[B[I)J
  */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callIndirectReturnInt64(
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_abi_x86_NativeCallX86_callIndirectReturnInt64(
     JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jbyteArray args,
     jintArray ptrArray)
 {
@@ -182,13 +182,12 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callIndirectRe
                          invoke_stdcall_basic);
 }
 
-
 /*
- * Class:     suneido_language_jsdi_dll_NativeCall
+ * Class:     suneido_language_jsdi_abi_x86_NativeCallX86
  * Method:    callVariableIndirectReturnInt64
  * Signature: (JI[B[I[Ljava/lang/Object;[I)J
  */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIndirectReturnInt64(
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_abi_x86_NativeCallX86_callVariableIndirectReturnInt64(
     JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jbyteArray args,
     jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
 {
@@ -197,11 +196,11 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIn
 }
 
 /*
- * Class:     suneido_language_jsdi_dll_NativeCall
+ * Class:     suneido_language_jsdi_abi_x86_NativeCallX86
  * Method:    callDirectReturnDouble
  * Signature: (JI[B)J
  */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callDirectReturnDouble(
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_abi_x86_NativeCallX86_callDirectReturnDouble(
     JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jbyteArray args)
 {
     return call_direct(env, funcPtr, sizeDirect, args,
@@ -209,11 +208,11 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callDirectRetu
 }
 
 /*
- * Class:     suneido_language_jsdi_dll_NativeCall
+ * Class:     suneido_language_jsdi_abi_x86_NativeCallX86
  * Method:    callIndirectReturnDouble
  * Signature: (JI[B[I)J
  */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callIndirectReturnDouble(
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_abi_x86_NativeCallX86_callIndirectReturnDouble(
     JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jbyteArray args,
     jintArray ptrArray)
 {
@@ -222,11 +221,11 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callIndirectRe
 }
 
 /*
- * Class:     suneido_language_jsdi_dll_NativeCall
+ * Class:     suneido_language_jsdi_abi_x86_NativeCallX86
  * Method:    callVariableIndirectReturnDouble
  * Signature: (JI[B[I[Ljava/lang/Object;[I)J
  */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIndirectReturnDouble(
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_abi_x86_NativeCallX86_callVariableIndirectReturnDouble(
     JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jbyteArray args,
     jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
 {
@@ -235,11 +234,11 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIn
 }
 
 /*
- * Class:     suneido_language_jsdi_dll_NativeCall
+ * Class:     suneido_language_jsdi_abi_x86_NativeCallX86
  * Method:    callVariableIndirectReturnVariableIndirect
  * Signature: (JI[B[I[Ljava/lang/Object;[I)V
  */
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableIndirectReturnVariableIndirect(
+JNIEXPORT void JNICALL Java_suneido_language_jsdi_abi_x86_NativeCallX86_callVariableIndirectReturnVariableIndirect(
     JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jbyteArray args,
     jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
 {
@@ -266,10 +265,10 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableInd
 }
 
 //==============================================================================
-//              JAVA CLASS: suneido.language.jsdi.ThunkManager
+//        JAVA CLASS: suneido.language.jsdi.abi.x86.ThunkManagerX86
 //==============================================================================
 
-#include "gen/suneido_language_jsdi_ThunkManager.h"
+#include "gen/suneido_language_jsdi_abi_x86_ThunkManagerX86.h"
     // This #include isn't strictly necessary -- the only caller of these
     // functions is the JVM. However, it is useful to have the generated code
     // around. Also, because you can only have one extern "C" symbol with the
@@ -277,11 +276,11 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_dll_NativeCall_callVariableInd
     // declaration/definition conflicts.
 
 /*
- * Class:     suneido_language_jsdi_ThunkManager
- * Method:    newThunk
+ * Class:     suneido_language_jsdi_abi_x86_ThunkManagerX86
+ * Method:    newThunkX86
  * Signature: (Lsuneido/language/jsdi/type/Callback;Lsuneido/SuValue;II[II[J)V
  */
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_newThunk(
+JNIEXPORT void JNICALL Java_suneido_language_jsdi_abi_x86_ThunkManagerX86_newThunkX86(
     JNIEnv * env, jclass thunkManager, jobject callback, jobject boundValue,
     jint sizeDirect, jint sizeIndirect, jintArray ptrArray,
     jint variableIndirectCount, jlongArray outThunkAddrs)
@@ -310,25 +309,19 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_newThunk(
     void * func_addr(thunk->func_addr());
     static_assert(sizeof(stdcall_thunk *) <= sizeof(jlong), "fatal data loss");
     static_assert(sizeof(void *) <= sizeof(jlong), "fatal data loss");
-    out_thunk_addrs[env->GetStaticIntField(
-        thunkManager,
-        GLOBAL_REFS
-            ->suneido_language_jsdi_ThunkManager__f_THUNK_OBJECT_ADDR_INDEX())] =
-        reinterpret_cast<jlong>(thunk);
-    out_thunk_addrs[env->GetStaticIntField(
-        thunkManager,
-        GLOBAL_REFS
-            ->suneido_language_jsdi_ThunkManager__f_THUNK_FUNC_ADDR_INDEX())] =
-        reinterpret_cast<jlong>(func_addr);
+    out_thunk_addrs[suneido_language_jsdi_abi_x86_ThunkManagerX86_THUNK_OBJECT_ADDR_INDEX
+    ] = reinterpret_cast<jlong>(thunk);
+    out_thunk_addrs[suneido_language_jsdi_abi_x86_ThunkManagerX86_THUNK_FUNC_ADDR_INDEX
+    ] = reinterpret_cast<jlong>(func_addr);
     JNI_EXCEPTION_SAFE_END(env);
 }
 
 /*
- * Class:     suneido_language_jsdi_ThunkManager
- * Method:    deleteThunk
+ * Class:     suneido_language_jsdi_abi_x86_ThunkManagerX86
+ * Method:    deleteThunkX86
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_deleteThunk
+JNIEXPORT void JNICALL Java_suneido_language_jsdi_abi_x86_ThunkManagerX86_deleteThunkX86
   (JNIEnv * env, jclass, jlong thunkObjectAddr)
 {
     static_assert(sizeof(stdcall_thunk *) <= sizeof(jlong), "fatal data loss");
@@ -337,10 +330,10 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_deleteThunk
 }
 
 //==============================================================================
-//             JAVA CLASS: suneido.language.jsdi.type.Structure
+//          JAVA CLASS: suneido.language.jsdi.abi.x86.StructureX86
 //==============================================================================
 
-#include "gen/suneido_language_jsdi_type_Structure.h"
+#include "gen/suneido_language_jsdi_abi_x86_StructureX86.h"
     // This #include isn't strictly necessary -- the only caller of these
     // functions is the JVM. However, it is useful to have the generated code
     // around. Also, because you can only have one extern "C" symbol with the
@@ -348,11 +341,11 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_ThunkManager_deleteThunk
     // declaration/definition conflicts.
 
 /*
- * Class:     suneido_language_jsdi_type_Structure
+ * Class:     suneido_language_jsdi_abi_x86_StructureX86
  * Method:    copyOutDirect
  * Signature: (J[BI)V
  */
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutDirect(
+JNIEXPORT void JNICALL Java_suneido_language_jsdi_abi_x86_StructureX86_copyOutDirect(
     JNIEnv * env, jclass, jlong structAddr, jbyteArray data, jint sizeDirect)
 {
     JNI_EXCEPTION_SAFE_BEGIN
@@ -369,11 +362,11 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutDirect(
 }
 
 /*
- * Class:     suneido_language_jsdi_type_Structure
+ * Class:     suneido_language_jsdi_abi_x86_StructureX86
  * Method:    copyOutIndirect
  * Signature: (J[BI[I)V
  */
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutIndirect(
+JNIEXPORT void JNICALL Java_suneido_language_jsdi_abi_x86_StructureX86_copyOutIndirect(
     JNIEnv * env, jclass, jlong structAddr, jbyteArray data, jint sizeDirect,
     jintArray ptrArray)
 {
@@ -393,11 +386,11 @@ JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutIndirect
 }
 
 /*
- * Class:     suneido_language_jsdi_type_Structure
+ * Class:     suneido_language_jsdi_abi_x86_StructureX86
  * Method:    copyOutVariableIndirect
  * Signature: (J[BI[I[Ljava/lang/Object;[I)V
  */
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_type_Structure_copyOutVariableIndirect(
+JNIEXPORT void JNICALL Java_suneido_language_jsdi_abi_x86_StructureX86_copyOutVariableIndirect(
     JNIEnv * env, jclass, jlong structAddr, jbyteArray data, jint sizeDirect,
     jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
 {

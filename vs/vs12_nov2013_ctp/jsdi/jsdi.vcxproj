@@ -270,12 +270,12 @@
     <ClInclude Include="..\..\..\src\callback.h" />
     <ClInclude Include="..\..\..\src\com.h" />
     <ClInclude Include="..\..\..\src\com_util.h" />
+    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_abi_x86_NativeCallX86.h" />
+    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_abi_x86_StructureX86.h" />
+    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_abi_x86_ThunkManagerX86.h" />
     <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_com_COMobject.h" />
-    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_dll_DllFactory.h" />
-    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_dll_NativeCall.h" />
+    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_DllFactory.h" />
     <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_JSDI.h" />
-    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_ThunkManager.h" />
-    <ClInclude Include="..\..\..\src\gen\suneido_language_jsdi_type_Structure.h" />
     <ClInclude Include="..\..\..\src\global_refs.h" />
     <ClInclude Include="..\..\..\src\jsdi_windef.h" />
     <ClInclude Include="..\..\..\src\heap.h" />

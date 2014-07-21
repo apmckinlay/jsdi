@@ -148,7 +148,7 @@ void global_refs::init(JNIEnv * env) throw(jni_exception)
 
     global_refs * g = &global_refs_;
 
-    // [BEGIN:GENERATED CODE last updated Sat May 17 21:01:06 PDT 2014]
+    // [BEGIN:GENERATED CODE last updated Sat Jul 19 18:21:58 PDT 2014]
     g->java_lang_Object_ = get_global_class_ref(env, "java/lang/Object");
     g->java_lang_Object__m_toString_ = get_method_id(env, g->java_lang_Object_, "toString", "()Ljava/lang/String;");
     g->java_lang_Boolean_ = get_global_class_ref(env, "java/lang/Boolean");
@@ -172,9 +172,6 @@ void global_refs::init(JNIEnv * env) throw(jni_exception)
     g->java_util_Date_ = get_global_class_ref(env, "java/util/Date");
     g->java_util_Date__init_ = get_method_id(env, g->java_util_Date_, "<init>", "(J)V");
     g->java_util_Date__m_getTime_ = get_method_id(env, g->java_util_Date_, "getTime", "()J");
-    g->suneido_language_jsdi_ThunkManager_ = get_global_class_ref(env, "suneido/language/jsdi/ThunkManager");
-    g->suneido_language_jsdi_ThunkManager__f_THUNK_FUNC_ADDR_INDEX_ = get_static_field_id(env, g->suneido_language_jsdi_ThunkManager_, "THUNK_FUNC_ADDR_INDEX", "I");
-    g->suneido_language_jsdi_ThunkManager__f_THUNK_OBJECT_ADDR_INDEX_ = get_static_field_id(env, g->suneido_language_jsdi_ThunkManager_, "THUNK_OBJECT_ADDR_INDEX", "I");
     g->suneido_language_jsdi_type_Callback_ = get_global_class_ref(env, "suneido/language/jsdi/type/Callback");
     g->suneido_language_jsdi_type_Callback__m_invoke_ = get_method_id(env, g->suneido_language_jsdi_type_Callback_, "invoke", "(Lsuneido/SuValue;[B)I");
     g->suneido_language_jsdi_type_Callback__m_invokeVariableIndirect_ = get_method_id(env, g->suneido_language_jsdi_type_Callback_, "invokeVariableIndirect", "(Lsuneido/SuValue;[B[Ljava/lang/Object;)I");

@@ -96,10 +96,10 @@ JNIEXPORT jstring JNICALL Java_suneido_language_jsdi_JSDI_when
 }
 
 //==============================================================================
-//             JAVA CLASS: suneido.language.jsdi.dll.DllFactory
+//               JAVA CLASS: suneido.language.jsdi.DllFactory
 //==============================================================================
 
-#include "gen/suneido_language_jsdi_dll_DllFactory.h"
+#include "gen/suneido_language_jsdi_DllFactory.h"
     // This #include isn't strictly necessary -- the only caller of these
     // functions is the JVM. However, it is useful to have the generated code
     // around. Also, because you can only have one extern "C" symbol with the
@@ -107,11 +107,11 @@ JNIEXPORT jstring JNICALL Java_suneido_language_jsdi_JSDI_when
     // declaration/definition conflicts.
 
 /*
- * Class:     suneido_language_jsdi_dll_DllFactory
+ * Class:     suneido_language_jsdi_DllFactory
  * Method:    loadLibrary
  * Signature: (Ljava/lang/String;)J
  */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_DllFactory_loadLibrary
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_DllFactory_loadLibrary
   (JNIEnv * env, jclass, jstring libraryName)
 {
     jlong result(0);
@@ -119,27 +119,31 @@ JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_DllFactory_loadLibrary
     jni_utf16_string_region libraryName_(env, libraryName);
     HMODULE hmodule = LoadLibraryW(libraryName_.wstr());
     result = reinterpret_cast<jlong>(hmodule);
+    LOG_INFO("LoadLibraryW('" << jni_utf8_string_region(env, libraryName)
+                              << "') => " << hmodule);
     JNI_EXCEPTION_SAFE_END(env);
     return result;
 }
 
 /*
- * Class:     suneido_language_jsdi_dll_DllFactory
+ * Class:     suneido_language_jsdi_DllFactory
  * Method:    freeLibrary
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_suneido_language_jsdi_dll_DllFactory_freeLibrary
+JNIEXPORT void JNICALL Java_suneido_language_jsdi_DllFactory_freeLibrary
   (JNIEnv * env, jclass, jlong hModule)
 {
-    FreeLibrary(reinterpret_cast<HMODULE>(hModule));
+    HMODULE hmodule = reinterpret_cast<HMODULE>(hModule);
+    BOOL result = FreeLibrary(hmodule);
+    LOG_INFO("FreeLibrary(" << hmodule << ") => " << result);
 }
 
 /*
- * Class:     suneido_language_jsdi_dll_DllFactory
+ * Class:     suneido_language_jsdi_DllFactory
  * Method:    getProcAddress
  * Signature: (JLjava/lang/String;)J
  */
-JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_dll_DllFactory_getProcAddress
+JNIEXPORT jlong JNICALL Java_suneido_language_jsdi_DllFactory_getProcAddress
   (JNIEnv * env, jclass, jlong hModule, jstring procName)
 {
     jlong result(0);

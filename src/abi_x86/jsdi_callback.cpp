@@ -146,9 +146,8 @@ uint32_t jsdi_callback_basic::call(const uint32_t * args)
     //
     // CALL
     //
-    result = env->CallNonvirtualIntMethodA(
+    result = env->CallIntMethodA(
         d_suneido_callback_global_ref,
-        GLOBAL_REFS->suneido_language_jsdi_type_Callback(),
         GLOBAL_REFS->suneido_language_jsdi_type_Callback__m_invoke(),
         out_args
     );
@@ -235,9 +234,8 @@ uint32_t jsdi_callback_vi::call(const uint32_t * args)
     //
     // CALL
     //
-    result = env->CallNonvirtualIntMethodA(
+    result = env->CallIntMethodA(
         d_suneido_callback_global_ref,
-        GLOBAL_REFS->suneido_language_jsdi_type_Callback(),
         GLOBAL_REFS->suneido_language_jsdi_type_Callback__m_invokeVariableIndirect(),
         out_args
     );

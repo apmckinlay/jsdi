@@ -1692,6 +1692,17 @@ inline jni_utf16_string_region::const_iterator jni_utf16_string_region::end() co
 //==============================================================================
 
 /**
+ * \brief Inserts a \link jni_utf18_string_region\endlink into a
+ *        <code>std::ostream</code>
+ * \param o Target stream
+ * \param str String region to insert
+ * \see operator<<(utf16_ostream&, jstring)
+ */
+inline std::ostream& operator<<(std::ostream& o,
+                                const jni_utf8_string_region& str)
+{ return o << str.str(); }
+
+/**
  * \brief Inserts a <code>jstring</code> into a \link utf16_ostream\endlink
  * \param o Target stream
  * \param str Valid Java string to insert into <code>o</code>
