@@ -31,7 +31,7 @@ using namespace jsdi;
 /* TODO: do we need to be able to handle Win32 exceptions? If so, we'll want
  *       to wrap things in SEH code *at some level*. But do we want that
  *       overhead around every DLL call, regardless of whether it is expected
- *       to throw an exception? [See NOTES A-D in jsdi_callback.cpp]
+ *       to throw an exception? [See NOTES A-D in callback_x86.cpp]
  */
 
 namespace {
