@@ -111,9 +111,6 @@
     <ClInclude Include="..\..\..\src\abi_x86\stdcall_thunk.h">
       <Filter>Header Files\src\abi_x86</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\abi_x86\marshalling.h">
-      <Filter>Header Files\src\abi_x86</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\abi_amd64\invoke64.h">
       <Filter>Header Files\src\abi_amd64</Filter>
     </ClInclude>
@@ -143,6 +140,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\gen\suneido_jsdi_abi_x86_ThunkManagerX86.h">
       <Filter>Header Files\src\gen\abi_x86</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\marshalling.h">
+      <Filter>Header Files\src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -218,9 +218,6 @@
     <ClCompile Include="..\..\..\src\abi_x86\_jni_interface_x86.cpp">
       <Filter>Source Files\src\abi_x86</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\abi_x86\marshalling.cpp">
-      <Filter>Source Files\src\abi_x86</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\abi_amd64\invoke64.cpp">
       <Filter>Source Files\src\abi_x64</Filter>
     </ClCompile>
@@ -235,6 +232,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\abi_amd64\test64.cpp">
       <Filter>Source Files\src\abi_x64</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\marshalling.cpp">
+      <Filter>Source Files\src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

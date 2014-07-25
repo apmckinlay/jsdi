@@ -7,7 +7,7 @@
         -- doxygen
             [ ] Modify header style (include guard, then doxygen docs)
             [ ] Modify auto-generated header style.
-            [ ] Current number of warnings: 74 (down from 149) ... next: marshalling.h
+            [ ] Current number of warnings: 23 (down from 149) ... next: jsdi_callback.h
         -- cppcheck
 
 C++ CONFORMANCE LIVE ISSUES
@@ -30,11 +30,7 @@ OUTSTANDING BUGS/FEATURES
 
 MORE DOXYGEN ISSUES
 
-    - Next fix marshalling.h errors (about 57)
-    - Incorrect use of \link \endlink commands
-      Correct use is \link <Doxygen link tokens> <text of actual link>  \endlink
-      for example \link a::b::c() const Hello, there\endlink would make the text
-      "Hello, there" a link  to a::b::c() const
+    - Next fix jsdi_callback.h errors (about 17)
 
 ================================================================================
 DLL INTERFACE GRAMMAR CLAMPDOWNS

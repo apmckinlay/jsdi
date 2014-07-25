@@ -18,7 +18,7 @@ char const * const version::PLATFORM =
 #elif defined(_M_IX86)
 "x86"
 #else
-#error "unknown platform"
+#error unknown CPU architecture
 #endif
 ;
 

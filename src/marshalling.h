@@ -28,7 +28,35 @@
 #endif
 
 namespace jsdi {
-namespace abi_x86 {
+
+//==============================================================================
+//                          typdef marshall_word_t
+//                         typdef marshall_jarray_t
+//==============================================================================
+
+/**
+ * \brief Type of the data word processed by the marshalling algorithms on the
+ *        current platform
+ * \author Victor Schappert
+ * \since 20140722
+ * \see marshall_jarray_t
+ */
+typedef
+#if defined(_M_IX86)
+jint
+#elif defined(_M_AMD64)
+jlong
+#else
+#error unknown CPU architecture
+#endif // defined
+marshall_word_t;
+
+/**
+ * \brief Type of a JNI array of \link marshall_word_t\endlink
+ * \author Victor Schappert
+ * \since 20140722
+ */
+typedef jni_traits<marshall_word_t>::array_type marshall_jarray_t;
 
 //==============================================================================
 //                      class marshalling_vi_container
@@ -36,7 +64,16 @@ namespace abi_x86 {
 
 struct marshalling_roundtrip;
 
-// TODO: docs since 20130812 -- formerly jbyte_array_container in jsdi_jni.h/cpp
+/**
+ * \brief Opaque data structure to store variable indirect marshall/unmarshall
+ *        state needed by \link marshalling_roundtrip\endlink
+ * \author Victor Schappert
+ * \since 20130812
+ * \see marshalling_roundtrip#ptrs_init_vi(marshall_word_t *, jsize,
+        const jint *, jsize, JNIEnv *, jobjectArray, marshalling_vi_container&)
+ * \see marshalling_roundtrip#ptrs_finish_vi(jobjectArray,
+ *      marshalling_vi_container&, const jni_array_region<jint>&)
+ */
 class marshalling_vi_container : private non_copyable
 {
         //
@@ -46,10 +83,8 @@ class marshalling_vi_container : private non_copyable
         friend struct marshalling_roundtrip;
 
         //
-        // TYPES
+        // INTERNAL TYPES
         //
-
-    public:
 
         struct tuple
         {
@@ -61,23 +96,25 @@ class marshalling_vi_container : private non_copyable
                 jboolean   d_is_copy;
         };
 
-        //
-        // INTERNAL TYPES
-        //
-
-    private:
-
         typedef std::vector<tuple> vector_type;
 
         //
         // DATA
         //
 
-    private:
-
         vector_type  d_arrays;
         JNIEnv     * d_env;
-        jobjectArray d_object_array;
+        jobjectArray d_object_array;    // NOT OWNED
+
+        //
+        // INTERNALS
+        //
+
+        void put_not_null(size_t pos, jbyteArray array, jbyte ** pp_array);
+
+        void put_null(size_t pos, jbyte ** pp_array);
+
+        void replace_byte_array(size_t pos, jobject new_object);
 
         //
         // CONSTRUCTORS
@@ -85,6 +122,18 @@ class marshalling_vi_container : private non_copyable
 
     public:
 
+        /**
+         * \brief Constructs variable indirect roundtrip state
+         * \param size Number of variable indirect pointers state must hold
+         * \param env JNI environment
+         * \param object_array Java <code>Object</code> array having length at
+         *        least <code>size</code> where modifications to the state
+         *        should be made
+         *
+         * \note
+         * This object does not become the owner of <code>object_array</code>
+         * and is not responsible for destroying it.
+         */
         marshalling_vi_container(size_t size, JNIEnv * env,
                                  jobjectArray object_array);
 
@@ -96,6 +145,10 @@ class marshalling_vi_container : private non_copyable
 
     public:
 
+        /**
+         * \brief Returns the number of contained variable indirect pointers
+         * \return Variable indirect pointer count
+         */
         size_t size() const;
 
         //
@@ -103,36 +156,24 @@ class marshalling_vi_container : private non_copyable
         //
 
     public:
-
-        void put_not_null(size_t pos, jbyteArray array, jbyte ** pp_array);
-
-        void put_return_value(size_t pos, jbyte * str);
-
-        void put_null(size_t pos, jbyte ** pp_array);
-
-        void replace_byte_array(size_t pos, jobject new_object);
+    
+        /**
+         * \brief Stores a string pointer to be returned as part of a function
+         *        return value
+         * \param str Pointer to string, may be <code>null</code>
+         */
+        void put_return_value(jbyte * str);
 };
-
-constexpr marshalling_vi_container::tuple NULL_TUPLE = { nullptr, nullptr,
-                                                         nullptr, JNI_FALSE };
-    // On gcc 4.6.2 (MinGW), you can't declare this inside the definition of
-    // marshalling_vi_container or the compiler complains.
 
 inline marshalling_vi_container::marshalling_vi_container(
     size_t size, JNIEnv * env, jobjectArray object_array)
-    : d_arrays(size, NULL_TUPLE)
+    : d_arrays(size, { nullptr, nullptr, nullptr, JNI_FALSE })
     , d_env(env)
     , d_object_array(object_array)
 { assert(env && object_array); }
 
 inline size_t marshalling_vi_container::size() const
 { return d_arrays.size(); }
-
-inline void marshalling_vi_container::put_return_value(size_t pos, jbyte * str)
-{ // FOR USE BY RETURN VALUE
-    tuple& t = d_arrays[pos];
-    *t.d_pp_arr = str;
-}
 
 inline void marshalling_vi_container::put_null(size_t pos, jbyte ** pp_array)
 {
@@ -158,6 +199,16 @@ inline void marshalling_vi_container::replace_byte_array(
     JNI_EXCEPTION_CHECK(d_env);
 }
 
+inline void marshalling_vi_container::put_return_value(jbyte * str)
+{
+    assert(0 < size() || !"can't put return value in empty container");
+    tuple& t = d_arrays[size()-1];
+    assert(! t.d_elems   || !"return value must go in unused tuple");
+    assert(! t.d_global  || !"return value must go in unused tuple");
+    assert(! t.d_is_copy || !"return value must go in unused tuple");
+    *t.d_pp_arr = str; // t.d_pp_arr was initialized by ptrs_init_vi()
+}
+
 //==============================================================================
 //                       struct marshalling_roundtrip
 //==============================================================================
@@ -170,25 +221,122 @@ inline void marshalling_vi_container::replace_byte_array(
  * \since 20130812
  * \see unmarshaller_indirect
  * \see unmarshaller_vi
+ *
+ * The functions in this namespace are used when a roundtrip from Java to JNI
+ * and back to Java is required. The "roundtrip" is composed of two phases:
+ *
+ * -# an "init" phase, in which pointers <code>args</code> storage block are
+ *    initialized (this phase is, of course, necessary because Java has no
+ *    concept of pointers and so we have to travel through all the data words in
+ *    <code>args</code> that represent pointers and set their values to the
+ *    address they are supposed to point to); and
+ * -# a "finish" phase&mdash;only necessary where one or more pointers points to
+ *    variable indirect storage&mdash;where variable indirect objects are
+ *    unmarshalled into Java <code>Object</code>'s before they are sent back to
+ *    the Java side (<em>this variable indirect unmarshalling is in contrast to
+ *    ordinary direct and indirect storage values, which are completely
+ *    unmarshalled on the Java side</em>).
+ *
+ * These functions are not used in non-roundtrip situations (<em>ie</em> a call
+ * to copy out a <code>struct</code>, or a <code>callback</code> invocation)
+ * where the "init" phase is implicitly done by the person who owns the
+ * <code>struct</code>, or the callback invoker. In these cases, the appropriate
+ * class derived from \link unmarshaller_base\endlink should be used.
  */
 struct marshalling_roundtrip
 {
+        /**
+         * \brief Constant value indicating a <code>null</code> pointer
+         *
+         * This value can only ever appear as the second value of a pointer pair
+         * in a pointer array.
+         *
+         * A pointer array is a list of pairs <code>&lt;<i>x</i>,
+         * <i>y</i>&gt;</code> where <code><i>x</i></code> is an index into the
+         * <code>args</code> array giving the index of the pointer; and
+         * <code><i>y</i></code> is either a positive number giving the
+         * <strong>byte</strong> offset into <code>args</code> where the pointer
+         * <code><i>x</i></code> must point, <em>or</em> the value
+         * <code>UNKNOWN_LOCATION</code>, indicating that  <code><i>x</i></code>
+         * must be set to a <code>null</code> pointer.
+         *
+         * \note
+         * - For clarity, the value <code><i>x</i></code> in each tuple is a
+         *   \link marshall_word_t\endlink offset, <strong>not a byte
+         *   offset!</strong>
+         * - The value <code><i>y</i></code>, assuming it is not set to
+         *   <code>UNKNOWN_LOCATION</code>, is a byte offset.
+         */
         static constexpr jint UNKNOWN_LOCATION = -1;
 
-        static void ptrs_init(jbyte * args, const jint * ptr_array,
+        /**
+         * \brief Initializes a storage block that contains ordinary pointers to
+         *        locations within the block but no variable indirect pointers
+         * \param args Storage block
+         * \param ptr_array List of pointer pairs
+         * \param ptr_array_size Number of <em>values</em> in
+         *        <code>ptr_array</code> (this is always an even number)
+         * \see #ptrs_init_vi(marshall_word_t *, jsize, const jint *, jsize,
+         *                    JNIEnv *, jobjectArray, marshalling_vi_container&)
+         *
+         * This function will not fail with the parameter
+         * <code>ptr_array_size</code> set to zero, but it will do no work since
+         * an empty pointer array implies only direct storage (<em>ie</em> no
+         * pointers). Pure direct storage does not need an "init" phase.
+         */
+        static void ptrs_init(marshall_word_t * args, const jint * ptr_array,
                               jsize ptr_array_size);
 
-        static void ptrs_init_vi(jbyte * args, jsize args_size,
+        /**
+         * \brief Initializes a storage block that contains variable indirect
+         *        pointers&mdash;and possibly ordinary pointers as well
+         * \param args Storage block
+         * \param args_size Number of values in <code>args</code>
+         * \param ptr_array List of pointer pairs
+         * \param ptr_array_size Number of <em>values</em> in
+         *        <code>ptr_array</code> (this is always an even number)
+         * \param env JNI environment
+         * \param vi_array_in Input variable indirect object array
+         * \param vi_array_out Fresh \link marshalling_vi_container\endlink
+         *        which receives the state needed to complete the roundtrip via
+         *        \link #ptrs_finish_vi(jobjectArray, marshalling_vi_container&, const jni_array_region<jint>&)
+         *        ptrs_finish_vi(...)\endlink
+         * \see #ptrs_init(marshall_word_t *, const jint *, jsize)
+         *
+         * In order to unmarshall any changes to the variable indirect storage,
+         * \link #ptrs_finish_vi(jobjectArray, marshalling_vi_container&, const jni_array_region<jint>&)
+         * ptrs_finish_vi(...)\endlink must be called after <code>args</code>
+         * has been passed to the invoked function.
+         *
+         * \note
+         * For clarity, the parameter <code>args_size</code> is a count of
+         * \link marshall_word_t\endlink, not bytes!
+         */
+        static void ptrs_init_vi(marshall_word_t * args, jsize args_size,
                                  const jint * ptr_array, jsize ptr_array_size,
                                  JNIEnv * env, jobjectArray vi_array_in,
                                  marshalling_vi_container& vi_array_out);
 
-        static void ptrs_finish_vi(JNIEnv * env, jobjectArray vi_array_java,
+        /**
+         * \brief Converts variable indirect values back into Java
+         *        <code>Object</code> instances so they can be sent back to the
+         *        Java side
+         * \param vi_array_java Array to receive variable indirect values
+         *        unmarshalled out of <code>vi_array_cpp</code>
+         * \param vi_array_cpp State initialized in
+         *        \link #ptrs_init_vi(marshall_word_t *, jsize, const jint *, jsize, JNIEnv *, jobjectArray, marshalling_vi_container&)
+         *        ptrs_init_vi(...)\endlink, points to variable indiret values to
+         *        extract
+         * \param vi_inst_array Variable indirect instruction array, explains
+         *        how to unmarshall out each variable indirect value
+         * \see #ptrs_init_vi(marshall_word_t *, jsize, const jint *, jsize, JNIEnv *, jobjectArray, marshalling_vi_container&)
+         */
+        static void ptrs_finish_vi(jobjectArray vi_array_java,
                                    marshalling_vi_container& vi_array_cpp,
                                    const jni_array_region<jint>& vi_inst_array);
 };
 
-inline void marshalling_roundtrip::ptrs_init(jbyte * args,
+inline void marshalling_roundtrip::ptrs_init(marshall_word_t * args,
                                              const jint * ptr_array,
                                              jsize ptr_array_size)
 {
@@ -196,16 +344,17 @@ inline void marshalling_roundtrip::ptrs_init(jbyte * args,
     jint const * i(ptr_array), * e(ptr_array + ptr_array_size);
     while (i < e)
     {
-        jint ptr_pos = *i++;
-        jint ptd_to_pos = *i++;
+        jint ptr_word_index = *i++;
+        jint ptd_to_byte_offset = *i++;
         // If the Java-side marshaller put UNKNOWN_LOCATION as the location to
         // point to, just skip this pointer -- we will trust that the Java side
         // put a NULL value into the data array. Otherwise, set the pointer in
         // the data array to point to the appropriate location.
-        if (UNKNOWN_LOCATION != ptd_to_pos)
+        if (UNKNOWN_LOCATION != ptd_to_byte_offset)
         {
-            jbyte ** ptr_addr = reinterpret_cast<jbyte **>(&args[ptr_pos]);
-            jbyte * ptd_to_addr = &args[ptd_to_pos];
+            jbyte ** ptr_addr = reinterpret_cast<jbyte **>(&args[ptr_word_index]);
+            jbyte * ptd_to_addr = reinterpret_cast<jbyte *>(args) +
+                                  ptd_to_byte_offset;
             // Possible alignment issue if the Java-side marshaller didn't set
             // things up so that the pointers are word-aligned. This is the
             // Java side's job, however, and we trust it was done properly.
@@ -218,6 +367,17 @@ inline void marshalling_roundtrip::ptrs_init(jbyte * args,
 //                          class unmarshaller_base
 //==============================================================================
 
+/**
+ * \brief Base for classes that unmarshall data from native &rarr; Java
+ *       (<em>ie</em> not used for roundtrip Java &rarr; native &rarr; Java)
+ * \author Victor Schappert
+ * \since 20130813
+ * 
+ * Classes derived from this class are used for one-way unmarshalling, as in
+ * <code>struct</code> copy-outs and <code>callback</code> invocations. Where a
+ * roundtrip is involved, as in a function call, use
+ * \link marshalling_roundtrip\endlink.
+ */
 class unmarshaller_base : private non_copyable
 {
         //
@@ -226,8 +386,32 @@ class unmarshaller_base : private non_copyable
 
     protected:
 
-        int         d_size_direct;
-        int         d_size_total;
+        /** \cond internal */
+        const int   d_size_direct;
+        const int   d_size_total;
+        /** \endcond internal */
+
+        //
+        // INTERNAL TYPES
+        //
+
+    protected:
+
+        /**
+         * \brief Type of a pointer, itself located within a marshalled data
+         *        block, to a pointer at an arbitrary location in the address
+         *        space
+         * \see #addr_of_ptr(const marshall_word_t *, int)
+         * \see #ptr_to_datablock_t
+         */
+        typedef uint8_t * const * ptr_to_anywhere_ptr_t;
+        /**
+         * \brief Type of a pointer to an address at some offset within the
+         *        marshalled data block
+         * \see #addr_of_byte(marshall_word_t *, int)
+         * \see #ptr_to_anywhere_ptr_t
+         */
+        typedef uint8_t * ptr_to_datablock_t;
 
         //
         // INTERNALS
@@ -235,7 +419,41 @@ class unmarshaller_base : private non_copyable
 
     protected:
 
-        static char ** to_char_ptr_ptr(char * data, int ptr_pos);
+        /**
+         * \brief Returns the address of a pointer within a marshalled data
+         *        block
+         * \param data Pointer to start of data block
+         * \param word_index Index of the pointer within <code>data</code>
+         * \return Address of the <code>marshall_word_t</code> at position
+         *         <code>word_index</code>, typed as a <code>const</code>
+         *         #ptr_to_anywhere_ptr_t
+         * \see #addr_of_byte(marshall_word_t *, int)
+         *
+         * The return value is typed as <code><b>const</b></code>
+         * #ptr_to_anywhere_ptr_t for the following reasons:
+         * - since the data is being unmarshalled, the pointer locations
+         *   themselves do not need to be touched, hence the <code>const</code>;
+         * - the pointer may point to any arbitrary byte location within the
+         *   process address space, therefore it is a #ptr_to_anywhere_ptr_t;
+         *   and
+         * - such an arbitrary location may be read-only, thus the reason
+         *   #ptr_to_anywhere_ptr_t is itself a pointer to a <code>const</code>
+         *   byte location.
+         */
+        static const ptr_to_anywhere_ptr_t addr_of_ptr(
+            const marshall_word_t * data, int word_index);
+
+        /**
+         * \brief Returns the address of a byte within a marshalled data block
+         * \param data Pointer to start of data block
+         * \param byte_offset Amount, in bytes, the desired address is offset
+         *        from the start of the data block
+         * \return Address of the byte <code>byte_offset</code> bytes past
+         *         <code>data</code>
+         * \see #addr_of_ptr(const marshall_word_t *, int word_index)
+         */
+        static ptr_to_datablock_t addr_of_byte(marshall_word_t * data,
+                                               int byte_offset);
 
         //
         // CONSTRUCTORS
@@ -243,16 +461,36 @@ class unmarshaller_base : private non_copyable
 
     protected:
 
+        /**
+         * \brief Constructs a base unmarshaller suitable for a data block of a
+         *        given total size containing a direct block of a given size
+         * \param size_direct Size, in bytes, of the direct data at the start of
+         *        the marshalled data block: <code>0 &lt; size_direct &le;
+         *        size_total</code> <em>must be a multiple of
+         *        <code>sizeof(marshall_word_t)</code></em>
+         * \param size_total Size, in bytes, of the whole marshalled data block
+         *        <em>must be a multiple of
+         *        <code>sizeof(marshall_word_t)</code></em>
+         */
         unmarshaller_base(int size_direct, int size_total);
 };
 
-inline char ** unmarshaller_base::to_char_ptr_ptr(char * data, int ptr_pos)
-{ return reinterpret_cast<char **>(&data[ptr_pos]); }
+inline const unmarshaller_base::ptr_to_anywhere_ptr_t
+unmarshaller_base::addr_of_ptr(const marshall_word_t * data, int word_index)
+{ return reinterpret_cast<const ptr_to_anywhere_ptr_t>(&data[word_index]); }
+
+inline unmarshaller_base::ptr_to_datablock_t unmarshaller_base::addr_of_byte(
+    marshall_word_t * data, int byte_offset)
+{ return reinterpret_cast<ptr_to_datablock_t>(data) + byte_offset; }
 
 inline unmarshaller_base::unmarshaller_base(int size_direct, int size_total)
     : d_size_direct(size_direct)
     , d_size_total(size_total)
-{ assert(0 <= size_direct && size_direct <= size_total); }
+{
+    assert(0 <= size_direct && size_direct <= size_total);
+    assert(0 == size_direct % sizeof(marshall_word_t));
+    assert(0 == size_total % sizeof(marshall_word_t));
+}
 
 //==============================================================================
 //                        class unmarshaller_indirect
@@ -275,7 +513,10 @@ class unmarshaller_indirect : public unmarshaller_base
 
     public:
 
-        typedef const int * ptr_iterator_type;
+        /**
+         * \brief Type of an iterator over a pointer list
+         */
+        typedef const int * ptr_iterator_t;
 
         //
         // DATA
@@ -283,8 +524,10 @@ class unmarshaller_indirect : public unmarshaller_base
 
     protected:
 
-        ptr_iterator_type d_ptr_begin;
-        ptr_iterator_type d_ptr_end;
+        /** \cond internal */
+        ptr_iterator_t d_ptr_begin;  // start of pointer list
+        ptr_iterator_t d_ptr_end;    // end of pointer list
+        /** \endcond internal */
 
         //
         // INTERNALS
@@ -292,8 +535,8 @@ class unmarshaller_indirect : public unmarshaller_base
 
     private:
 
-        void normal_ptr(char * data, int ptr_pos, int ptd_to_pos,
-                        ptr_iterator_type& ptr_i) const;
+        void normal_ptr(marshall_word_t * data, int ptr_word_index,
+                        int ptd_to_byte_offset,  ptr_iterator_t& ptr_i) const;
 
         //
         // CONSTRUCTORS
@@ -301,9 +544,23 @@ class unmarshaller_indirect : public unmarshaller_base
 
     public:
 
+        /**
+         * \brief Constructs an indirect storage unmarshaller
+         * \param size_direct Size, in bytes, of the direct data at the start of
+         *        the marshalled data block: <code>0 &lt; size_direct &le;
+         *        size_total</code> <em>must be a multiple of
+         *        <code>sizeof(marshall_word_t)</code></em>
+         * \param size_total Size, in bytes, of the whole marshalled data block
+         *        <em>must be a multiple of
+         *        <code>sizeof(marshall_word_t)</code></em>
+         * \param ptr_begin Iterator to first element in pointer list
+         * \param ptr_end Iterator one-past the last element in the pointer list
+         *
+         * The pointer list must contain an even number of elements.
+         */
         unmarshaller_indirect(int size_direct, int size_total,
-                              const ptr_iterator_type& ptr_begin,
-                              const ptr_iterator_type& ptr_end);
+                              const ptr_iterator_t& ptr_begin,
+                              const ptr_iterator_t& ptr_end);
 
         //
         // ACCESSORS
@@ -311,29 +568,35 @@ class unmarshaller_indirect : public unmarshaller_base
 
     public:
 
-        void unmarshall_indirect(char * to, const char * from) const;
+        /**
+         * \brief Unmarshalls a data block containing indirect storage (normal
+         *        pointers but no variable indirect pointers)
+         * \param from Address of marshalled data block
+         * \param to Address of data block to unmarshall into
+         */
+        void unmarshall_indirect(const void * from, marshall_word_t * to) const;
 };
 
 inline unmarshaller_indirect::unmarshaller_indirect(
     int size_direct,
     int size_total,
-    const ptr_iterator_type& ptr_begin,
-    const ptr_iterator_type& ptr_end)
+    const ptr_iterator_t& ptr_begin,
+    const ptr_iterator_t& ptr_end)
     : unmarshaller_base(size_direct, size_total)
     , d_ptr_begin(ptr_begin)
     , d_ptr_end(ptr_end)
 { }
 
 inline void unmarshaller_indirect::unmarshall_indirect(
-    char * to, const char * from) const
+    const void * from, marshall_word_t * to) const
 {
     std::memcpy(to, from, d_size_direct);
-    ptr_iterator_type ptr_i(d_ptr_begin), ptr_e(d_ptr_end);
+    ptr_iterator_t ptr_i(d_ptr_begin), ptr_e(d_ptr_end);
     while (ptr_i != ptr_e)
     {
-        int ptr_pos = *ptr_i++;
-        int ptd_to_pos = *ptr_i++;
-        normal_ptr(to, ptr_pos, ptd_to_pos, ptr_i);
+        int ptr_word_index = *ptr_i++;
+        int ptd_to_byte_offset = *ptr_i++;
+        normal_ptr(to, ptr_word_index, ptd_to_byte_offset, ptr_i);
     }
 }
 
@@ -369,15 +632,35 @@ class unmarshaller_vi_base : public unmarshaller_indirect
 
         bool is_vi_ptr(int ptd_to_pos) const;
 
-        void vi_ptr(char * data, int ptr_pos, int ptd_to_pos, JNIEnv * env,
-                    jobjectArray vi_array, const int * vi_inst_array);
+        void vi_ptr(marshall_word_t * data, int ptr_word_index, int ptd_to_pos,
+                    JNIEnv * env, jobjectArray vi_array,
+                    const int * vi_inst_array);
 
-        void normal_ptr(char * data, int ptr_pos, int ptd_to_pos,
-                        ptr_iterator_type& ptr_i, JNIEnv * env,
-                        jobjectArray vi_array, const int * vi_inst_array);
+        void normal_ptr(marshall_word_t * data, int ptr_word_index,
+                        int ptd_to_byte_offset, ptr_iterator_t& ptr_i,
+                        JNIEnv * env, jobjectArray vi_array,
+                        const int * vi_inst_array);
 
     protected:
 
+        /**
+         * \brief Allows derived class to unmarshall a zero-terminated string of
+         *        8-bit characters
+         * \param str Non-<code>null</code> address of zero-terminated string
+         * \param vi_index Index of the variable indirect pointer (a number in
+         *        the range <code>[0..length(vi_array)-1]</code>)
+         * \param env JNI environment, required to manipulate
+         *            <code>vi_array</code>
+         * \param vi_array Variable indirect output array; the unmarshalled
+         *        string should be placed at index <code>vi_index</code> within
+         *        this array
+         * \param vi_inst Variable indirect instruction (specifies what kind of
+         *        Java value <code>str</code> should be converted to)
+         *
+         * Called by \link #unmarshall_vi(const void *, marshall_word_t *, JNIEnv *, jobjectArray, const int *)
+         * unmarshall_vi(...)\endlink when a variable indirect pointer is
+         * encountered.
+         */
         virtual void vi_string_ptr(const char * str, int vi_index, JNIEnv * env,
                                    jobjectArray vi_array, int vi_inst) = 0;
 
@@ -387,13 +670,27 @@ class unmarshaller_vi_base : public unmarshaller_indirect
 
     public:
 
+        /**
+         * \brief Constructs a base variable indirect storage unmarshaller
+         * \param size_direct Size, in bytes, of the direct data at the start of
+         *        the marshalled data block: <code>0 &lt; size_direct &le;
+         *        size_total</code> <em>must be a multiple of
+         *        <code>sizeof(marshall_word_t)</code></em>
+         * \param size_total Size, in bytes, of the whole marshalled data block
+         *        <em>must be a multiple of
+         *        <code>sizeof(marshall_word_t)</code></em>
+         * \param ptr_begin Iterator to first element in pointer list
+         * \param ptr_end Iterator one-past the last element in the pointer list
+         * \param vi_count Number of variable indirect pointers:
+         *                 <code>0 &le; vi_count</code>
+         *
+         * The pointer list must contain an even number of elements.
+         */
         unmarshaller_vi_base(int size_direct, int size_total,
-                             const ptr_iterator_type& ptr_begin,
-                             const ptr_iterator_type& ptr_end, int vi_count);
+                             const ptr_iterator_t& ptr_begin,
+                             const ptr_iterator_t& ptr_end, int vi_count);
 
-        virtual ~unmarshaller_vi_base();
-            // NOTE: 'virtual ~unmarshaller_vi() = default;' would be preferable
-            //       but MinGW/gcc 4.5.3 doesn't seem to support it.
+        virtual ~unmarshaller_vi_base() = default;
 
         //
         // ACCESSORS
@@ -401,8 +698,20 @@ class unmarshaller_vi_base : public unmarshaller_indirect
 
     public:
 
-        void unmarshall_vi(char * to, const char * from, JNIEnv * env,
-                           jobjectArray vi_array,
+        /**
+         * \brief Unmarshalls a data block containing variable indirect pointers
+         * \param from Address of marshalled data block
+         * \param to Address of data block to unmarshall into
+         * \param env JNI environment
+         * \param vi_array Variable indirect output array
+         * \param vi_inst_array Variable indirect instruction array
+         *
+         * The elements of <code>vi_inst_array</code> are in one-to-one
+         * correspondence with the elements of <code>vi_array</code> and are
+         * instructions on how to unmarshall each variable indirect pointer.
+         */
+        void unmarshall_vi(const void * from, marshall_word_t * to,
+                           JNIEnv * env, jobjectArray vi_array,
                            const int * vi_inst_array);
 };
 
@@ -410,29 +719,29 @@ inline bool unmarshaller_vi_base::is_vi_ptr(int ptd_to_pos) const
 { return unmarshaller_base::d_size_total <= ptd_to_pos; }
 
 inline unmarshaller_vi_base::unmarshaller_vi_base(
-    int size_direct, int size_total, const ptr_iterator_type& ptr_begin,
-    const ptr_iterator_type& ptr_end, int vi_count)
+    int size_direct, int size_total, const ptr_iterator_t& ptr_begin,
+    const ptr_iterator_t& ptr_end, int vi_count)
     : unmarshaller_indirect(size_direct, size_total, ptr_begin, ptr_end)
     , d_vi_count(vi_count)
 { assert(0 <= vi_count); }
 
-inline void unmarshaller_vi_base::unmarshall_vi(char * to, const char * from,
-                                                JNIEnv * env,
-                                                jobjectArray vi_array,
-                                                const int * vi_inst_array)
+inline void unmarshaller_vi_base::unmarshall_vi(
+    const void * from, marshall_word_t * to, JNIEnv * env,
+    jobjectArray vi_array, const int * vi_inst_array)
 {
     std::memcpy(to, from, unmarshaller_base::d_size_direct);
-    ptr_iterator_type ptr_i(unmarshaller_indirect::d_ptr_begin),
-                      ptr_e(unmarshaller_indirect::d_ptr_end);
+    ptr_iterator_t ptr_i(unmarshaller_indirect::d_ptr_begin),
+                   ptr_e(unmarshaller_indirect::d_ptr_end);
     while (ptr_i != ptr_e)
     {
-        int ptr_pos = *ptr_i++;
-        int ptd_to_pos = *ptr_i++;
-        if (is_vi_ptr(ptd_to_pos))          // vi pointer
-            vi_ptr(to, ptr_pos, ptd_to_pos, env, vi_array, vi_inst_array);
+        int ptr_word_index = *ptr_i++;
+        int ptd_to_byte_offset = *ptr_i++;
+        if (is_vi_ptr(ptd_to_byte_offset))  // vi pointer
+            vi_ptr(to, ptr_word_index, ptd_to_byte_offset, env,
+                   vi_array, vi_inst_array);
         else                                // normal pointer
-            normal_ptr(to, ptr_pos, ptd_to_pos, ptr_i, env, vi_array,
-                       vi_inst_array);
+            normal_ptr(to, ptr_word_index, ptd_to_byte_offset, ptr_i, env,
+                       vi_array, vi_inst_array);
     }
 }
 
@@ -479,8 +788,8 @@ class unmarshaller_vi_test : public unmarshaller_vi_base
     public:
 
         unmarshaller_vi_test(int size_direct, int size_total,
-                        const ptr_iterator_type& ptr_begin,
-                        const ptr_iterator_type& ptr_end, int vi_count);
+                        const ptr_iterator_t& ptr_begin,
+                        const ptr_iterator_t& ptr_end, int vi_count);
 
         //
         // ACCESSORS
@@ -492,8 +801,8 @@ class unmarshaller_vi_test : public unmarshaller_vi_base
 };
 
 inline unmarshaller_vi_test::unmarshaller_vi_test(
-    int size_direct, int size_total, const ptr_iterator_type& ptr_begin,
-    const ptr_iterator_type& ptr_end, int vi_count)
+    int size_direct, int size_total, const ptr_iterator_t& ptr_begin,
+    const ptr_iterator_t& ptr_end, int vi_count)
     : unmarshaller_vi_base(size_direct, size_total, ptr_begin, ptr_end,
                            vi_count)
     , d_vi_data(vi_count)
@@ -543,20 +852,35 @@ class unmarshaller_vi : public unmarshaller_vi_base
 
     public:
 
+        /**
+         * \brief Constructs a variable indirect storage unmarshaller
+         * \param size_direct Size, in bytes, of the direct data at the start of
+         *        the marshalled data block: <code>0 &lt; size_direct &le;
+         *        size_total</code> <em>must be a multiple of
+         *        <code>sizeof(marshall_word_t)</code></em>
+         * \param size_total Size, in bytes, of the whole marshalled data block
+         *        <em>must be a multiple of
+         *        <code>sizeof(marshall_word_t)</code></em>
+         * \param ptr_begin Iterator to first element in pointer list
+         * \param ptr_end Iterator one-past the last element in the pointer list
+         * \param vi_count Number of variable indirect pointers:
+         *                 <code>0 &le; vi_count</code>
+         *
+         * The pointer list must contain an even number of elements.
+         */
         unmarshaller_vi(int size_direct, int size_total,
-                        const ptr_iterator_type& ptr_begin,
-                        const ptr_iterator_type& ptr_end, int vi_count);
+                        const ptr_iterator_t& ptr_begin,
+                        const ptr_iterator_t& ptr_end, int vi_count);
 };
 
 inline unmarshaller_vi::unmarshaller_vi(int size_direct, int size_total,
-                                        const ptr_iterator_type& ptr_begin,
-                                        const ptr_iterator_type& ptr_end,
+                                        const ptr_iterator_t& ptr_begin,
+                                        const ptr_iterator_t& ptr_end,
                                         int vi_count)
     : unmarshaller_vi_base(size_direct, size_total, ptr_begin, ptr_end,
                            vi_count)
 { }
 
-} // namespace abi_x86
 } // namespace jsdi
 
 #endif // __INCLUDED_MARSHALLING_H___

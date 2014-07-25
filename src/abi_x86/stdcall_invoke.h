@@ -41,7 +41,7 @@ struct stdcall_invoke
          * the contents of EAX after invoking <code>func_ptr</code> and the
          * high-order 32 bits are the content of EDX after invoking
          * <code>func_ptr</code>
-         * \see #return_double(int, char *, void *)
+         * \see #return_double(int, uint32_t *, void *)
          * \since 20130805
          *
          * This function is very limited in capability. In particular, it cannot:
@@ -57,7 +57,7 @@ struct stdcall_invoke
          * See <a href="http://pic.dhe.ibm.com/infocenter/ratdevz/v7r5/index.jsp?topic=%2Fcom.ibm.etools.pl1.win.doc%2Ftopics%2Fxf6700.htm">here</a>
          * and <a href="http://stackoverflow.com/q/17912828/1911388">here</a>.
          */
-        static uint64_t basic(int args_size_bytes, char * args_ptr,
+        static uint64_t basic(int args_size_bytes, const void * args_ptr,
                               void * func_ptr);
 
         /**
@@ -69,7 +69,7 @@ struct stdcall_invoke
          * \param args_ptr Pointer to the arguments to push on the stack
          * \param func_ptr Pointer to the <code>__stdcall</code> function to call
          * \return The `double` returned by calling <code>func_ptr</code>
-         * \see #basic(int, char *, void *)
+         * \see #basic(int, uint32_t *, void *)
          * \since 20130808
          *
          * Note that this invoker should be used for <code>stdcall</code>
@@ -79,12 +79,12 @@ struct stdcall_invoke
          * precision than either <code>float</code> or <code>double</code>), we
          * might as well take the <code>double</code> option.
          */
-        static double return_double(int args_size_bytes, char * args_ptr,
+        static double return_double(int args_size_bytes, const void * args_ptr,
                                     void * func_ptr);
 };
 
-inline uint64_t stdcall_invoke::basic(int args_size_bytes, char * args_ptr,
-                                      void * func_ptr)
+inline uint64_t stdcall_invoke::basic(int args_size_bytes,
+                                      const void * args_ptr, void * func_ptr)
 {
     assert(
         0 == args_size_bytes % 4
@@ -140,12 +140,12 @@ inline uint64_t stdcall_invoke::basic(int args_size_bytes, char * args_ptr,
     }
     return *reinterpret_cast<uint64_t *>(result);
 #else
-#error Replacement for inline assembler required
+#error replacement for inline assembler required
 #endif
 }
 
-inline double stdcall_invoke::return_double(int args_size_bytes,
-                                            char * args_ptr, void * func_ptr)
+inline double stdcall_invoke::return_double(
+    int args_size_bytes, const void * args_ptr, void * func_ptr)
 {
     double result;
     assert(
@@ -194,7 +194,7 @@ inline double stdcall_invoke::return_double(int args_size_bytes,
         fstp  result             // Callee will leave result in ST0.
     }
 #else
-#error Replacement for inline assembler required
+#error replacement for inline assembler required
 #endif
     return result;
 }

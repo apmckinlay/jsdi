@@ -13,7 +13,6 @@
 #include "marshalling.h"
 
 namespace jsdi {
-namespace abi_x86 {
 
 //==============================================================================
 //                      class marshalling_vi_container
@@ -55,39 +54,38 @@ inline void marshalling_vi_container::put_not_null(size_t pos, jbyteArray array,
     assert(! t.d_global);
     // Save a global reference to the array. This allows us to call
     // ReleaseByteArrayElements from the destructor (A) regardless of whether
-    // this array is subsequently replaced by a different value; and (B) without
-    // having to call GetObjectArrayElement(), which isn't permitted if a JNI
-    // exception has been flagged.
+    // the corresponding entry in d_object_array is subsequently replaced by a
+    // different value; and (B) without having to call GetObjectArrayElement(),
+    // which isn't permitted if a JNI exception has been flagged.
     t.d_global = static_cast<jbyteArray>(d_env->NewGlobalRef(array));
     JNI_EXCEPTION_CHECK(d_env);
     t.d_pp_arr = pp_array;
     *pp_array = t.d_elems;
-
 }
 
 //==============================================================================
 //                       struct marshalling_roundtrip
 //==============================================================================
 
-void marshalling_roundtrip::ptrs_init_vi(jbyte * args, jsize args_size,
-                                         const jint * ptr_array,
-                                         jsize ptr_array_size, JNIEnv * env,
-                                         jobjectArray vi_array_in,
-                                         marshalling_vi_container& vi_array_out)
+void marshalling_roundtrip::ptrs_init_vi(
+    marshall_word_t * args, jsize args_size, const jint * ptr_array,
+    jsize ptr_array_size, JNIEnv * env, jobjectArray vi_array_in,
+    marshalling_vi_container& vi_array_out)
 {
     assert(0 == ptr_array_size % 2 || !"pointer array must have even size");
     jint const * i(ptr_array), * e(ptr_array + ptr_array_size);
+    jint const total_size = args_size * sizeof(marshall_word_t);
     while (i < e)
     {
-        jint ptr_pos = *i++;
+        jint ptr_word_index = *i++;
         jint ptd_to_pos = *i++;
         if (UNKNOWN_LOCATION == ptd_to_pos) continue; // Leave a null pointer
-        assert(0 <= ptd_to_pos || !"pointer position must be a non-negative index");
-        jbyte ** ptr_addr = reinterpret_cast<jbyte **>(&args[ptr_pos]);
-        if (ptd_to_pos < args_size)
+        assert(0 <= ptd_to_pos || !"pointer offset must be non-negative");
+        jbyte ** ptr_addr = reinterpret_cast<jbyte **>(&args[ptr_word_index]);
+        if (ptd_to_pos < total_size)
         {
             // Normal pointer: points back into a location within args
-            jbyte * ptd_to_addr = &args[ptd_to_pos];
+            jbyte * ptd_to_addr = reinterpret_cast<jbyte *>(args) + ptd_to_pos;
             *ptr_addr = ptd_to_addr;
         }
         else
@@ -95,7 +93,7 @@ void marshalling_roundtrip::ptrs_init_vi(jbyte * args, jsize args_size,
             // Variable indirect pointer: points to the start of a byte[] which
             // is passed in from Java in vi_array_in, and marshalled into the
             // C++ environment in vi_array_out.
-            ptd_to_pos -= args_size; // Convert to an index into vi_array
+            ptd_to_pos -= total_size; // Convert to index into vi_array
             assert(
                 static_cast<size_t>(ptd_to_pos) < vi_array_out.d_arrays.size()
                 || !"pointer points outside of variable indirect array"
@@ -122,11 +120,11 @@ void marshalling_roundtrip::ptrs_init_vi(jbyte * args, jsize args_size,
 }
 
 void marshalling_roundtrip::ptrs_finish_vi(
-    JNIEnv * env, jobjectArray vi_array_java,
-    marshalling_vi_container& vi_array_cpp,
+    jobjectArray vi_array_java, marshalling_vi_container& vi_array_cpp,
     const jni_array_region<jint>& vi_inst_array)
 {
     const jsize N(vi_array_cpp.d_arrays.size());
+    JNIEnv * const env(vi_array_cpp.d_env);
     assert(
         N == vi_inst_array.size() || !"variable indirect array size mismatch");
     for (jsize k = 0; k < N; ++k)
@@ -141,7 +139,7 @@ void marshalling_roundtrip::ptrs_finish_vi(
             case RETURN_JAVA_STRING:
                 if (! *tuple.d_pp_arr)
                 {   // null pointer, so return a null String ref
-                    vi_array_cpp.replace_byte_array(k, 0);
+                    vi_array_cpp.replace_byte_array(k, nullptr);
                 }
                 else
                 {
@@ -184,35 +182,42 @@ void marshalling_roundtrip::ptrs_finish_vi(
 //                        class unmarshaller_indirect
 //==============================================================================
 
-void unmarshaller_indirect::normal_ptr(char * data, int ptr_pos, int ptd_to_pos,
-                                       ptr_iterator_type& ptr_i) const
+void unmarshaller_indirect::normal_ptr(
+    marshall_word_t * data, int ptr_word_index, int ptd_to_byte_offset,
+    ptr_iterator_t& ptr_i) const
 {
     // STAGE 1: Copy
     //     Look at the next pointer following this one.
-    //     - If it is a standard pointer, its ptd_to_pos sets the boundary of
-    //       what needs to be copied.
+    //     - Its ptd_to_byte_offset sets the boundary of what needs to be
+    //       copied.
     //     - If there is no next pointer, boundary of what needs to be copied is
     //       the end of the data.
     //
     //     NOTE: If this normal pointer is NULL, we don't copy, we zero out.
-    int copy_end(d_size_total);
-    if (ptr_i != d_ptr_end) copy_end = *(ptr_i + 1);
-    char ** ptr_addr = to_char_ptr_ptr(data, ptr_pos);
-    char ** ptd_to_addr = to_char_ptr_ptr(data, ptd_to_pos);
+    int copy_end_byte_offset(d_size_total);
+    if (ptr_i != d_ptr_end) copy_end_byte_offset = *(ptr_i + 1);
+    auto ptr_addr = addr_of_ptr(data, ptr_word_index);
+    auto ptd_to_addr = addr_of_byte(data, ptd_to_byte_offset);
     if (*ptr_addr)
-        std::memcpy(ptd_to_addr, *ptr_addr, copy_end - ptd_to_pos);
+        std::memcpy(ptd_to_addr, *ptr_addr,
+                    copy_end_byte_offset - ptd_to_byte_offset);
     else
-        std::memset(ptd_to_addr, 0, copy_end - ptd_to_pos);
+        std::memset(ptd_to_addr, 0,
+                    copy_end_byte_offset - ptd_to_byte_offset);
     // STAGE 2: Handle sub-pointers
     //     For each subsequent pointer that is within the block just copied or
     //     zeroed, call this function recursively.
     while (ptr_i != d_ptr_end)
     {
-        int next_ptr_pos = *ptr_i;
-        if (! (ptd_to_pos <= next_ptr_pos && next_ptr_pos < copy_end)) break;
+        const int next_ptr_word_index = *ptr_i;
+        const int next_ptr_byte_offset = sizeof(marshall_word_t) *
+                                         next_ptr_word_index;
+        if (! (ptd_to_byte_offset <= next_ptr_byte_offset &&
+               next_ptr_byte_offset < copy_end_byte_offset))
+            break;
         ++ptr_i;
-        int next_ptd_to_pos = *ptr_i++;
-        normal_ptr(data, next_ptr_pos, next_ptd_to_pos, ptr_i);
+        const int next_ptd_to_byte_offset = *ptr_i++;
+        normal_ptr(data, next_ptr_word_index, next_ptd_to_byte_offset, ptr_i);
     }
 }
 
@@ -220,24 +225,24 @@ void unmarshaller_indirect::normal_ptr(char * data, int ptr_pos, int ptd_to_pos,
 //                        class unmarshaller_vi_base
 //==============================================================================
 
-unmarshaller_vi_base::~unmarshaller_vi_base()
-{ } // anchor for virtual destructor
-
-void unmarshaller_vi_base::vi_ptr(char * data, int ptr_pos, int ptd_to_pos,
-                                  JNIEnv * env, jobjectArray vi_array,
-                                  const int * vi_inst_array)
+void unmarshaller_vi_base::vi_ptr(
+    marshall_word_t * data, int ptr_word_index, int ptd_to_pos, JNIEnv * env,
+    jobjectArray vi_array, const int * vi_inst_array)
 {
     int vi_index = ptd_to_pos - unmarshaller_base::d_size_total;
     assert(0 <= vi_index && vi_index < d_vi_count);
-    char ** pstr = unmarshaller_base::to_char_ptr_ptr(data, ptr_pos);
+    auto pstr = unmarshaller_base::addr_of_ptr(data, ptr_word_index);
     if (*pstr)
-        vi_string_ptr(*pstr, vi_index, env, vi_array, vi_inst_array[vi_index]);
+    {
+        auto str = reinterpret_cast<const char *>(*pstr);
+        vi_string_ptr(str, vi_index, env, vi_array, vi_inst_array[vi_index]);
+    }
 }
 
-void unmarshaller_vi_base::normal_ptr(char * data, int ptr_pos, int ptd_to_pos,
-                                      ptr_iterator_type& ptr_i, JNIEnv * env,
-                                      jobjectArray vi_array,
-                                      const int * vi_inst_array)
+void unmarshaller_vi_base::normal_ptr(
+    marshall_word_t * data, int ptr_word_index, int ptd_to_byte_offset,
+    ptr_iterator_t& ptr_i, JNIEnv * env, jobjectArray vi_array,
+    const int * vi_inst_array)
 {
     // STAGE 1: Copy
     //     Look at the next pointer following this one.
@@ -248,29 +253,31 @@ void unmarshaller_vi_base::normal_ptr(char * data, int ptr_pos, int ptd_to_pos,
     //       the end of the data.
     //
     //     NOTE: If this normal pointer is NULL, we don't copy, we zero out.
-    int copy_end(unmarshaller_base::d_size_total);
-    ptr_iterator_type ptr_e(unmarshaller_indirect::d_ptr_end);
+    int copy_end_byte_offset(unmarshaller_base::d_size_total);
+    ptr_iterator_t ptr_e(unmarshaller_indirect::d_ptr_end);
     if (ptr_i != ptr_e)
     {
-        ptr_iterator_type ptr_j(ptr_i);
+        ptr_iterator_t ptr_j(ptr_i);
         do
         {
             ++ptr_j;
-            int next_ptd_to_pos = *ptr_j++;
+            const int next_ptd_to_pos = *ptr_j++;
             if (! is_vi_ptr(next_ptd_to_pos))
             {
-                copy_end = next_ptd_to_pos;
+                copy_end_byte_offset = next_ptd_to_pos;
                 break;
             }
         }
         while (ptr_j != ptr_e);
     }
-    char ** ptr_addr = unmarshaller_base::to_char_ptr_ptr(data, ptr_pos);
-    char ** ptd_to_addr = unmarshaller_base::to_char_ptr_ptr(data, ptd_to_pos);
+    auto ptr_addr = addr_of_ptr(data, ptr_word_index);
+    auto ptd_to_addr = addr_of_byte(data, ptd_to_byte_offset);
     if (*ptr_addr)
-        std::memcpy(ptd_to_addr, *ptr_addr, copy_end - ptd_to_pos);
+        std::memcpy(ptd_to_addr, *ptr_addr,
+                    copy_end_byte_offset - ptd_to_byte_offset);
     else
-        std::memset(ptd_to_addr, 0, copy_end - ptd_to_pos);
+        std::memset(ptd_to_addr, 0,
+                    copy_end_byte_offset - ptd_to_byte_offset);
     // STAGE 2: Handle sub-pointers
     //     For each subsequent pointer that is within the block just copied or
     //     zeroed:
@@ -279,15 +286,19 @@ void unmarshaller_vi_base::normal_ptr(char * data, int ptr_pos, int ptd_to_pos,
     //     - If it's a normal pointer, call this function recursively.
     while (ptr_i != ptr_e)
     {
-        int next_ptr_pos = *ptr_i;
-        if (! (ptd_to_pos <= next_ptr_pos && next_ptr_pos < copy_end)) break;
+        const int next_ptr_word_index = *ptr_i;
+        const int next_ptr_byte_offset = sizeof(marshall_word_t) *
+                                         next_ptr_word_index;
+        if (! (ptd_to_byte_offset <= next_ptr_byte_offset &&
+               next_ptr_byte_offset < copy_end_byte_offset))
+            break;
         ++ptr_i;
-        int next_ptd_to_pos = *ptr_i++;
+        const int next_ptd_to_pos = *ptr_i++;
         if (is_vi_ptr(next_ptd_to_pos))
-            vi_ptr(data, next_ptr_pos, next_ptd_to_pos, env, vi_array,
+            vi_ptr(data, next_ptr_word_index, next_ptd_to_pos, env, vi_array,
                    vi_inst_array);
         else
-            normal_ptr(data, next_ptr_pos, next_ptd_to_pos, ptr_i, env,
+            normal_ptr(data, next_ptr_word_index, next_ptd_to_pos, ptr_i, env,
                        vi_array, vi_inst_array);
     }
 }
@@ -360,7 +371,6 @@ void unmarshaller_vi::vi_string_ptr(const char * str, int vi_index,
     }
 }
 
-} // namespace abi_x86
 } // namespace jsdi
 
 //==============================================================================
@@ -369,31 +379,77 @@ void unmarshaller_vi::vi_string_ptr(const char * str, int vi_index,
 
 #ifndef __NOTEST__
 
-#include "stdcall_invoke.h"
 #include "test.h"
 #include "test_exports.h"
 
 #include <algorithm>
+#include <array>
 
-using jsdi::array_length;
-using namespace jsdi::abi_x86;
+#include <iostream> // FIXME: delete this include TODO: delete me
+#include <iomanip>  // FIXME: delete this include TODO: delete me
+template<typename T> // TODO: delete me
+std::ostream& dump_bytes_todo_deleteme(std::ostream& o, const T& t) // TODO: delete me
+{
+    uint8_t const * i(reinterpret_cast<const uint8_t *>(&t)),
+                  * e(i + sizeof(T));
+    if (i != e)
+    {
+        o << std::hex << std::setw(2) << std::setfill('0')
+          << static_cast<int>(*i);
+        for (++i; i != e; ++i)
+            o << ' ' << std::setw(2) << static_cast<int>(*i);
+    }
+    return o;
+} // TODO: this func needs to be deleted!!
+
+#if defined(_M_IX86)
+#include "abi_x86/stdcall_invoke.h"
+#elif defined(_M_AMD64)
+#include "abi_amd64/invoke64.h"
+#else
+#error no invocation program for this platform
+#endif // if defined(_M_IX86)
+
+using namespace jsdi;
 
 namespace {
 
-template<typename FuncPtr>
-inline jlong invoke_stdcall_(FuncPtr f, int nlongs, long * args)
+template<typename IntType>
+constexpr int word_size(IntType x)
 {
-    return stdcall_invoke::basic(nlongs * sizeof(long),
-                                 reinterpret_cast<char *>(args),
-                                 reinterpret_cast<void *>(f));
+    return static_cast<int>(
+        (x + sizeof(marshall_word_t)-1) / sizeof(marshall_word_t));
 }
 
-template<typename FuncPtr>
-inline jlong invoke_stdcall_(FuncPtr f, int nbytes, jbyte * args)
+template<typename T>
+constexpr int word_size()
+{ return word_size(sizeof(T)); }
+
+#define ARGS(member) marshall_word_t args[word_size<decltype(member)>()]
+
+template<typename T, typename U>
+constexpr int byte_offset(const T& t, const U& u)
 {
-    return stdcall_invoke::basic(nbytes,
-                                 reinterpret_cast<char *>(args),
-                                 reinterpret_cast<void *>(f));
+    return static_cast<int>(reinterpret_cast<const char *>(&u) -
+                            reinterpret_cast<const char *>(&t));
+}
+
+template<typename T, typename U>
+constexpr int word_offset(const T& t, const U& u)
+{ return word_size(byte_offset(t, u)); }
+
+template<typename FuncPtr>
+inline uint64_t invoke_basic(FuncPtr f, size_t size_bytes,
+                             const marshall_word_t * args)
+{
+    auto f_(reinterpret_cast<void *>(f));
+#if defined(_M_IX86)
+    return abi_x86::stdcall_invoke::basic(size_bytes, args, f);
+#elif defined(_M_AMD64)
+    return invoke64_basic(size_bytes, args, f);
+#else
+#error no invocation program for this platform
+#endif // if defined(_M_IX86)
 }
 
 } // anonymous namespace
@@ -405,12 +461,15 @@ TEST(ptrs_init,
         {
             struct x_
             {
-                long * ptr;
-                long   value;
+                int * ptr;
+                int   value;
             } x;
-            jbyte args[sizeof(x_)];
+            ARGS(x);
         } u;
-        jint ptr_array[] = { 0, sizeof(long *) };
+        const jint ptr_array[] =
+        {
+            word_offset(u.x, u.x.ptr), byte_offset(u.x, u.x.value)
+        };
         marshalling_roundtrip::ptrs_init(u.args, ptr_array,
                                          array_length(ptr_array));
         *u.x.ptr = 0x19820207;
@@ -422,13 +481,17 @@ TEST(ptrs_init,
         {
             struct x_
             {
-                long ** ptr_ptr;
-                long *  ptr;
-                long    value;
+                int ** ptr_ptr;
+                int *  ptr;
+                int    value;
             } x;
-            jbyte args[sizeof(x_)];
+            ARGS(x);
         } u;
-        jint ptr_array[] = { 0, sizeof(long **), sizeof(long **), sizeof(long **) + sizeof(long *) };
+        const jint ptr_array[] =
+        {
+            word_offset(u.x, u.x.ptr_ptr), byte_offset(u.x, u.x.ptr),
+            word_offset(u.x, u.x.ptr),     byte_offset(u.x, u.x.value)
+        };
         marshalling_roundtrip::ptrs_init(u.args, ptr_array,
                                          array_length(ptr_array));
         **u.x.ptr_ptr = 0x19900606;
@@ -445,16 +508,13 @@ TEST(ptrs_init,
                 double *   ptr;
                 double     value;
             } x;
-            jbyte args[sizeof(x_)];
+            ARGS(x);
         } u;
-        jint ptr_array[] =
+        const jint ptr_array[] =
         {
-            0,
-                reinterpret_cast<char *>(&u.x.ptr_ptr) - reinterpret_cast<char *>(&u.args[0]),
-            reinterpret_cast<char *>(&u.x.ptr_ptr) - reinterpret_cast<char *>(&u.args[0]),
-                reinterpret_cast<char *>(&u.x.ptr) - reinterpret_cast<char *>(&u.args[0]),
-            reinterpret_cast<char *>(&u.x.ptr) - reinterpret_cast<char *>(&u.args[0]),
-                reinterpret_cast<char *>(&u.x.value) - reinterpret_cast<char *>(&u.args[0]),
+            word_offset(u.x, u.x.ptr_ptr_ptr), byte_offset(u.x, u.x.ptr_ptr),
+            word_offset(u.x, u.x.ptr_ptr),     byte_offset(u.x, u.x.ptr),
+            word_offset(u.x, u.x.ptr),         byte_offset(u.x, u.x.value)
         };
         marshalling_roundtrip::ptrs_init(u.args, ptr_array,
                                          array_length(ptr_array));
@@ -480,13 +540,15 @@ TEST(ptrs_init,
             as_uint64 = TestReturnPtrPtrPtrDoubleAsUInt64(u2->x.ptr_ptr_ptr);
             assert_equals(expect2, as_dbl);
             as_uint64 = static_cast<uint64_t>(
-                invoke_stdcall_(TestReturnPtrPtrPtrDoubleAsUInt64,
-                                sizeof (double ***), u2->args)
-            );
+                invoke_basic(TestReturnPtrPtrPtrDoubleAsUInt64,
+                             sizeof(double ***), u2->args));
             assert_equals(expect2, as_dbl);
         }
     }
 );
+
+// TODO: add tests for ptrs_init_vi that uses a JVM instance (as of right now
+//       there are no tests for ptrs_init_vi()!!
 
 namespace {
 
@@ -498,6 +560,7 @@ constexpr JNIEnv * NULL_JNI_ENV = nullptr;
 
 constexpr jobjectArray NULL_JOBJ_ARR = nullptr;
 
+// TODO: Is this function actually being used by anything!?!?
 template<typename T>
 inline void vector_append(std::vector<char>& dest, const T& ref)
 {
@@ -509,182 +572,258 @@ inline void vector_append(std::vector<char>& dest, const T& ref)
 } // anonymous namespace
 
 TEST(unmarshall_flat_args,
-    static const char ARGS[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
-    unmarshaller_indirect x(sizeof(ARGS), sizeof(ARGS), EMPTY_PTR_ARRAY,
+    union
+    {
+        uint8_t data[8];
+        ARGS(data);
+    } static const STORAGE = { { 0, 1, 2, 3, 4, 5, 6, 7 } };
+    unmarshaller_indirect x(sizeof(STORAGE), sizeof(STORAGE), EMPTY_PTR_ARRAY,
                             EMPTY_PTR_ARRAY);
-    static char result[sizeof(ARGS)];
-    x.unmarshall_indirect(result, ARGS);
-    assert_equals(0, std::memcmp(ARGS, result, sizeof(ARGS)));
-    unmarshaller_vi_test y(sizeof(ARGS), sizeof(ARGS), EMPTY_PTR_ARRAY,
+    static decltype(STORAGE.args) result;
+    x.unmarshall_indirect(STORAGE.args, result);
+    assert_equals(0, std::memcmp(&STORAGE, result, sizeof(STORAGE)));
+    unmarshaller_vi_test y(sizeof(STORAGE), sizeof(STORAGE), EMPTY_PTR_ARRAY,
                            EMPTY_PTR_ARRAY, 0);
     std::memset(result, 0xee, sizeof(result));
-    y.unmarshall_vi(result, ARGS, NULL_JNI_ENV, NULL_JOBJ_ARR,
+    y.unmarshall_vi(STORAGE.args, result, NULL_JNI_ENV, NULL_JOBJ_ARR,
                     ZEROED_VI_INST_ARRAY);
-    assert_equals(0, std::memcmp(ARGS, result, sizeof(ARGS)));
+    assert_equals(0, std::memcmp(&STORAGE, result, sizeof(STORAGE)));
 );
 
 TEST(unmarshall_flat_args_vi,
-    static const char * ARGS[] = { 0, "Hallo Welt", "xyz" };
-    static const int PTR_ARRAY[] =
-    { sizeof(char *), sizeof(ARGS), 2 * sizeof(char *), sizeof(ARGS) + 1 };
-    unmarshaller_vi_test y(sizeof(ARGS), sizeof(ARGS), PTR_ARRAY,
-                           PTR_ARRAY + array_length(PTR_ARRAY), 2);
-    static char result[sizeof(ARGS)];
-    y.unmarshall_vi(result, reinterpret_cast<const char *>(ARGS), NULL_JNI_ENV,
-                    NULL_JOBJ_ARR, ZEROED_VI_INST_ARRAY);
-    assert_equals(0, std::memcmp(ARGS, result, sizeof(ARGS)));
-    assert_equals("Hallo Welt", *y.vi_at(0));
-    assert_equals("xyz", *y.vi_at(1));
+   union
+   {
+       const char * data[3];
+       ARGS(data);
+   } static const STORAGE = { { nullptr, "Hallo Welt", "xyz" } };
+   static int const PTR_ARRAY[] =
+   {
+       word_offset(STORAGE.args, STORAGE.args[1]), sizeof(STORAGE.args) + 0,
+       word_offset(STORAGE.args, STORAGE.args[2]), sizeof(STORAGE.args) + 1
+   };
+   unmarshaller_vi_test y(sizeof(STORAGE), sizeof(STORAGE), PTR_ARRAY,
+                          PTR_ARRAY + array_length(PTR_ARRAY), 2);
+   static decltype(STORAGE.args) result;
+   y.unmarshall_vi(STORAGE.args, result, NULL_JNI_ENV, NULL_JOBJ_ARR,
+                   ZEROED_VI_INST_ARRAY);
+   assert_equals(0, std::memcmp(&STORAGE, result, sizeof(STORAGE)));
+   assert_equals("Hallo Welt", *y.vi_at(0));
+   assert_equals("xyz", *y.vi_at(1));
 );
 
 TEST(unmarshall_level_one_simple,
-    static const struct { int a; int b; char c; } s = { -1, 1, 'c' };
-    static const void * ARGS[] = { &s };
-    static const int PTR_ARRAY[] = { 0, sizeof(ARGS) };
-    enum { SIZE_TOTAL = sizeof(ARGS) + sizeof(s) };
-    unmarshaller_indirect x(sizeof(ARGS), SIZE_TOTAL, PTR_ARRAY,
-                            PTR_ARRAY + array_length(PTR_ARRAY));
-    static char result[SIZE_TOTAL];
-    x.unmarshall_indirect(result, reinterpret_cast<const char *>(ARGS));
-    std::vector<char> expected;
-    vector_append(expected, ARGS);
-    vector_append(expected, s);
-    assert_equals(0, std::memcmp(expected.data(), result, expected.size()));
-    unmarshaller_vi y(sizeof(ARGS), SIZE_TOTAL, PTR_ARRAY,
-                      PTR_ARRAY + array_length(PTR_ARRAY), 0);
-    std::memset(result, 0xaa, sizeof(result));
-    y.unmarshall_vi(result, reinterpret_cast<const char *>(ARGS),
+    struct s { int a; int b; char c; };
+    union indirect
+    {
+        s value;
+        ARGS(value);
+    } static const INDIRECT = { { -1, -1, 'c' } };
+    union direct
+    {
+        s * ptr;
+        ARGS(ptr);
+    } static const DIRECT = { const_cast<s *>(&INDIRECT.value) };
+    union combined
+    {
+        struct
+        {
+            direct d;
+            indirect i;
+        } data;
+        ARGS(data);
+    } static const EXPECTED = { { DIRECT, INDIRECT } };
+    constexpr size_t SIZE_TOTAL = sizeof(DIRECT) + sizeof(INDIRECT);
+    static_assert(sizeof(combined) == SIZE_TOTAL, "size mismatch");
+    static int const PTR_ARRAY[] =
+    {
+        word_offset(EXPECTED.data, EXPECTED.data.d),
+        byte_offset(EXPECTED.data, EXPECTED.data.i)
+    };
+    static combined result;
+    unmarshaller_indirect x(sizeof(DIRECT), SIZE_TOTAL,
+                            PTR_ARRAY, PTR_ARRAY + array_length(PTR_ARRAY));
+    x.unmarshall_indirect(DIRECT.args, result.args);
+    assert_equals(0, std::memcmp(EXPECTED.args, result.args, SIZE_TOTAL));
+    unmarshaller_vi y(sizeof(DIRECT), SIZE_TOTAL,
+                      PTR_ARRAY, PTR_ARRAY + array_length(PTR_ARRAY), 0);
+    std::memset(result.args, 0xaa, sizeof(result));
+    y.unmarshall_vi(DIRECT.args, result.args,
                     NULL_JNI_ENV, NULL_JOBJ_ARR, ZEROED_VI_INST_ARRAY);
-    assert_equals(0, std::memcmp(expected.data(), result, expected.size()));
+    assert_equals(0, std::memcmp(EXPECTED.args, result.args, SIZE_TOTAL));
 );
 
 TEST(unmarshall_level_one_complex,
-     static const struct S { double d; char c; int64_t i; }
-         s1 = { 2.5, 'C', static_cast<int64_t>(0xfffffffffffffffeLL) },
-         s2 = { -2.5, 'D', 50LL },
-         szero { 0, 0, 0LL };
-     static const S * ARGS[] { 0, &s1, 0, &s1, &s2, 0, &s1 };
-     static const int PTR_ARRAY[] =
-     {
-         0 * sizeof(const S *), sizeof(ARGS) + 0 * sizeof(S),
-         1 * sizeof(const S *), sizeof(ARGS) + 1 * sizeof(S),
-         2 * sizeof(const S *), sizeof(ARGS) + 2 * sizeof(S),
-         3 * sizeof(const S *), sizeof(ARGS) + 3 * sizeof(S),
-         4 * sizeof(const S *), sizeof(ARGS) + 4 * sizeof(S),
-         5 * sizeof(const S *), sizeof(ARGS) + 5 * sizeof(S),
-         6 * sizeof(const S *), sizeof(ARGS) + 6 * sizeof(S)
-     };
-     enum { SIZE_TOTAL = sizeof(ARGS) + 7 * sizeof(S) };
-     unmarshaller_indirect x(sizeof(ARGS), SIZE_TOTAL, PTR_ARRAY,
-                             PTR_ARRAY + array_length(PTR_ARRAY));
-     char result[SIZE_TOTAL];
-     x.unmarshall_indirect(result, reinterpret_cast<const char *>(ARGS));
-     std::vector<char> expected;
-     vector_append(expected, ARGS);
-     vector_append(expected, szero);
-     vector_append(expected, s1);
-     vector_append(expected, szero);
-     vector_append(expected, s1);
-     vector_append(expected, s2);
-     vector_append(expected, szero);
-     vector_append(expected, s1);
-     assert_equals(SIZE_TOTAL, expected.size());
-     assert_equals(0, std::memcmp(expected.data(), result, expected.size()));
-     unmarshaller_vi_test y(sizeof(ARGS), SIZE_TOTAL, PTR_ARRAY,
-                            PTR_ARRAY + array_length(PTR_ARRAY), 0);
-     std::memset(result, 0xbb, sizeof(result));
-     y.unmarshall_vi(result, reinterpret_cast<const char *>(ARGS), NULL_JNI_ENV,
-                     NULL_JOBJ_ARR, ZEROED_VI_INST_ARRAY);
-     assert_equals(0, std::memcmp(expected.data(), result, expected.size()));
+    constexpr size_t N = 7;
+    static const struct S { double d; char c; int64_t i; }
+        s1 = { 2.5, 'C', static_cast<int64_t>(0xfffffffffffffffeLL) },
+        s2 = { -2.5, 'D', 50LL },
+        szero { 0, 0, 0LL };
+    union
+    {
+        std::array<S const *, N> data;
+        ARGS(data);
+    } static const DIRECT = { { nullptr, &s1, nullptr, &s1, &s2, nullptr, &s1 } };
+    union combined
+    {
+        struct
+        {
+            std::array<S const *, N> direct;
+            S                        indirect[N];
+        } data;
+        ARGS(data);
+    } static const EXPECTED =
+    { /* union */
+        { /* struct */
+            DIRECT.data /* direct */,
+            { szero, s1, szero, s1, s2, szero, s1 } /* indirect */
+        }
+    };
+    constexpr size_t SIZE_TOTAL = sizeof(combined);
+    int PTR_ARRAY[2 * N];
+    for (size_t k = 0; k < N; ++k)
+    {
+        PTR_ARRAY[2*k+0] = word_offset(EXPECTED, EXPECTED.data.direct[k]);
+        PTR_ARRAY[2*k+1] = byte_offset(EXPECTED, EXPECTED.data.indirect[k]);
+    };
+    static combined result;
+    unmarshaller_indirect x(sizeof(DIRECT), SIZE_TOTAL, PTR_ARRAY,
+                            PTR_ARRAY + array_length(PTR_ARRAY));
+    x.unmarshall_indirect(DIRECT.args, result.args);
+    assert_equals(0, std::memcmp(&EXPECTED, &result, SIZE_TOTAL));
+    unmarshaller_vi_test y(sizeof(DIRECT), SIZE_TOTAL, PTR_ARRAY,
+                           PTR_ARRAY + array_length(PTR_ARRAY), 0);
+    std::memset(&result, 0, sizeof(result));
+    y.unmarshall_vi(DIRECT.args, result.args, NULL_JNI_ENV,
+                    NULL_JOBJ_ARR, ZEROED_VI_INST_ARRAY);
+    assert_equals(0, std::memcmp(&EXPECTED, &result, SIZE_TOTAL));
 );
 
 TEST(unmarshall_level_two,
-    static const struct S { int level; const S * next; } s2 = { 2, 0 },
-        s1 = { 1, &s2 }, szero = { 0, 0 };
-    static const S * ARGS[] = { 0, &s1 };
-    static const int PTR_ARRAY[] =
+    constexpr size_t N = 2;
+    static const struct S { int level; S const * next; } s2 = { 2, nullptr },
+        s1 = { 1, &s2 }, szero = { 0, nullptr };
+    union
     {
-        0 * sizeof(const S *),
-            sizeof(ARGS) + 0 * sizeof(S),
-        sizeof(ARGS) + 0 * sizeof(S) + sizeof(int),
-            sizeof(ARGS) + 1 * sizeof(S),
-        1 * sizeof(const S *),
-            sizeof(ARGS) + 2 * sizeof(S),
-        sizeof(ARGS) + 2 * sizeof(S) + sizeof(int),
-            sizeof(ARGS) + 3 * sizeof(S)
+        std::array<S const *, N> data;
+        ARGS(data);
+    } static const DIRECT = { { nullptr, &s1 } };
+    union combined
+    {
+        struct
+        {
+            std::array<S const *, N> direct;
+            S                        indirect[2 * N];
+        } data;
+        ARGS(data);
+    } static const EXPECTED =
+    { /* union */
+        { /* struct */
+            DIRECT.data /* direct */,
+            { szero, szero, s1, s2 } /* indirect */
+        }
     };
-    enum { SIZE_TOTAL = sizeof(ARGS) + 4 * sizeof(S) };
-    unmarshaller_indirect x(sizeof(ARGS), SIZE_TOTAL, PTR_ARRAY,
-                            PTR_ARRAY + array_length(PTR_ARRAY));
-    static char result[SIZE_TOTAL];
-    x.unmarshall_indirect(result, reinterpret_cast<const char *>(ARGS));
-    std::vector<char> expected;
-    vector_append(expected, ARGS);
-    vector_append(expected, szero);
-    vector_append(expected, szero);
-    vector_append(expected, s1);
-    vector_append(expected, s2);
-    assert_equals(sizeof(result), expected.size());
-    assert_equals(0, std::memcmp(expected.data(), result, expected.size()));
-    unmarshaller_vi_test y(sizeof(ARGS), SIZE_TOTAL, PTR_ARRAY,
+    constexpr size_t SIZE_TOTAL = sizeof(combined);
+    static int const PTR_ARRAY[4 * N] =
+    {
+        word_offset(EXPECTED, EXPECTED.data.direct[0]),
+            byte_offset(EXPECTED, EXPECTED.data.indirect[0]),
+        word_offset(EXPECTED, EXPECTED.data.indirect[0].next),
+            byte_offset(EXPECTED, EXPECTED.data.indirect[1]),
+        word_offset(EXPECTED, EXPECTED.data.direct[1]),
+            byte_offset(EXPECTED, EXPECTED.data.indirect[2]),
+        word_offset(EXPECTED, EXPECTED.data.indirect[2].next),
+            byte_offset(EXPECTED, EXPECTED.data.indirect[3])
+    };
+    static combined result;
+    unmarshaller_indirect x(sizeof(DIRECT), SIZE_TOTAL, PTR_ARRAY,
+                           PTR_ARRAY + array_length(PTR_ARRAY));
+    x.unmarshall_indirect(DIRECT.args, result.args);
+    assert_equals(0, std::memcmp(&EXPECTED, &result, SIZE_TOTAL));
+// TODO: delete the commented lines below, and clean up the dependencies above
+//std::cout << "DIRECT:" << std::endl << '\t';
+//dump_bytes_todo_deleteme(std::cout, DIRECT) << std::endl;
+//std::cout << "EXPECTED:" << std::endl << '\t';
+//dump_bytes_todo_deleteme(std::cout, EXPECTED) << std::endl;
+//std::cout << "result:" << std::endl << '\t';
+//dump_bytes_todo_deleteme(std::cout, result) << std::endl;
+    unmarshaller_vi_test y(sizeof(DIRECT), SIZE_TOTAL, PTR_ARRAY,
                            PTR_ARRAY + array_length(PTR_ARRAY), 0);
-    std::memset(result, 0xcc, sizeof(result));
-    y.unmarshall_vi(result, reinterpret_cast<const char *>(ARGS),
+    std::memset(&result, 0, SIZE_TOTAL);
+    y.unmarshall_vi(DIRECT.args, result.args,
                     NULL_JNI_ENV, NULL_JOBJ_ARR, ZEROED_VI_INST_ARRAY);
-    assert_equals(0, std::memcmp(expected.data(), result, expected.size()));
+    assert_equals(0, std::memcmp(&EXPECTED, &result, SIZE_TOTAL));
 );
 
 TEST(unmarshall_level_three_with_vi,
+    enum { NARGS = 3, NVALS = 4, VI_COUNT = 4 };
     static const struct S { int level; const S * next; const char * str; }
-        s3 = { 3, 0, "level3" }, s2 = { 2, &s3, "level2" },
-        s1 = { 1, &s2, "level1" }, szero = { 0, 0, 0 };
-    static const S * ARGS[] = { &szero, &s1, 0 };
-    enum
+        s3 = { 3, nullptr, "level3" }, s2 = { 2, &s3, "level2" },
+        s1 = { 1, &s2, "level1" }, szero = { 0, nullptr, nullptr };
+    union
     {
-        SIZE_DIRECT = sizeof(ARGS),
-        SIZE_INDIRECT = 4 * sizeof(S),
-        SIZE_TOTAL = SIZE_DIRECT + SIZE_INDIRECT,
-        NEXT_OFFSET = sizeof(int),
-        STR_OFFSET = NEXT_OFFSET + sizeof(const S *),
-        VI_COUNT = 4
-    };
-    static const int PTR_ARRAY[] =
+        std::array<S const *, NARGS> data;
+        ARGS(data);
+    } static const DIRECT = { { &szero, &s1, nullptr } };
+    union combined
     {
-        0 * sizeof(const S *),
-            SIZE_DIRECT + 0 * sizeof(S),
-        SIZE_DIRECT + 0 * sizeof(S) + STR_OFFSET,     // NULL -> str
-            SIZE_TOTAL + 0,
-        1 * sizeof(const S *),                         // ARG -> s1
-            SIZE_DIRECT + 1 * sizeof(S),              // s1
-        SIZE_DIRECT + 1 * sizeof(S) + NEXT_OFFSET,    // s1.next -> s2
-            SIZE_DIRECT + 2 * sizeof(S),              // s2
-        SIZE_DIRECT + 2 * sizeof(S) + NEXT_OFFSET,    // s2.next -> s3
-            SIZE_DIRECT + 3 * sizeof(S),              // s3
-        SIZE_DIRECT + 3 * sizeof(S) + STR_OFFSET,     // s3.str
-            SIZE_TOTAL + 1,
-        SIZE_DIRECT + 2 * sizeof(S) + STR_OFFSET,     // s2.str
-            SIZE_TOTAL + 2,
-        SIZE_DIRECT + 1 * sizeof(S) + STR_OFFSET,     // s1.str
-            SIZE_TOTAL + 3,
+        struct
+        {
+            std::array<S const *, NARGS> direct;
+            S                            indirect[NVALS];
+        } data;
+        ARGS(data);
+    } static const EXPECTED =
+    { /* union */
+        { /* struct */
+            DIRECT.data /* direct */,
+            { szero, s1, s2, s3 } /* indirect */
+        }
     };
-    unmarshaller_vi_test y(SIZE_DIRECT, SIZE_TOTAL, PTR_ARRAY,
-                           PTR_ARRAY + array_length(PTR_ARRAY), VI_COUNT);
-    static int VI_INST_ARRAY[VI_COUNT] = { };
-    char result[SIZE_TOTAL];
-    y.unmarshall_vi(result, reinterpret_cast<const char *>(ARGS), NULL_JNI_ENV,
-                    NULL_JOBJ_ARR, VI_INST_ARRAY);
-    std::vector<char> expected;
-    vector_append(expected, ARGS);
-    vector_append(expected, szero);
-    vector_append(expected, s1);
-    vector_append(expected, s2);
-    vector_append(expected, s3);
-    assert_equals(sizeof(result), expected.size());
-    assert_equals(0, std::memcmp(expected.data(), result, expected.size()));
-    assert_true(! y.vi_at(0));
-    assert_equals("level3", *y.vi_at(1));
-    assert_equals("level2", *y.vi_at(2));
-    assert_equals("level1", *y.vi_at(3));
+    constexpr size_t SIZE_TOTAL = sizeof(combined);
+    int const PTR_ARRAY[] =
+    {
+        // normal ptr : DIRECT[0] -> indirect[0] <=> DIRECT[0] -> szero
+        word_offset(EXPECTED, EXPECTED.data.direct[0]),
+            byte_offset(EXPECTED, EXPECTED.data.indirect[0]),
+
+        // omitted: normal ptr : indirect[0].next <=> szero.next (not needed
+        // because it is NULL anyway...)
+
+        // vi ptr : indirect[0].str <=> szero.str
+        word_offset(EXPECTED, EXPECTED.data.indirect[0].str), SIZE_TOTAL + 0,
+
+        // normal ptr: DIRECT[1] -> indirect[1] <=> DIRECT[1] -> s1
+        word_offset(EXPECTED, EXPECTED.data.direct[1]),
+            byte_offset(EXPECTED, EXPECTED.data.indirect[1]),
+
+        // normal ptr: indirect[1].next -> indirect[2] <=> s1.next -> s2
+        word_offset(EXPECTED, EXPECTED.data.indirect[1].next),
+            byte_offset(EXPECTED, EXPECTED.data.indirect[2]),
+
+        // normal ptr: indirect[2].next -> indirect[3] <=> s2.next -> s3
+        word_offset(EXPECTED, EXPECTED.data.indirect[2].next),
+            byte_offset(EXPECTED, EXPECTED.data.indirect[3]),
+
+        // vi ptr: indirect[3].str <=> s3.str
+        word_offset(EXPECTED, EXPECTED.data.indirect[3].str), SIZE_TOTAL + 1,
+
+        // vi ptr: indirect[2].str <=> s2.str
+        word_offset(EXPECTED, EXPECTED.data.indirect[2].str), SIZE_TOTAL + 2,
+
+        // vi ptr: indirect[2].str <=> s2.str
+        word_offset(EXPECTED, EXPECTED.data.indirect[1].str), SIZE_TOTAL + 3,
+    };
+   unmarshaller_vi_test y(sizeof(DIRECT), SIZE_TOTAL, PTR_ARRAY,
+                          PTR_ARRAY + array_length(PTR_ARRAY), VI_COUNT);
+   static int VI_INST_ARRAY[VI_COUNT] = { };
+   static combined result;
+   y.unmarshall_vi(DIRECT.args, result.args, NULL_JNI_ENV,
+                   NULL_JOBJ_ARR, VI_INST_ARRAY);
+   assert_equals(0, std::memcmp(&EXPECTED, &result, SIZE_TOTAL));
+   assert_false(y.vi_at(0));
+   assert_equals("level3", *y.vi_at(1));
+   assert_equals("level2", *y.vi_at(2));
+   assert_equals("level1", *y.vi_at(3));
 );
 
 #endif // __NOTEST__

@@ -20,7 +20,7 @@
 
 namespace jsdi {
 
-template<typename ParamType> class callback;
+class callback;
 
 //==============================================================================
 //                             enum thunk_state
@@ -54,15 +54,23 @@ enum thunk_state
 };
 
 //==============================================================================
-//                             class thunk_base
+//                                class thunk
 //==============================================================================
 
 /**
- * \brief Non-templated base functionality for \link thunk\endlink
+ * \brief Base class for an ABI-neutral thunk
  * \author Victor Schappert
- * \since 20140715
+ * \since 20140714
+ *
+ * This is the base class for a thunk which can provide a pointer to a
+ * dynamically-generated function that can then be supplied to a caller function
+ * that expects a callback function pointer. When the caller function calls the
+ * thunk, the thunk passes the function arguments supplied by the caller through
+ * to an instance of\link callback\endlink known to the thunk. This callback
+ * object then performs the action expected by the caller. If it returns a
+ * value, the thunk passes the return value on to the caller.
  */
-class thunk_base : private non_copyable
+class thunk : private non_copyable
 {
         //
         // DATA
@@ -71,8 +79,9 @@ class thunk_base : private non_copyable
 #ifndef _NDEBUG
         int                         d_magic;
 #endif // _NDEBUG
-        std::atomic<bool>           d_clearing;
         std::atomic_int_fast32_t    d_state;
+        std::atomic<bool>           d_clearing;
+        std::shared_ptr<callback>   d_callback;
 
         //
         // INTERNALS
@@ -95,11 +104,13 @@ class thunk_base : private non_copyable
     public:
 
         /**
-         * \brief Initializes thunk base
+         * \brief Constructs a thunk
+         * \param callback_ptr Non-<code>null</code> pointer to the callback
+         *        to invoke when #func_addr() is called
          */
-        thunk_base();
+        thunk(const std::shared_ptr<callback>& callback_ptr);
 
-        virtual ~thunk_base();
+        virtual ~thunk();
 
         //
         // ACCESSORS
@@ -146,67 +157,7 @@ class thunk_base : private non_copyable
          * by any thread.
          */
         thunk_state clear();
-
 };
-
-//==============================================================================
-//                                class thunk
-//==============================================================================
-
-/**
- * \brief Base class for an ABI-neutral thunk
- * \author Victor Schappert
- * \since 20140714
- * \tparam An unsigned integer type 
- *
- * This is the base class for a thunk which can provide a pointer to a
- * dynamically-generated function that can then be supplied to a caller function
- * that expects a callback function pointer. When the caller function calls the
- * thunk, the thunk passes the function arguments supplied by the caller through
- * to an instance of\link callback\endlink known to the thunk. This callback
- * object then performs the action expected by the caller. If it returns a
- * value, the thunk passes the return value on to the caller.
- */
-template<typename ParamType>
-class thunk : public thunk_base
-{
-        //
-        // TYPES
-        //
-
-    public:
-
-        /** \brief Callback specialized to the <code>ParamType</code> of the
-         *         thunk type
-         */
-        typedef callback<ParamType> callback_t;
- 
-        //
-        // DATA
-        //
-
-    private:
-
-        std::shared_ptr<callback_t> d_callback;
-
-        //
-        // CONSTRUCTORS
-        //
-
-    public:
-
-        /**
-         * \brief Constructs a thunk
-         * \param callback_ptr Non-<code>null</code> pointer to the callback
-         *        to invoke when #func_addr() is called
-         */
-        thunk(const std::shared_ptr<callback_t>& callback_ptr);
-};
-
-template<typename ParamType>
-thunk<ParamType>::thunk(const std::shared_ptr<callback_t>& callback_ptr)
-    : d_callback(callback_ptr)
-{ }
 
 //==============================================================================
 //                         class thunk_clearing_list
@@ -266,7 +217,7 @@ class thunk_clearing_list
          * words, two different threads may safely call this function (with
          * respect to <em>different</em> thunks!) simultaneously.
          */
-        void clear_thunk(thunk_base * thunk_);
+        void clear_thunk(thunk * thunk_);
 };
 
 } // namespace jsdi

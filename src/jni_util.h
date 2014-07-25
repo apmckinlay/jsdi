@@ -1692,7 +1692,7 @@ inline jni_utf16_string_region::const_iterator jni_utf16_string_region::end() co
 //==============================================================================
 
 /**
- * \brief Inserts a \link jni_utf18_string_region\endlink into a
+ * \brief Inserts a \link jni_utf8_string_region\endlink into a
  *        <code>std::ostream</code>
  * \param o Target stream
  * \param str String region to insert

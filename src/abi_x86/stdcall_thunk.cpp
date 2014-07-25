@@ -78,7 +78,8 @@ static_assert(0x77 == INSTRUCTIONS[CODE_RET_POP_SIZE_OFFSET+0], "check code");
 static_assert(0x77 == INSTRUCTIONS[CODE_RET_POP_SIZE_OFFSET+1], "check code");
 #endif
 
-typedef uint32_t (__stdcall * wrapper_func)(stdcall_thunk_impl *, uint32_t *);
+typedef uint64_t (__stdcall * wrapper_func)(stdcall_thunk_impl *,
+                                            const marshall_word_t *);
 
 struct stub_code
 {
@@ -152,24 +153,25 @@ struct stdcall_thunk_impl
     // DATA
     //
 
-    stub_code                                  d_code;
-    std::function<void()>                      d_setup;
-    std::shared_ptr<stdcall_thunk::callback_t> d_callback;
-    std::function<void()>                      d_teardown;
+    stub_code                 d_code;
+    std::function<void()>     d_setup;
+    std::shared_ptr<callback> d_callback;
+    std::function<void()>     d_teardown;
 
     //
     // CONSTRUCTORS
     //
 
     stdcall_thunk_impl(const std::function<void()>&,
-                       const std::shared_ptr<stdcall_thunk::callback_t>&,
+                       const std::shared_ptr<callback>&,
                        const std::function<void()>&);
 
     //
     // STATIC FUNCTIONS
     //
 
-    static uint32_t __stdcall wrapper(stdcall_thunk_impl *, uint32_t *);
+    static uint64_t __stdcall wrapper(stdcall_thunk_impl *,
+                                      const marshall_word_t *);
 
     //
     // OPERATORS
@@ -185,7 +187,7 @@ struct stdcall_thunk_impl
 
 stdcall_thunk_impl::stdcall_thunk_impl(
     const std::function<void()>& setup,
-    const std::shared_ptr<stdcall_thunk::callback_t>& callback,
+    const std::shared_ptr<callback>& callback,
     const std::function<void()>& teardown)
     : d_code(this, wrapper, callback->size_direct())
     , d_setup(setup)
@@ -193,10 +195,10 @@ stdcall_thunk_impl::stdcall_thunk_impl(
     , d_teardown(teardown)
 { }
 
-uint32_t __stdcall stdcall_thunk_impl::wrapper(stdcall_thunk_impl * impl,
-                                               uint32_t * args)
+uint64_t __stdcall stdcall_thunk_impl::wrapper(stdcall_thunk_impl * impl,
+                                               const marshall_word_t * args)
 {
-    uint32_t result(0);
+    uint64_t result(0);
     LOG_TRACE("stdcall_thunk_impl::wrapper( impl => " << impl << ", args => "
                                                       << args << " )");
     impl->d_setup();
@@ -233,8 +235,7 @@ void stdcall_thunk_impl::operator delete(void * ptr)
 //                            class stdcall_thunk
 //==============================================================================
 
-stdcall_thunk::stdcall_thunk(
-    const std::shared_ptr<callback_t>& callback_ptr)
+stdcall_thunk::stdcall_thunk(const std::shared_ptr<callback>& callback_ptr)
     : thunk(callback_ptr)
     , d_impl(new stdcall_thunk_impl(
           std::bind(std::mem_fn(&stdcall_thunk::setup_call), this),
@@ -263,39 +264,43 @@ void * stdcall_thunk::func_addr()
 using namespace jsdi;
 using namespace jsdi::abi_x86;
 
+namespace {
+
 static const int EMPTY_PTR_ARRAY[1] = { };
 
-typedef stdcall_thunk::callback_t callback_t;
-
 // callback that can invoke a stdcall func and return its value
-struct stdcall_invoke_basic_callback : public callback_t
+struct stdcall_invoke_basic_callback : public callback
 {
     void * d_func_ptr;
     template<typename FuncPtr>
-    stdcall_invoke_basic_callback(FuncPtr func_ptr, int size_direct,
-                                  int size_indirect, const int * ptr_array,
+    stdcall_invoke_basic_callback(FuncPtr func_ptr, size_t size_direct,
+                                  size_t size_total, const int * ptr_array,
                                   int ptr_array_size, int vi_count)
-        : callback(size_direct, size_indirect, ptr_array, ptr_array_size,
-                   vi_count)
+        : callback(static_cast<int>(size_direct), static_cast<int>(size_total),
+                   ptr_array, ptr_array_size, vi_count)
         , d_func_ptr(reinterpret_cast<void *>(func_ptr))
     { }
-    virtual uint32_t call(const uint32_t * args)
+    template<typename FuncPtr>
+    stdcall_invoke_basic_callback(FuncPtr func_ptr, size_t size_direct)
+        : stdcall_invoke_basic_callback(func_ptr, size_direct, size_direct,
+                                        EMPTY_PTR_ARRAY, 0, 0)
+    { }
+    virtual uint64_t call(const marshall_word_t * args)
     {
-        std::vector<char> data(d_size_total, 0);
+        std::vector<uint8_t> data(d_size_total, 0);
         std::vector<int> vi_inst_array(
             d_vi_count,
             static_cast<int>(suneido_jsdi_VariableIndirectInstruction::RETURN_JAVA_STRING));
         unmarshaller_vi_test u(d_size_direct, d_size_total, d_ptr_array.data(),
                                d_ptr_array.data() + d_ptr_array.size(),
                                d_vi_count);
-        u.unmarshall_vi(data.data(),
-                        // FIXME: The reinterpret_cast below should go away
-                        reinterpret_cast<const char *>(args), 0, 0,
-                        vi_inst_array.data());
-        return static_cast<uint32_t>(
-            stdcall_invoke::basic(d_size_direct, data.data(), d_func_ptr) &
-            0x00000000ffffffffLL
-        );
+        u.unmarshall_vi(args, reinterpret_cast<marshall_word_t *>(data.data()),
+                        0, 0, vi_inst_array.data());
+        return static_cast<uint64_t>(
+            stdcall_invoke::basic(
+                d_size_direct,
+                reinterpret_cast<uint32_t *>(data.data()), d_func_ptr)
+            & 0x00000000ffffffffLL);
     }
 };
 
@@ -312,10 +317,19 @@ struct Func
     };
 };
 
+int word_offset(ptrdiff_t byte_offset)
+{
+    assert(0 <= byte_offset || !"byte offset cannot be negative");
+    assert(0 == byte_offset % sizeof(marshall_word_t) || !"can't word-align");
+    return static_cast<int>(
+        (byte_offset + sizeof(marshall_word_t)-1) / sizeof(marshall_word_t));
+}
+
+} // anonymous namespace
+
 TEST(one_int32,
-    std::shared_ptr<callback_t> cb(
-        new stdcall_invoke_basic_callback(TestInt32, sizeof(int32_t), 0,
-                                          EMPTY_PTR_ARRAY, 0, 0));
+    std::shared_ptr<callback> cb(
+        new stdcall_invoke_basic_callback(TestInt32, sizeof(int32_t)));
     stdcall_thunk thunk(cb);
     int32_t result = Func<int32_t>::call(TestInvokeCallback_Int32_1, thunk, 10);
     thunk.clear();
@@ -323,9 +337,8 @@ TEST(one_int32,
 );
 
 TEST(sum_two_int32s,
-    std::shared_ptr<callback_t> cb(
-        new stdcall_invoke_basic_callback(TestSumTwoInt32s, 2 * sizeof(int32_t),
-                                          0, EMPTY_PTR_ARRAY, 0, 0));
+    std::shared_ptr<callback> cb(
+        new stdcall_invoke_basic_callback(TestSumTwoInt32s, 2*sizeof(int32_t)));
     stdcall_thunk thunk(cb);
     int32_t result = Func<int32_t, int32_t>::call(
         TestInvokeCallback_Int32_2, thunk,
@@ -335,9 +348,8 @@ TEST(sum_two_int32s,
 );
 
 TEST(sum_six_mixed,
-    std::shared_ptr<callback_t> cb(
-        new stdcall_invoke_basic_callback(TestSumSixMixed, 8 * sizeof(uint32_t),
-                                          0, EMPTY_PTR_ARRAY, 0, 0));
+    std::shared_ptr<callback> cb(
+        new stdcall_invoke_basic_callback(TestSumSixMixed, 8*sizeof(int32_t)));
     stdcall_thunk thunk(cb);
     int32_t result = Func<double, int8_t, float, int16_t, float, int64_t>::call(
         TestInvokeCallback_Mixed_6, thunk,
@@ -348,10 +360,9 @@ TEST(sum_six_mixed,
 
 TEST(sum_packed,
     Packed_Int8Int8Int16Int32 packed = { -1, 2, 100, 54321 };
-    std::shared_ptr<callback_t> cb(
+    std::shared_ptr<callback> cb(
         new stdcall_invoke_basic_callback(TestSumPackedInt8Int8Int16Int32,
-                                          sizeof(packed), 0, EMPTY_PTR_ARRAY, 0,
-                                          0));
+                                          sizeof(packed)));
     stdcall_thunk thunk(cb);
     int32_t result = Func<Packed_Int8Int8Int16Int32>::call(
         TestInvokeCallback_Packed_Int8Int8Int16Int32, thunk, packed);
@@ -375,23 +386,25 @@ TEST(sum_string,
         SIZE_TOTAL = SIZE_DIRECT + SIZE_INDIRECT,
         VI_COUNT = 4,
     };
-    const int STR_OFFSET =   reinterpret_cast<char *>(&r_ss[0].str) -
-                             reinterpret_cast<char *>(&r_ss[0]),
-              BUF_OFFSET =   reinterpret_cast<char *>(&r_ss[0].buffer) -
-                             reinterpret_cast<char *>(&r_ss[0]),
-              INNER_OFFSET = reinterpret_cast<char *>(&r_ss[0].inner) -
-                             reinterpret_cast<char *>(&r_ss[0]);
-    static int PTR_ARRAY[12] =
+    const ptrdiff_t STR_OFFSET =   reinterpret_cast<char *>(&r_ss[0].str) -
+                                   reinterpret_cast<char *>(&r_ss[0]),
+                    BUF_OFFSET =   reinterpret_cast<char *>(&r_ss[0].buffer) -
+                                   reinterpret_cast<char *>(&r_ss[0]),
+                    INNER_OFFSET = reinterpret_cast<char *>(&r_ss[0].inner) -
+                                   reinterpret_cast<char *>(&r_ss[0]);
+    static int const PTR_ARRAY[12] =
     {
         0, SIZE_DIRECT,
-        SIZE_DIRECT + STR_OFFSET, SIZE_TOTAL + 0,
-        SIZE_DIRECT + BUF_OFFSET, SIZE_TOTAL + 1,
-        SIZE_DIRECT + INNER_OFFSET, SIZE_DIRECT + sizeof(r_ss[0]),
-        SIZE_DIRECT + sizeof(r_ss[0]) + STR_OFFSET, SIZE_TOTAL + 2,
-        SIZE_DIRECT + sizeof(r_ss[0]) + BUF_OFFSET, SIZE_TOTAL + 3,
+        // rss[0]
+        word_offset(SIZE_DIRECT + STR_OFFSET), SIZE_TOTAL + 0,
+        word_offset(SIZE_DIRECT + BUF_OFFSET), SIZE_TOTAL + 1,
+        word_offset(SIZE_DIRECT + INNER_OFFSET), SIZE_DIRECT + sizeof(r_ss[0]),
+        // rss[1]
+        word_offset(SIZE_DIRECT + sizeof(r_ss[0]) + STR_OFFSET), SIZE_TOTAL + 2,
+        word_offset(SIZE_DIRECT + sizeof(r_ss[0]) + BUF_OFFSET), SIZE_TOTAL + 3,
     };
-    std::shared_ptr<callback_t> cb(
-    new stdcall_invoke_basic_callback(TestSumString, SIZE_DIRECT, SIZE_INDIRECT,
+    std::shared_ptr<callback> cb(
+    new stdcall_invoke_basic_callback(TestSumString, SIZE_DIRECT, SIZE_TOTAL,
                                       PTR_ARRAY, array_length(PTR_ARRAY),
                                       VI_COUNT));
     stdcall_thunk thunk(cb);
