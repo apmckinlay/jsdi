@@ -280,7 +280,7 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callVariableIndir
  */
 JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_ThunkManagerX86_newThunkX86(
     JNIEnv * env, jclass thunkManager, jobject callback, jobject boundValue,
-    jint sizeDirect, jint sizeIndirect, jintArray ptrArray,
+    jint sizeDirect, jint sizeTotal, jintArray ptrArray,
     jint variableIndirectCount, jlongArray outThunkAddrs)
 {
     JNI_EXCEPTION_SAFE_BEGIN
@@ -291,7 +291,7 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_ThunkManagerX86_newThunkX86(
     {
         callback_ptr.reset(
             new callback_x86_basic(env, callback, boundValue, sizeDirect,
-                                   sizeIndirect,
+                                   sizeTotal,
                                    reinterpret_cast<int *>(ptr_array.data()),
                                    ptr_array.size()));
     }
@@ -299,7 +299,7 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_ThunkManagerX86_newThunkX86(
     {
         callback_ptr.reset(
             new callback_x86_vi(env, callback, boundValue, sizeDirect,
-                                sizeIndirect,
+                                sizeTotal,
                                 reinterpret_cast<int *>(ptr_array.data()),
                                 ptr_array.size(), variableIndirectCount));
     }
