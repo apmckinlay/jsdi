@@ -3,13 +3,13 @@
  */
 
 //==============================================================================
-// file: jsdi_callback.cpp
+// file: callback_x86.cpp
 // auth: Victor Schappert
 // date: 20130806
 // desc: Implementation of callback which is able to call back into JNI
 //==============================================================================
 
-#include "jsdi_callback.h"
+#include "callback_x86.h"
 
 #include "log.h"
 #include "marshalling.h"
@@ -20,11 +20,11 @@ namespace jsdi {
 namespace abi_x86 {
 
 //==============================================================================
-//                         class jsdi_callback_basic
+//                         class callback_x86_basic
 //==============================================================================
 
-void jsdi_callback_basic::init(JNIEnv * env, jobject suneido_callback,
-                               jobject suneido_sucallable)
+void callback_x86_basic::init(JNIEnv * env, jobject suneido_callback,
+                              jobject suneido_sucallable)
 {
     assert(suneido_callback);
     assert(suneido_sucallable);
@@ -38,24 +38,23 @@ void jsdi_callback_basic::init(JNIEnv * env, jobject suneido_callback,
     }
 }
 
-jsdi_callback_basic::jsdi_callback_basic(JNIEnv * env,
-                                         jobject suneido_callback,
-                                         jobject suneido_sucallable,
-                                         int size_direct, int size_indirect,
-                                         const int * ptr_array,
-                                         int ptr_array_size, int vi_count)
+callback_x86_basic::callback_x86_basic(JNIEnv * env, jobject suneido_callback,
+                                       jobject suneido_sucallable,
+                                       int size_direct, int size_indirect,
+                                       const int * ptr_array,
+                                       int ptr_array_size, int vi_count)
     : callback(size_direct, size_indirect, ptr_array, ptr_array_size, vi_count)
 { init(env, suneido_callback, suneido_sucallable); }
 
-jsdi_callback_basic::jsdi_callback_basic(JNIEnv * env, jobject suneido_callback,
-                                         jobject suneido_bound_value,
-                                         int size_direct, int size_indirect,
-                                         const int * ptr_array,
-                                         int ptr_array_size)
+callback_x86_basic::callback_x86_basic(JNIEnv * env, jobject suneido_callback,
+                                       jobject suneido_bound_value,
+                                       int size_direct, int size_indirect,
+                                       const int * ptr_array,
+                                       int ptr_array_size)
     : callback(size_direct, size_indirect, ptr_array, ptr_array_size, 0)
 { init(env, suneido_callback, suneido_bound_value); }
 
-jsdi_callback_basic::~jsdi_callback_basic()
+callback_x86_basic::~callback_x86_basic()
 {
     JNIEnv * env(fetch_env());
     if (env)
@@ -65,11 +64,11 @@ jsdi_callback_basic::~jsdi_callback_basic()
     }
 }
 
-uint64_t jsdi_callback_basic::call(const marshall_word_t * args)
+uint64_t callback_x86_basic::call(const marshall_word_t * args)
 {
     uint64_t result(0);
-    LOG_TRACE("jsdi_callback_basic::call( this => " << this << ", args => "
-                                                    << args << " )");
+    LOG_TRACE("callback_x86_basic::call( this => " << this << ", args => "
+                                                   << args << " )");
     JNIEnv * const env(fetch_env());
     if (! env) return 0;
     JNI_EXCEPTION_SAFE_BEGIN
@@ -161,7 +160,7 @@ uint64_t jsdi_callback_basic::call(const marshall_word_t * args)
     return result;
 }
 
-JNIEnv * jsdi_callback_basic::fetch_env() const
+JNIEnv * callback_x86_basic::fetch_env() const
 {
     JNIEnv * env(nullptr);
     JavaVMAttachArgs attach_args;
@@ -180,14 +179,14 @@ JNIEnv * jsdi_callback_basic::fetch_env() const
 }
 
 //==============================================================================
-//                            class jsdi_callback_vi
+//                           class callback_x86_vi
 //==============================================================================
 
-uint64_t jsdi_callback_vi::call(const marshall_word_t * args)
+uint64_t callback_x86_vi::call(const marshall_word_t * args)
 {
     uint64_t result(0);
-    LOG_TRACE("jsdi_callback_vi::call( this => " << this << ", args => "
-                                                 << args << " )");
+    LOG_TRACE("callback_x86_vi::call( this => " << this << ", args => "
+                                                << args << " )");
     JNIEnv * const env(fetch_env());
     if (!env) return 0;
     JNI_EXCEPTION_SAFE_BEGIN

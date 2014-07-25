@@ -102,9 +102,6 @@
     <ClInclude Include="..\..\..\src\version.h">
       <Filter>Header Files\src</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\abi_x86\jsdi_callback.h">
-      <Filter>Header Files\src\abi_x86</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\abi_x86\stdcall_invoke.h">
       <Filter>Header Files\src\abi_x86</Filter>
     </ClInclude>
@@ -143,6 +140,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\marshalling.h">
       <Filter>Header Files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\abi_x86\callback_x86.h">
+      <Filter>Header Files\src\abi_x86</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -203,9 +203,6 @@
     <ClCompile Include="..\..\..\src\version.cpp">
       <Filter>Source Files\src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\abi_x86\jsdi_callback.cpp">
-      <Filter>Source Files\src\abi_x86</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\abi_x86\stdcall_invoke.cpp">
       <Filter>Source Files\src\abi_x86</Filter>
     </ClCompile>
@@ -235,6 +232,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\marshalling.cpp">
       <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\abi_x86\callback_x86.cpp">
+      <Filter>Source Files\src\abi_x86</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

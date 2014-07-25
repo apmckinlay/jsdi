@@ -11,9 +11,10 @@
 
 #include "global_refs.h"
 #include "jni_exception.h"
-#include "jsdi_callback.h"
 #include "log.h"
 #include "marshalling.h"
+
+#include "callback_x86.h"
 #include "stdcall_invoke.h"
 #include "stdcall_thunk.h"
 
@@ -30,7 +31,7 @@ using namespace jsdi::abi_x86;
 /* TODO: do we need to be able to handle Win32 exceptions? If so, we'll want
  *       to wrap things in SEH code *at some level*. But do we want that
  *       overhead around every DLL call, regardless of whether it is expected
- *       to throw an exception? [See NOTES A-D in jsdi_callback.cpp]
+ *       to throw an exception? [See NOTES A-D in callback_x86.cpp]
  */
 
 namespace {
@@ -289,18 +290,18 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_ThunkManagerX86_newThunkX86(
     if (variableIndirectCount < 1)
     {
         callback_ptr.reset(
-            new jsdi_callback_basic(env, callback, boundValue, sizeDirect,
-                                    sizeIndirect,
-                                    reinterpret_cast<int *>(ptr_array.data()),
-                                    ptr_array.size()));
+            new callback_x86_basic(env, callback, boundValue, sizeDirect,
+                                   sizeIndirect,
+                                   reinterpret_cast<int *>(ptr_array.data()),
+                                   ptr_array.size()));
     }
     else
     {
         callback_ptr.reset(
-            new jsdi_callback_vi(env, callback, boundValue, sizeDirect,
-                                    sizeIndirect,
-                                    reinterpret_cast<int *>(ptr_array.data()),
-                                    ptr_array.size(), variableIndirectCount));
+            new callback_x86_vi(env, callback, boundValue, sizeDirect,
+                                sizeIndirect,
+                                reinterpret_cast<int *>(ptr_array.data()),
+                                ptr_array.size(), variableIndirectCount));
     }
     stdcall_thunk * thunk(new stdcall_thunk(callback_ptr));
     void * func_addr(thunk->func_addr());

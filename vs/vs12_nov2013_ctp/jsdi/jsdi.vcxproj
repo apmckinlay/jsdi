@@ -263,7 +263,7 @@
     <ClInclude Include="..\..\..\src\abi_amd64\register64.h" />
     <ClInclude Include="..\..\..\src\abi_amd64\test64.h" />
     <ClInclude Include="..\..\..\src\abi_amd64\thunk64.h" />
-    <ClInclude Include="..\..\..\src\abi_x86\jsdi_callback.h" />
+    <ClInclude Include="..\..\..\src\abi_x86\callback_x86.h" />
     <ClInclude Include="..\..\..\src\abi_x86\stdcall_invoke.h" />
     <ClInclude Include="..\..\..\src\abi_x86\stdcall_thunk.h" />
     <ClInclude Include="..\..\..\src\callback.h" />
@@ -318,7 +318,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-exe|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-dll|Win32'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\abi_x86\jsdi_callback.cpp">
+    <ClCompile Include="..\..\..\src\abi_x86\callback_x86.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-exe|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-dll|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-exe|x64'">true</ExcludedFromBuild>
