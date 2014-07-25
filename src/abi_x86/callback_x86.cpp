@@ -40,18 +40,18 @@ void callback_x86_basic::init(JNIEnv * env, jobject suneido_callback,
 
 callback_x86_basic::callback_x86_basic(JNIEnv * env, jobject suneido_callback,
                                        jobject suneido_sucallable,
-                                       int size_direct, int size_indirect,
+                                       int size_direct, int size_total,
                                        const int * ptr_array,
                                        int ptr_array_size, int vi_count)
-    : callback(size_direct, size_indirect, ptr_array, ptr_array_size, vi_count)
+    : callback(size_direct, size_total, ptr_array, ptr_array_size, vi_count)
 { init(env, suneido_callback, suneido_sucallable); }
 
 callback_x86_basic::callback_x86_basic(JNIEnv * env, jobject suneido_callback,
                                        jobject suneido_bound_value,
-                                       int size_direct, int size_indirect,
+                                       int size_direct, int size_total,
                                        const int * ptr_array,
                                        int ptr_array_size)
-    : callback(size_direct, size_indirect, ptr_array, ptr_array_size, 0)
+    : callback(size_direct, size_total, ptr_array, ptr_array_size, 0)
 { init(env, suneido_callback, suneido_bound_value); }
 
 callback_x86_basic::~callback_x86_basic()
