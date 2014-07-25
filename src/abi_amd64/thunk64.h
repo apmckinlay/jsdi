@@ -27,7 +27,7 @@
   * \author Victor Schappert
   * \since 20140710
   */
- class thunk64 : public thunk<uint64_t>
+ class thunk64 : public thunk
  {
         //
         // DATA
@@ -50,12 +50,12 @@
          *        [0..#NUM_PARAM_REGISTERS]</em>
          * \param register_types Register types of the parameter registers
          */
-        thunk64(const std::shared_ptr<callback_t>& callback_ptr,
+        thunk64(const std::shared_ptr<callback>& callback_ptr,
                 size_t num_param_registers,
                 param_register_types register_types);
 
         //
-        // ANCESTOR CLASS: thunk<uint64_t>
+        // ANCESTOR CLASS: thunk
         //
 
     public:

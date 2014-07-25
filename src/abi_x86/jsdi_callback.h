@@ -25,7 +25,7 @@ namespace abi_x86 {
 //                         class jsdi_callback_basic
 //==============================================================================
 
-class jsdi_callback_basic : public callback<uint32_t>, private non_copyable
+class jsdi_callback_basic : public callback, private non_copyable
 {
         //
         // DATA
@@ -75,7 +75,7 @@ class jsdi_callback_basic : public callback<uint32_t>, private non_copyable
 
     protected:
 
-        virtual uint32_t call(const uint32_t * args);
+        virtual uint64_t call(const marshall_word_t * args);
 
         //
         // STATICS
@@ -115,7 +115,7 @@ class jsdi_callback_vi : public jsdi_callback_basic
 
     protected:
 
-        virtual uint32_t call(const uint32_t * args);
+        virtual uint64_t call(const marshall_word_t * args);
 };
 
 inline jsdi_callback_vi::jsdi_callback_vi(JNIEnv * env,

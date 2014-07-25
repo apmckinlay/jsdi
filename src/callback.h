@@ -12,6 +12,8 @@
  * \brief Generic interface for a callback function
  */
 
+#include "marshalling.h"
+
 #include <vector>
 #include <memory>
 #include <cassert>
@@ -28,9 +30,8 @@ namespace jsdi {
  * \since 20130804
  *
  * Specific implementations of this class should override
- * #call(const ParamType *).
+ * #call(const marshall_word_t *).
  */
-template<typename ParamType>
 class callback
 {
         //
@@ -55,9 +56,12 @@ class callback
         /**
          * \brief Constructs a callback with a given set of unmarshalling
          * parameters.
-         * \param size_direct Size of the on-stack arguments
-         * \param size_indirect Size of data indirectly accessible from
-         * pointers passed on the stack
+         * \param size_direct Size of the on-stack arguments: <code>0 &lt;
+         * size_direct &le; size_total</code> <em>must be a multiple of
+         * <code>sizeof(marshall_word_t)</code></em>
+         * \param size_total Size of the on-stack arguments plus size of any
+         * data indirectly accessible via pointers from the on-stack arguments
+         * <em>must be a multiple of <code>sizeof(marshall_word_t)</code></em>
          * \param ptr_array Array of tuples indicating which positions in the
          * direct and indirect storage are pointers, and which positions they
          * point to
@@ -65,10 +69,10 @@ class callback
          * \param vi_count Number of variable indirect pointers that must be
          * unmarshalled
          */
-        callback(int size_direct, int size_indirect, const int * ptr_array,
+        callback(int size_direct, int size_total, const int * ptr_array,
                  int ptr_array_size, int vi_count);
 
-        virtual ~callback();
+        virtual ~callback() = default;
 
         //
         // ACCESSORS
@@ -96,30 +100,10 @@ class callback
          * base of the on-stack arguments in <dfn>stdcall</dfn> format
          * \return Return value of the callback function
          */
-        virtual ParamType call(const ParamType * args) = 0;
+        virtual uint64_t call(const marshall_word_t * args) = 0;
 };
 
-template<typename ParamType>
-inline callback<ParamType>::callback(int size_direct, int size_indirect,
-                                     const int * ptr_array, int ptr_array_size,
-                                     int vi_count)
-    : d_ptr_array(ptr_array, ptr_array + ptr_array_size)
-    , d_size_direct(size_direct)
-    , d_size_total(size_direct + size_indirect)
-    , d_vi_count(vi_count)
-{
-    assert(0 < size_direct || !"direct size must be positive");
-    assert(0 <= size_indirect || !"indirect size cannot be negative");
-    assert(0 <= ptr_array_size || !"pointer array size cannot be negative");
-    assert(0 <= vi_count || !"variable indirect count cannot be negative");
-}
-
-template<typename ParamType>
-inline callback<ParamType>::~callback()
-{ } // anchor for virtual destructor
-
-template<typename ParamType>
-inline int callback<ParamType>::size_direct() const { return d_size_direct; }
+inline int callback::size_direct() const { return d_size_direct; }
 
 } // namespace jsdi
 

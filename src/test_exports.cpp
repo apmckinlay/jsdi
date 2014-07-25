@@ -206,7 +206,7 @@ EXPORT_STDCALL(void) TestNullPtrOutParam(const char ** ptr)
 { if (ptr) *ptr = 0; }
 
 EXPORT_STDCALL(uint64_t) TestReturnPtrPtrPtrDoubleAsUInt64(
-    const double * const * const * ptr)
+    double const * const * const * ptr)
 {
     // The parameter type is because: http://stackoverflow.com/a/1404795/1911388
     union
@@ -292,7 +292,7 @@ EXPORT_STDCALL(int32_t) TestSwap(Swap_StringInt32Int32 * ptr)
 EXPORT_STDCALL(const char *) TestReturnString(const char * str)
 { return str; }
 
-EXPORT_STDCALL(const char *) TestReturnPtrString(const char * const * ptr)
+EXPORT_STDCALL(const char *) TestReturnPtrString(char const * const * ptr)
 { return ptr ? *ptr : 0; }
 
 EXPORT_STDCALL(char *) TestReturnStringOutBuffer(const char * str,

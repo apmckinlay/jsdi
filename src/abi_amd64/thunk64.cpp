@@ -127,7 +127,7 @@ const uint8_t UNWIND_INFO[UNWIND_INFO_SIZE] =
             of UNWIND_CODE's, the last being unused if unnecessary) */
 };
 
-typedef uint64_t (* wrapper_func)(thunk64_impl *, const uint64_t *);
+typedef uint64_t (* wrapper_func)(thunk64_impl *, const marshall_word_t *);
 
 struct stub_code
 {
@@ -276,24 +276,24 @@ struct thunk64_impl
     // DATA
     //
 
-    stub_code                               d_code;
-    std::function<void()>                   d_setup;
-    std::shared_ptr<thunk64::callback_t>    d_callback;
-    std::function<void()>                   d_teardown;
+    stub_code                   d_code;
+    std::function<void()>       d_setup;
+    std::shared_ptr<callback>   d_callback;
+    std::function<void()>       d_teardown;
 
     //
     // CONSTRUCTORS
     //
 
     thunk64_impl(size_t, param_register_types, const std::function<void()>&,
-                 const std::shared_ptr<thunk64::callback_t>&,
+                 const std::shared_ptr<callback>&,
                  const std::function<void()>&);
 
     //
     // STATICS
     //
 
-    static uint64_t wrapper(thunk64_impl *, const uint64_t *);
+    static uint64_t wrapper(thunk64_impl *, const marshall_word_t *);
 
     //
     // OPERATORS
@@ -310,7 +310,7 @@ struct thunk64_impl
 thunk64_impl::thunk64_impl(
     size_t num_param_registers, param_register_types register_types,
     const std::function<void()>& setup,
-    const std::shared_ptr<thunk64::callback_t>& callback,
+    const std::shared_ptr<callback>& callback,
     const std::function<void()>& teardown)
     : d_code(this, wrapper, num_param_registers, register_types)
     , d_setup(setup)
@@ -318,7 +318,8 @@ thunk64_impl::thunk64_impl(
     , d_teardown(teardown)
 { }
 
-uint64_t thunk64_impl::wrapper(thunk64_impl * impl, const uint64_t * args)
+uint64_t thunk64_impl::wrapper(thunk64_impl * impl,
+                               const marshall_word_t * args)
 {
     uint64_t result(0);
     LOG_TRACE("thunk64_impl::wrapper ( impl => " << impl << ", args => "
@@ -357,7 +358,7 @@ void thunk64_impl::operator delete(void * ptr)
 //                              class thunk64
 //==============================================================================
 
-thunk64::thunk64(const std::shared_ptr<callback_t>& callback_ptr,
+thunk64::thunk64(const std::shared_ptr<callback>& callback_ptr,
                  size_t num_param_registers,
                  param_register_types register_types)
     : thunk(callback_ptr)
@@ -395,23 +396,23 @@ namespace {
 static const int EMPTY_PTR_ARRAY[1] = { };
 static const param_register_types DEFAULT_REGISTERS;
 
-typedef thunk64::callback_t callback_t;
-typedef std::shared_ptr<callback_t> callback_ptr;
+typedef std::shared_ptr<jsdi::callback> callback_ptr_t;
 
 // callback that can invoke a function using direct data (arguments) only and
 // return its result
-struct direct_callback : public callback_t
+struct direct_callback : public jsdi::callback
 {
     void *               d_func_ptr;
     param_register_types d_register_types;
     template<typename FuncPtr>
     direct_callback(FuncPtr func_ptr, size_t size_direct,
                     param_register_types register_types)
-        : callback(static_cast<int>(size_direct), 0, EMPTY_PTR_ARRAY, 0, 0)
+        : callback(static_cast<int>(size_direct), static_cast<int>(size_direct),
+                   EMPTY_PTR_ARRAY, 0, 0)
         , d_func_ptr(reinterpret_cast<void *>(func_ptr))
         , d_register_types(register_types)
     { }
-    virtual uint64_t call(const uint64_t * args)
+    virtual uint64_t call(const jsdi::marshall_word_t * args)
     {
         const size_t args_size_bytes(static_cast<size_t>(d_size_direct));
         return d_register_types.has_fp()
@@ -436,8 +437,8 @@ struct invoker
 } // anonymous namespace
 
 TEST(one_int32,
-    callback_ptr cb(new direct_callback(TestInt32, sizeof(uint64_t),
-                                        DEFAULT_REGISTERS));
+    callback_ptr_t cb(new direct_callback(TestInt32, sizeof(uint64_t),
+                                          DEFAULT_REGISTERS));
     thunk64 thunk(cb, 1, DEFAULT_REGISTERS);
     int32_t result = invoker<int32_t>::call(TestInvokeCallback_Int32_1, thunk,
                                             0x19800725);
@@ -446,8 +447,8 @@ TEST(one_int32,
 );
 
 TEST(sum_two_int32s,
-    callback_ptr cb(new direct_callback(TestSumTwoInt32s, 2 * sizeof(uint64_t),
-                                        DEFAULT_REGISTERS));
+    callback_ptr_t cb(new direct_callback(TestSumTwoInt32s, 2 * sizeof(uint64_t),
+                                          DEFAULT_REGISTERS));
     thunk64 thunk(cb, 2, DEFAULT_REGISTERS);
     int32_t result = invoker<int32_t, int32_t>::call(
         TestInvokeCallback_Int32_2, thunk, std::numeric_limits<int32_t>::min(),
@@ -460,8 +461,8 @@ TEST(sum_six_mixed,
     const param_register_types registers(
         param_register_type::DOUBLE, param_register_type::UINT64,
         param_register_type::FLOAT, param_register_type::UINT64);
-    callback_ptr cb(new direct_callback(TestSumSixMixed, 6 * sizeof(uint64_t),
-                                        registers));
+    callback_ptr_t cb(new direct_callback(TestSumSixMixed, 6 * sizeof(uint64_t),
+                                          registers));
     thunk64 thunk(cb, 4, registers);
     int32_t result = 
     invoker<double, int8_t, float, int16_t, float, int64_t>::call(
@@ -473,8 +474,8 @@ TEST(sum_six_mixed,
 TEST(sum_packed,
     const Packed_Int8Int8Int16Int32 packed = { -1, 2, 100, 54321 };
     assert_equals(sizeof(uint64_t), sizeof(packed));
-    callback_ptr cb(new direct_callback(TestSumPackedInt8Int8Int16Int32,
-                                        sizeof(uint64_t), DEFAULT_REGISTERS));
+    callback_ptr_t cb(new direct_callback(TestSumPackedInt8Int8Int16Int32,
+                                          sizeof(uint64_t), DEFAULT_REGISTERS));
     thunk64 thunk(cb, 1, DEFAULT_REGISTERS);
     int32_t result = invoker<Packed_Int8Int8Int16Int32>::call(
         TestInvokeCallback_Packed_Int8Int8Int16Int32, thunk, packed);
@@ -489,7 +490,7 @@ TEST(fp_thorough,
         [this, &args](auto f)
         {
             // Set up the callback and thunk
-            callback_ptr cb(new direct_callback(
+            callback_ptr_t cb(new direct_callback(
                 f->func.ptr, sizeof(uint64_t) * f->func.nargs,
                 f->func.register_types));
             thunk64 thunk(cb, std::min(f->func.nargs, NUM_PARAM_REGISTERS),

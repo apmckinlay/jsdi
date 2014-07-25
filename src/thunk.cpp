@@ -20,7 +20,7 @@
 namespace jsdi {
 
 //==============================================================================
-//                             class thunk_base
+//                                class thunk
 //==============================================================================
 
 namespace {
@@ -49,7 +49,7 @@ std::string bad_state_to_str(int_fast32_t state)
 
 } // anonymous namespace
 
-/* NOTE: The meaning of the thunk_base.d_state member is the following:
+/* NOTE: The meaning of the thunk.d_state member is the following:
  *    -1: deleted
  *     0: cleared
  *     1: clearing
@@ -61,21 +61,21 @@ std::string bad_state_to_str(int_fast32_t state)
  * same time can be solved with a simple atomic test-and-set approach.
  */
 
-void thunk_base::setup_bad_state(int_fast32_t state)
+void thunk::setup_bad_state(int_fast32_t state)
 {
     LOG_FATAL("Bad state " << state << " detected in setup_call() for "
               "thunk " << this << " [func_addr() => " << func_addr() << ']');
     std::abort();
 }
 
-void thunk_base::teardown_bad_state(int_fast32_t state)
+void thunk::teardown_bad_state(int_fast32_t state)
 {
     LOG_FATAL("Bad state " << state << " detected in setup_call() for "
               "thunk " << this << " [func_addr() => " << func_addr() << ']');
     std::abort();
 }
 
-void thunk_base::setup_call()
+void thunk::setup_call()
 {
     assert(MAGIC == d_magic);
     int_fast32_t state = std::atomic_fetch_add(&d_state, 1);
@@ -83,7 +83,7 @@ void thunk_base::setup_call()
         setup_bad_state(state);
 }
 
-void thunk_base::teardown_call()
+void thunk::teardown_call()
 {
     assert(MAGIC == d_magic);
     int_fast32_t state = std::atomic_fetch_sub(&d_state, 1) - 1;
@@ -96,16 +96,17 @@ void thunk_base::teardown_call()
     }
 }
 
-thunk_base::thunk_base()
+thunk::thunk(const std::shared_ptr<callback>& callback_ptr)
     :
 #ifndef _NDEBUG
       d_magic(MAGIC),
 #endif // _NDEBUG
-      d_clearing(false)
-    , d_state(thunk_state::READY)
+      d_state(thunk_state::READY)
+    , d_clearing(false)
+    , d_callback(callback_ptr)
 { LOG_DEBUG("New thunk " << static_cast<void *>(this)); }
 
-thunk_base::~thunk_base()
+thunk::~thunk()
 {
 #ifndef _NDEBUG
     d_magic = ~MAGIC;
@@ -114,7 +115,7 @@ thunk_base::~thunk_base()
     assert(thunk_state::CLEARED == state || thunk_state::READY == state);
 }
 
-thunk_state thunk_base::clear()
+thunk_state thunk::clear()
 {
     assert(MAGIC == d_magic);
     bool already_clearing = std::atomic_exchange(&d_clearing, true);
@@ -129,7 +130,7 @@ thunk_state thunk_base::clear()
     else return thunk_state::CLEARING;
 }
 
-thunk_state thunk_base::state() const
+thunk_state thunk::state() const
 {
     int_fast32_t state = std::atomic_load(&d_state);
     assert(thunk_state::CLEARED <= state || !"bad thunk state");
@@ -145,12 +146,12 @@ thunk_state thunk_base::state() const
 
 struct thunk_clearing_list_impl
 {
-    std::deque<thunk_base *> d_cleared_list;
-    std::deque<thunk_base *> d_clearing_list;
+    std::deque<thunk *> d_cleared_list;
+    std::deque<thunk *> d_clearing_list;
     std::mutex               d_mutex;
     // Use default destructor. Thus it will leak whatever is on the lists at
     // time of destruction.
-    void clear_thunk(thunk_base * thunk_)
+    void clear_thunk(thunk * thunk_)
     {
         assert(thunk_ || !"thunk cannot be null");
         std::lock_guard<std::mutex> lock(d_mutex);
@@ -189,7 +190,7 @@ thunk_clearing_list::thunk_clearing_list()
     : d_impl(new thunk_clearing_list_impl)
 { }
 
-void thunk_clearing_list::clear_thunk(thunk_base * thunk_)
+void thunk_clearing_list::clear_thunk(thunk * thunk_)
 { d_impl->clear_thunk(thunk_); }
 
 } // namespace jsdi

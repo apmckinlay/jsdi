@@ -17,7 +17,6 @@
 
 namespace jsdi {
 
-template<typename ParamType>
 class callback;
 
 namespace abi_x86 {
@@ -30,7 +29,7 @@ struct stdcall_thunk_impl;
  * \since 20130802
  * \see stdcall_invoke
  */
-class stdcall_thunk : public thunk<uint32_t>
+class stdcall_thunk : public thunk
 {
         //
         // DATA
@@ -49,10 +48,10 @@ class stdcall_thunk : public thunk<uint32_t>
          * \param callback_ptr Valid pointer to the callback to invoke when
          *        #func_addr() is called
          */
-        stdcall_thunk(const std::shared_ptr<callback<uint32_t>>& callback_ptr);
+        stdcall_thunk(const std::shared_ptr<callback>& callback_ptr);
 
         //
-        // ANCESTOR CLASS: thunk<uint32_t>
+        // ANCESTOR CLASS: thunk
         //
 
     public:

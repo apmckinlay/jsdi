@@ -126,7 +126,7 @@ using namespace jsdi;
         __asm mov  receives_27, eax     \
     }
 #else
-#error Replacement for inline assembler required
+#error replacement for inline assembler required
 #endif
 
 #endif // #if defined(_M_IX86)

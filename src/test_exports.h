@@ -27,9 +27,11 @@ extern "C"
 // For x86, don't specify __declspec(dllexport) because these exports are
 // declared in test_exports.defs
 #define EXPORT_STDCALL(return_type) return_type __stdcall
-#else if defined(_M_AMD64)
+#elif defined(_M_AMD64)
 // For x64, don't specify __stdcall because, really, there's no such thing.
 #define EXPORT_STDCALL(return_type) __declspec(dllexport) return_type
+#else
+#error unknown CPU architecture
 #endif
 
 struct Packed_Int8Int8Int16Int32
@@ -165,7 +167,7 @@ EXPORT_STDCALL(void) TestHelloWorldOutBuffer(char * buffer, int32_t size);
 EXPORT_STDCALL(void) TestNullPtrOutParam(const char ** ptr);
 
 EXPORT_STDCALL(uint64_t) TestReturnPtrPtrPtrDoubleAsUInt64(
-    const double * const * const * ptr);
+    double const * const * const * ptr);
 
 EXPORT_STDCALL(int32_t) TestSumString(Recursive_StringSum * ptr);
 
@@ -175,7 +177,7 @@ EXPORT_STDCALL(int32_t) TestSwap(Swap_StringInt32Int32 * ptr);
 
 EXPORT_STDCALL(const char *) TestReturnString(const char * str);
 
-EXPORT_STDCALL(const char *) TestReturnPtrString(const char * const * ptr);
+EXPORT_STDCALL(const char *) TestReturnPtrString(char const * const * ptr);
 
 EXPORT_STDCALL(char *) TestReturnStringOutBuffer(const char * str,
                                                  char * buffer, int32_t size);
