@@ -65,7 +65,7 @@ class callback
          * \param ptr_array Array of tuples indicating which positions in the
          * direct and indirect storage are pointers, and which positions they
          * point to
-         * \param ptr_array_size Size of <dfn>ptr_array</dfn> (must be even)
+         * \param ptr_array_size Size of <code>ptr_array</code> (must be even)
          * \param vi_count Number of variable indirect pointers that must be
          * unmarshalled
          */
@@ -97,7 +97,7 @@ class callback
          * \brief Unmarshalls the parameters, does whatever work is expected,
          * and returns the callback return value
          * \param args Points to the address on the execution stack that is the
-         * base of the on-stack arguments in <dfn>stdcall</dfn> format
+         * base of the on-stack arguments in <code>stdcall</code> format
          * \return Return value of the callback function
          */
         virtual uint64_t call(const marshall_word_t * args) = 0;

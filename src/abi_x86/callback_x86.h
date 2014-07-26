@@ -25,6 +25,13 @@ namespace abi_x86 {
 //                         class callback_x86_basic
 //==============================================================================
 
+/**
+ * \brief Callback for Windows x86 platform that can unmarshall direct and
+ *        indirect data, but not variable indirect data
+ * \author Victor Schappert
+ * \since 20130806
+ * \see callback_x86_vi
+ */
 class callback_x86_basic : public callback, private non_copyable
 {
         //
@@ -33,9 +40,11 @@ class callback_x86_basic : public callback, private non_copyable
 
     protected:
 
+        /** \cond internal */
         jobject   d_suneido_callback_global_ref;
         jobject   d_suneido_bound_value_global_ref;
         JavaVM  * d_jni_jvm;
+        /** \endcond internal */
 
         //
         // INTERNALS
@@ -43,23 +52,43 @@ class callback_x86_basic : public callback, private non_copyable
 
     private:
 
-        // GCC doesn't support C++11 delegating constructors yet so need init()
-        void init(JNIEnv * env, jobject suneido_callback,
-                  jobject suneido_bound_value);
-
         //
         // CONSTRUCTORS
         //
 
     protected:
 
+        /** \cond internal */
         callback_x86_basic(JNIEnv * env, jobject suneido_callback,
                            jobject suneido_bound_value, int size_direct,
                            int size_total, const int * ptr_array,
                            int ptr_array_size, int vi_count);
+        /** \endcond internal */
 
     public:
 
+        /**
+         * \brief Constructs a basic x86 callback
+         * \param env Non-NULL pointer to the JNI environment for the current
+         *        thread
+         * \param suneido_callback Non-NULL reference to a Java
+         *        <code>Object</code> of type
+         *        <code>suneido.jsdi.type.Callback</code> (the Java entry-point
+         *        to be invoked when this C++ callback is called)
+         * \param suneido_bound_value Non-NULL reference to a Java
+         *        <code>Object</code> of type
+         *        <code>suneido.language.SuCallable</code> representing the
+         *        Suneido language callable value that is bound to the callback
+         *        (this is the code that is ultimately desired to be called by
+         *        the Suneido programmer)
+         * \param size_direct Size of the on-stack arguments:
+         *        <code>0 &le size_direct &le size_total</code>
+         * \param size_total Total size of the unmarshalled storage
+         * \param ptr_array Array of tuples indicating which positions in the
+         *        direct and indirect storage are pointers, and which positions
+         *        they point to
+         * \param ptr_array_size Size of <code>ptr_array</code>
+         */
         callback_x86_basic(JNIEnv * env, jobject suneido_callback,
                            jobject suneido_bound_value, int size_direct,
                            int size_total, const int * ptr_array,
@@ -76,18 +105,27 @@ class callback_x86_basic : public callback, private non_copyable
         virtual uint64_t call(const marshall_word_t * args);
 
         //
-        // STATICS
+        // ACCESSORS
         //
 
     protected:
 
+        /** \cond internal */
         JNIEnv * fetch_env() const;
+        /** \endcond internal */
 };
 
 //==============================================================================
 //                          class callback_x86_vi
 //==============================================================================
 
+/**
+ * \brief Callback for Windows x86 platform that can unmarshall variable
+ *        indirect data, as well as direct and indirect data
+ * \author Victor Schappert
+ * \since 20130806
+ * \see callback_x86_basic
+ */
 class callback_x86_vi : public callback_x86_basic
 {
         //
@@ -102,6 +140,30 @@ class callback_x86_vi : public callback_x86_basic
 
     public:
 
+        /**
+         * \brief Constructs an x86 callback with variable indirect capability
+         * \param env Non-NULL pointer to the JNI environment for the current
+         *        thread
+         * \param suneido_callback Non-NULL reference to a Java
+         *        <code>Object</code> of type
+         *        <code>suneido.jsdi.type.Callback</code> (the Java entry-point
+         *        to be invoked when this C++ callback is called)
+         * \param suneido_bound_value Non-NULL reference to a Java
+         *        <code>Object</code> of type
+         *        <code>suneido.language.SuCallable</code> representing the
+         *        Suneido language callable value that is bound to the callback
+         *        (this is the code that is ultimately desired to be called by
+         *        the Suneido programmer)
+         * \param size_direct Size of the on-stack arguments:
+         *        <code>0 &le size_direct &le size_total</code>
+         * \param size_total Total size of the unmarshalled storage
+         * \param ptr_array Array of tuples indicating which positions in the
+         *        direct and indirect storage are pointers, and which positions
+         *        they point to
+         * \param ptr_array_size Size of <code>ptr_array</code>
+         * \param vi_count Number of variable indirect pointers: <code>0 &le
+         *        vi_count</code>
+         */
         callback_x86_vi(JNIEnv * env, jobject suneido_callback,
                          jobject suneido_bound_value, int size_direct,
                          int size_total, const int * ptr_array,

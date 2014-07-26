@@ -251,7 +251,8 @@ class jni_bad_alloc : public jni_exception
         // INTERNALS
         //
 
-        static std::string make_what(const char *, const char *);
+        template<typename StrType1, typename StrType2>
+        static std::string make_what(const StrType1&, const StrType2&);
 
         //
         // CONSTRUCTORS
@@ -266,15 +267,26 @@ class jni_bad_alloc : public jni_exception
          * \param throwing_function Name of the C++ function that called the JNI
          *                          function
          */
-        jni_bad_alloc(const char * jni_function_name,
-                      const char * throwing_function);
+        template<typename StrType1, typename StrType2>
+        jni_bad_alloc(const StrType1& jni_function_name,
+                      const StrType2& throwing_function);
 };
 
-inline jni_bad_alloc::jni_bad_alloc(const char * jni_function_name,
-                                    const char * throwing_function)
+template<typename StrType1, typename StrType2>
+std::string jni_bad_alloc::make_what(const StrType1& jni_function,
+                                     const StrType2& throwing_function)
+{
+    std::ostringstream o;
+    o << "JNI function " << jni_function << " returned NULL in "
+      << throwing_function << std::endl;
+    return o.str(); // OK to return value because of C++11 RValue references
+}
+
+template<typename StrType1, typename StrType2>
+inline jni_bad_alloc::jni_bad_alloc(const StrType1& jni_function_name,
+                                    const StrType2& throwing_function)
     : jni_exception(make_what(jni_function_name, throwing_function), false)
 { }
-
 
 } // namespace jsdi
 
