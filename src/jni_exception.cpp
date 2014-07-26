@@ -15,7 +15,6 @@
 
 #include <cassert>
 #include <cstdlib>
-#include <iostream>
 
 namespace jsdi {
 
@@ -64,30 +63,17 @@ void jni_exception::throw_jni(JNIEnv * env) const
             if (! clazz)
             {
                 LOG_FATAL("Failed to find ANY exception class");
+                env->FatalError("Failed to find ANY exception class");
                 std::abort();
             }
         }
         if (0 != env->ThrowNew(clazz, what()))
         {
-            std::cerr << "Failed to throw a Java exception from JNI in "
-                      << __FILE__ << " at line " << __LINE__ << std::endl;
+            LOG_FATAL("Failed to throw a Java exception from JNI");
             env->FatalError("Failed to throw a Java exception from JNI");
             std::abort();
         }
     }
-}
-
-//==============================================================================
-//                           class jni_bad_alloc
-//==============================================================================
-
-std::string jni_bad_alloc::make_what(const char * jni_function,
-                                     const char * throwing_function)
-{
-    std::ostringstream o;
-    o << "JNI function " << jni_function << " returned NULL in "
-      << throwing_function << std::endl;
-    return o.str(); // OK to return value because of C++11 RValue references
 }
 
 } // namespace jsdi

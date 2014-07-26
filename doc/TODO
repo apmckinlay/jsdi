@@ -5,9 +5,10 @@
 
         BUILD ISSUES
         -- doxygen
-            [ ] Modify header style (include guard, then doxygen docs)
-            [ ] Modify auto-generated header style.
-            [ ] Current number of warnings: 23 (down from 149) ... next: jsdi_callback.h
+            [ ] Current number of warnings: 4, all in marshalling .h
+            [ ] These four warnings regarding "Member d_env" and "Member d_object" on
+                marshalling_vi_container constructor can't be easily gotten rid of
+                unless Doxygen is upgraded for C++11, so they are OK.
         -- cppcheck
 
 C++ CONFORMANCE LIVE ISSUES
@@ -27,10 +28,6 @@ OUTSTANDING BUGS/FEATURES
     - Should jsdi_callback_basic be split into direct and indirect?
     - Introduce SEH in native calls
     - Add ability to change dynamic log level from within Suneido 
-
-MORE DOXYGEN ISSUES
-
-    - Next fix jsdi_callback.h errors (about 17)
 
 ================================================================================
 DLL INTERFACE GRAMMAR CLAMPDOWNS

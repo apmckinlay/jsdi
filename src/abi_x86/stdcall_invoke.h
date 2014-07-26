@@ -41,7 +41,7 @@ struct stdcall_invoke
          * the contents of EAX after invoking <code>func_ptr</code> and the
          * high-order 32 bits are the content of EDX after invoking
          * <code>func_ptr</code>
-         * \see #return_double(int, uint32_t *, void *)
+         * \see #return_double(int, const void *, void *)
          * \since 20130805
          *
          * This function is very limited in capability. In particular, it cannot:
@@ -69,7 +69,7 @@ struct stdcall_invoke
          * \param args_ptr Pointer to the arguments to push on the stack
          * \param func_ptr Pointer to the <code>__stdcall</code> function to call
          * \return The `double` returned by calling <code>func_ptr</code>
-         * \see #basic(int, uint32_t *, void *)
+         * \see #basic(int, const void *, void *)
          * \since 20130808
          *
          * Note that this invoker should be used for <code>stdcall</code>

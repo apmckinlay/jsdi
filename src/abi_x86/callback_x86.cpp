@@ -23,20 +23,21 @@ namespace abi_x86 {
 //                         class callback_x86_basic
 //==============================================================================
 
-void callback_x86_basic::init(JNIEnv * env, jobject suneido_callback,
-                              jobject suneido_sucallable)
+namespace {
+
+jobject globalize(JNIEnv * env, jobject value, const char * name)
 {
-    assert(suneido_callback);
-    assert(suneido_sucallable);
-    d_suneido_callback_global_ref = env->NewGlobalRef(suneido_callback);
-    d_suneido_bound_value_global_ref = env->NewGlobalRef(suneido_sucallable);
-    assert(d_suneido_callback_global_ref);
-    assert(d_suneido_bound_value_global_ref);
-    if (JNI_OK != env->GetJavaVM(&d_jni_jvm))
-    {
-        assert(false || !"failed to get JVM reference");
-    }
+    assert(env || !"environment cannot be NULL");
+    assert(value || !"can't globalize a null reference");
+    jobject const result(env->NewGlobalRef(value));
+    if (result) return result;
+    JNI_EXCEPTION_CHECK(env);
+    std::ostringstream() << "NewGlobalRef(env => " << env << ", " << name
+                         << " => " << value << ')'
+                         << throw_cpp<jni_bad_alloc, const char *>(__FUNCTION__);
 }
+
+} // anonymous namespace
 
 callback_x86_basic::callback_x86_basic(JNIEnv * env, jobject suneido_callback,
                                        jobject suneido_sucallable,
@@ -44,15 +45,29 @@ callback_x86_basic::callback_x86_basic(JNIEnv * env, jobject suneido_callback,
                                        const int * ptr_array,
                                        int ptr_array_size, int vi_count)
     : callback(size_direct, size_total, ptr_array, ptr_array_size, vi_count)
-{ init(env, suneido_callback, suneido_sucallable); }
+    , d_suneido_callback_global_ref(
+          globalize(env, suneido_callback, "callback"))
+    , d_suneido_bound_value_global_ref(
+          globalize(env, suneido_sucallable, "callable"))
+    , d_jni_jvm(nullptr)
+{
+    assert(env || !"environment cannot be null");
+    if (JNI_OK != env->GetJavaVM(&d_jni_jvm))
+    {
+        JNI_EXCEPTION_CHECK(env);
+        std::ostringstream() << "failed to get JVM reference, env => " << env
+                             << throw_cpp<jni_exception, JNIEnv *>(env);
+    }
+}
 
 callback_x86_basic::callback_x86_basic(JNIEnv * env, jobject suneido_callback,
                                        jobject suneido_bound_value,
                                        int size_direct, int size_total,
                                        const int * ptr_array,
                                        int ptr_array_size)
-    : callback(size_direct, size_total, ptr_array, ptr_array_size, 0)
-{ init(env, suneido_callback, suneido_bound_value); }
+    : callback_x86_basic(env, suneido_callback, suneido_bound_value,
+                         size_direct, size_total, ptr_array, ptr_array_size, 0)
+{ }
 
 callback_x86_basic::~callback_x86_basic()
 {
