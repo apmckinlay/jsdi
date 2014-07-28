@@ -142,7 +142,6 @@ struct throw_cpp<Exception, void>
 template <typename CharT, typename Traits, typename Exception, typename Arg>
 void operator<<(
     std::basic_ostream<CharT, Traits>& o, const throw_cpp<Exception, Arg> & t)
-        throw (Exception, std::bad_cast)
 {
     typedef std::basic_ostringstream<CharT, Traits> stream_type;
     stream_type& s(dynamic_cast<stream_type&>(o)); // may throw std::bad_cast
