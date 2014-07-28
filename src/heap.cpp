@@ -44,8 +44,7 @@ struct heap_impl
     std::string d_name;
 };
 
-heap::heap(const char * name, bool is_executable) throw(std::bad_alloc)
-    : d_impl(0)
+heap::heap(const char * name, bool is_executable) : d_impl(nullptr)
 {
     assert(name || !"heap name cannot be null");
     std::unique_ptr<heap_impl> tmp(new heap_impl);
@@ -73,7 +72,7 @@ heap::~heap()
 const std::string& heap::name() const
 { return d_impl->d_name; }
 
-void * heap::alloc(size_t n) throw(std::bad_alloc)
+void * heap::alloc(size_t n)
 {
     assert(d_impl && d_impl->d_hheap);
     void * ptr = HeapAlloc(d_impl->d_hheap, 0, n);

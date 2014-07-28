@@ -35,9 +35,9 @@ namespace jsdi {
  * <p>
  * The following traits are available:
  * <dl>
- * <dt><dfn>array_type</dfn></dt>
+ * <dt><code>array_type</code></dt>
  * <dd>
- * JNI opaque array reference type &mdash; \em eg <dfn>jbyteArray</dfn>.
+ * JNI opaque array reference type &mdash; \em eg <code>jbyteArray</code>.
  * </dd>
  * </dl>
  * </p>
@@ -131,13 +131,13 @@ inline void jni_array_get_region<jboolean>(JNIEnv * env, jbooleanArray array,
  * \author Victor Schappert
  * \since 20130628
  * \tparam JNIType The JNI data type on which to specialize the array region
- *         &mdash; \em eg <dfn>jbyte</dfn>.
+ *         &mdash; \em eg <code>jbyte</code>.
  * \see jni_array
  * \see jni_utf8_string_region
  * \see jni_utf16_string_region
  *
  * The array data is copied out of the JVM on construction using a JNI
- * <dfn>Get&lt;Type&gt;ArrayRegion(...)</dfn> function and deallocated on
+ * <code>Get&lt;Type&gt;ArrayRegion(...)</code> function and deallocated on
  * destruction. This is a one-way data structure in the sense that it is not
  * possible to send its contents back to the JVM.
  */
@@ -155,12 +155,12 @@ class jni_array_region: private non_copyable
         /** \brief A signed integral type. */
         typedef jsize size_type;
         /** \brief Type of the region elements (a JNI primitive type, such as
-         *         <dfn>jbyte</dfn>).
+         *         <code>jbyte</code>).
          * \see #const_value_type
          */
         typedef typename jni_traits<JNIType>::value_type value_type;
         /**
-         * \brief Type of a <dfn>const</dfn> region element.
+         * \brief Type of a <code>const</code> region element.
          * \see #value_type
          */
         typedef typename jni_traits<JNIType>::const_value_type const_value_type;
@@ -195,7 +195,7 @@ class jni_array_region: private non_copyable
          *        Java array.
          * \param env JNI environment
          * \param array Reference to a JNI primitive array of the correct type
-         *              (\em eg <dfn>jbyteArray</dfn>)
+         *              (\em eg <code>jbyteArray</code>)
          */
         jni_array_region(JNIEnv * env, array_type array);
 
@@ -204,12 +204,12 @@ class jni_array_region: private non_copyable
          *        Java array from index 0 up to a certain size.
          * \param env JNI environment
          * \param array Reference to a JNI primitive array of the correct type
-         *              (\em eg <dfn>jbyteArray</dfn>)
+         *              (\em eg <code>jbyteArray</code>)
          * \param size Desired size of the region; this must be known in advance
          *             to be less than or equal to the array's length, because
          *             this constructor does not check the length of the array
          *
-         * The constructed region contains <dfn>array[0..size-1]</dfn>.
+         * The constructed region contains <code>array[0..size-1]</code>.
          */
         jni_array_region(JNIEnv * env, array_type array, size_type size);
 
@@ -250,7 +250,7 @@ class jni_array_region: private non_copyable
         /**
          * \brief Subscripts an element of the region.
          * \param n Zero-based index of the region element to return
-         * \return Read-only reference to the element at position <dfn>n</dfn>
+         * \return Read-only reference to the element at position <code>n</code>
          * \see #operator[](size_type)
          */
         reference operator[](size_type n);
@@ -258,7 +258,7 @@ class jni_array_region: private non_copyable
         /**
          * \brief Subscripts an element of the region.
          * \param n Zero-based index of the region element to return
-         * \return Read-only reference to the element at position <dfn>n</dfn>
+         * \return Read-only reference to the element at position <code>n</code>
          */
         const_reference operator[](size_type n) const;
 
@@ -474,12 +474,12 @@ inline jbyteArray jni_array_new<jbyte>(JNIEnv * env, jsize length)
  * \author Victor Schappert
  * \since 20130727
  * \tparam JNIType The JNI data type on which to specialize the array region
- *         &mdash; \em eg <dfn>jbyte</dfn>.
+ *         &mdash; \em eg <code>jbyte</code>.
  * \see jni_array_region
  * \see jni_critical_array
  *
  * The array data is retrieved from the JVM on construction using a JNI
- * <dfn>Get&lt;Type&gt;ArrayElements(...)</dfn> function and released on
+ * <code>Get&lt;Type&gt;ArrayElements(...)</code> function and released on
  * destruction. This is a two-way data structure in the sense that any changes
  * made to the array are propagated back to the JVM on destruction (or earlier,
  * depending on whether the array is a copy of the JVM data, or a pointer to
@@ -504,12 +504,12 @@ class jni_array: private non_copyable
         /** \brief An signed integral type. */
         typedef jsize size_type;
         /** \brief Type of the region elements (a JNI primitive type, such as
-         *         <dfn>jbyte</dfn>).
+         *         <code>jbyte</code>).
          * \see #const_value_type
          */
         typedef typename jni_traits<JNIType>::value_type value_type;
         /**
-         * \brief Type of a <dfn>const</dfn> region element.
+         * \brief Type of a <code>const</code> region element.
          * \see #value_type
          */
         typedef typename jni_traits<JNIType>::const_value_type const_value_type;
@@ -548,7 +548,7 @@ class jni_array: private non_copyable
          *        at construction time.
          * \param env JNI environment
          * \param array Reference to a JNI primitive array of the correct type
-         *              (\em eg <dfn>jbyteArray</dfn>)
+         *              (\em eg <code>jbyteArray</code>)
          * \see #jni_array(JNIEnv *, array_type, size_type)
          *
          * The only difference between this constructor and
@@ -564,14 +564,14 @@ class jni_array: private non_copyable
          *        construction time.
          * \param env JNI environment
          * \param array Reference to a JNI primitive array of the correct type
-         *              (\em eg <dfn>jbyteArray</dfn>)
+         *              (\em eg <code>jbyteArray</code>)
          * \param size Number of elements in the array
          * \see #jni_array(JNIEnv *, array_type)
          *
-         * The parameter <dfn>size</dfn> must correctly specify the number of
+         * The parameter <code>size</code> must correctly specify the number of
          * elements in the underlying Java array. Providing the size as a
          * parameter enables this constructor to avoid a call to the
-         * JNI function <dfn>GetArrayLength</dfn>
+         * JNI function <code>GetArrayLength</code>
          */
         jni_array(JNIEnv * env, array_type array, size_type size);
 
@@ -595,8 +595,8 @@ class jni_array: private non_copyable
          * \brief Indicates whether the array data is a copy of the underlying
          * Java array.
          * \return Whether the array data is a copy of the &quot;primary&quot;
-         * array held by the JVM (<dfn>true</dfn>); or whether this array
-         * directly refers to the JVM data (<dfn>false</dfn>).
+         * array held by the JVM (<code>true</code>); or whether this array
+         * directly refers to the JVM data (<code>false</code>).
          * \see #jarray()
          */
         bool is_copy() const;
@@ -630,7 +630,7 @@ class jni_array: private non_copyable
         /**
          * \brief Subscripts an element of the array.
          * \param n Zero-based index of the region element to return.
-         * \return Read-only reference to the element at position <dfn>n</dfn>
+         * \return Read-only reference to the element at position <code>n</code>
          * \see #operator[](size_type)
          */
         reference operator[](size_type n);
@@ -638,7 +638,7 @@ class jni_array: private non_copyable
         /**
          * \brief Subscripts an element of the array.
          * \param n Zero-based index of the array element to return
-         * \return Read-only reference to the element at position <dfn>n</dfn>
+         * \return Read-only reference to the element at position <code>n</code>
          */
         const_reference operator[](size_type n) const;
 
@@ -741,13 +741,13 @@ inline typename jni_array<JNIType>::const_iterator jni_array<JNIType>::cend() co
  * \author Victor Schappert
  * \since 20130813
  * \tparam JNIType The JNI data type on which to specialize the array region
- *         &mdash; \em eg <dfn>jbyte</dfn>.
+ *         &mdash; \em eg <code>jbyte</code>.
  * \see jni_array
  *
  * This class has the same basic behaviour as jni_array, \em including being a
  * "two-way" data structure. The major difference is that this class is based on
- * the JNI <dfn>GetPrimitiveArrayCritical(...)</dfn> function. This means it is
- * subject to the following <strong>usage restrictions</strong>:
+ * the JNI <code>GetPrimitiveArrayCritical(...)</code> function. This means it
+ * is subject to the following <strong>usage restrictions</strong>:
  *
  * <ul>
  * <li>
@@ -777,12 +777,12 @@ class jni_critical_array : private non_copyable
         /** \brief An signed integral type. */
         typedef jsize size_type;
         /** \brief Type of the region elements (a JNI primitive type, such as
-         *         <dfn>jbyte</dfn>).
+         *         <code>jbyte</code>).
          * \see #const_value_type
          */
         typedef typename jni_traits<JNIType>::value_type value_type;
         /**
-         * \brief Type of a <dfn>const</dfn> region element.
+         * \brief Type of a <code>const</code> region element.
          * \see #value_type
          */
         typedef typename jni_traits<JNIType>::const_value_type const_value_type;
@@ -821,7 +821,7 @@ class jni_critical_array : private non_copyable
          * construction time.
          * \param env JNI environment
          * \param array Reference to a JNI primitive array of the correct type
-         *              (\em eg <dfn>jintArray</dfn>)
+         *              (\em eg <code>jintArray</code>)
          * \see #jni_critical_array(JNIEnv * env, array_type, size_type)
          *
          * The only difference between this constructor and
@@ -837,14 +837,14 @@ class jni_critical_array : private non_copyable
          *        is known at construction time.
          * \param env JNI environment
          * \param array Reference to a JNI primitive array of the correct type
-         *              (\em eg <dfn>jintArray</dfn>)
+         *              (\em eg <code>jintArray</code>)
          * \param size Number of elements in the array
          * \see #jni_critical_array(JNIEnv *, array_type)
          *
-         * The parameter <dfn>size</dfn> must correctly specify the number of
+         * The parameter <code>size</code> must correctly specify the number of
          * elements in the underlying Java array. Providing the size as a
          * parameter enables this constructor to avoid a call to the
-         * JNI function <dfn>GetArrayLength</dfn>
+         * JNI function <code>GetArrayLength</code>
          */
         jni_critical_array(JNIEnv * env, array_type array, size_type size);
 
@@ -942,8 +942,8 @@ inline typename jni_critical_array<JNIType>::const_pointer jni_critical_array<
  * The various specializations of jni_auto_local may have type-specific
  * constructors and, perhaps, methods, but they have consistent behaviour on
  * destruction: if an auto local contains a live JNI object reference (\em ie a
- * non-<dfn>null</dfn> pointer), the reference is released via
- * <dfn>DeleteLocalRef(JNIEnv *, jobject)</dfn>.
+ * non-<code>null</code> pointer), the reference is released via
+ * <code>DeleteLocalRef(JNIEnv *, jobject)</code>.
  */
 template<typename JNIObjectType>
 class jni_auto_local;
@@ -959,7 +959,7 @@ class jni_auto_local;
  *
  * As with all specializations of jni_auto_local, this class frees its
  * managed local reference on destruction via
- * <dfn>DeleteLocalRef(JNIEnv *, jobject)</dfn>.
+ * <code>DeleteLocalRef(JNIEnv *, jobject)</code>.
  */
 template<>
 class jni_auto_local<jclass>
@@ -983,21 +983,21 @@ class jni_auto_local<jclass>
          * \param env JNI environment
          * \param class_name Fully-qualified class name
          *
-         * Regarding the <dfn>class_name</dfn> parameter, the JNI documentation
-         * describes it as:
+         * Regarding the <code>class_name</code> parameter, the JNI
+         * documentation describes it as:
          * > a fully-qualified class name (that is, a package name, delimited by
          * > “/”, followed by the class name). If the name begins with “[“ (the
          * > array signature character), it returns an array class. The string
          * > is encoded in modified UTF-8.
          *
          * \attention
-         * This constructor looks up <dfn>class_name</dfn> using the JNI
-         * <dfn>FindClass(JNIEnv *, const char *)</dfn> function. This function
-         * may return <dfn>null</dfn> and, more importantly, <em>raise an
-         * exception in the JVM</em> of which the most likely variety is
-         * <dfn>NoClassDefFoundError</dfn>. In other words, although this
-         * constructor will not raise a <em>C++</em> exception, both the
-         * constructed class and the JVM may be in an error state post
+         * This constructor looks up <code>class_name</code> using the JNI
+         * <code>FindClass(JNIEnv *, const char *)</code> function. This
+         * function may return <code>null</code> and, more importantly,
+         * <em>raise an exception in the JVM</em> of which the most likely
+         * variety is <code>NoClassDefFoundError</code>. In other words,
+         * although this constructor will not raise a <em>C++</em> exception,
+         * both the constructed class and the JVM may be in an error state post
          * construction. Any code instantiating this class should therefore test
          * for success post-construction, for example with:
          *
@@ -1018,8 +1018,8 @@ class jni_auto_local<jclass>
 
     public:
 
-        /** \brief Implicit conversion to <dfn>jclass</dfn>.
-         *  \return The <dfn>jclass</dfn> managed by this auto local. */
+        /** \brief Implicit conversion to <code>jclass</code>.
+         *  \return The <code>jclass</code> managed by this auto local. */
         operator jclass();
 };
 
@@ -1046,7 +1046,7 @@ inline jni_auto_local<jclass>::operator jclass()
  *
  * As with all specializations of jni_auto_local, this class frees its
  * managed local reference on destruction via
- * <dfn>DeleteLocalRef(JNIEnv *, jobject)</dfn>.
+ * <code>DeleteLocalRef(JNIEnv *, jobject)</code>.
  */
 template<>
 class jni_auto_local<jobject>
@@ -1071,7 +1071,7 @@ class jni_auto_local<jobject>
          * \param object JNI pointer representing a Java object reference.
          * \see jni_auto_local(JNIEnv *, jclass, jfieldID)
          *
-         * If <dfn>object</dfn> is <dfn>null</dfn>, this auto local will be
+         * If <code>object</code> is <code>null</code>, this auto local will be
          * constructed "empty" and no action will be taken on destruction.
          */
         jni_auto_local(JNIEnv * env, jobject object);
@@ -1082,13 +1082,13 @@ class jni_auto_local<jobject>
          * \param env JNI environment
          * \param clazz Valid reference to a Java class.
          * \param static_field_id Valid reference to a static field within
-         *        <dfn>clazz</dfn>.
+         *        <code>clazz</code>.
          *
          * This constructor uses
-         * <dfn>GetStaticObjectField(JNIEnv *, jclass, jfieldID)</dfn> to load
+         * <code>GetStaticObjectField(JNIEnv *, jclass, jfieldID)</code> to load
          * its local reference. The JNI documentation does not specify what
-         * happens if you give an invalid <dfn>jclass</dfn> or
-         * <dfn>jfieldID</dfn> or a field identifier that doesn't match the
+         * happens if you give an invalid <code>jclass</code> or
+         * <code>jfieldID</code> or a field identifier that doesn't match the
          * class, but it suffices to assume this would be very, very bad. Don't
          * pass invalid parameters.
          *
@@ -1099,15 +1099,15 @@ class jni_auto_local<jobject>
          *         ...
          *     }
          *
-         * If <dfn>clazz</dfn> is a <dfn>jclass</dfn> handle to
-         * <dfn>MyClass.class</dfn> and <dfn>static_field_id</dfn> is a
-         * <dfn>jfieldID</dfn> identifying "field" within
-         * <dfn>MyClass.class</dfn>, then the C++ code
+         * If <code>clazz</code> is a <code>jclass</code> handle to
+         * <code>MyClass.class</code> and <code>static_field_id</code> is a
+         * <code>jfieldID</code> identifying "field" within
+         * <code>MyClass.class</code>, then the C++ code
          *
          *     jni_auto_local<jobject> field(env, clazz, static_field_id);
          *
          * will construct an automatic local reference to
-         * <dfn>MyClass.field</dfn>.
+         * <code>MyClass.field</code>.
          */
         jni_auto_local(JNIEnv * env, jclass clazz, jfieldID static_field_id);
 
@@ -1119,8 +1119,8 @@ class jni_auto_local<jobject>
 
     public:
 
-        /** \brief Implicit conversion to <dfn>jobject</dfn>.
-         *  \return The <dfn>jobject</dfn> managed by this auto local. */
+        /** \brief Implicit conversion to <code>jobject</code>.
+         *  \return The <code>jobject</code> managed by this auto local. */
         operator jobject();
 };
 
@@ -1152,7 +1152,7 @@ inline jni_auto_local<jobject>::operator jobject()
  *
  * As with all specializations of jni_auto_local, this class frees its
  * managed local reference on destruction via
- * <dfn>DeleteLocalRef(JNIEnv *, jobject)</dfn>.
+ * <code>DeleteLocalRef(JNIEnv *, jobject)</code>.
  *
  * \note
  * This specialization of jni_auto_local is somewhat inconsistent with the
@@ -1192,17 +1192,17 @@ class jni_auto_local<jstring>
         jni_auto_local();
 
         /**
-         * \brief Constructs a new <dfn>jstring</dfn> within the JNI environment
-         *        and commences managing it.
+         * \brief Constructs a new <code>jstring</code> within the JNI
+         *        environment and commences managing it.
          * \param env JNI environment
-         * \param unicode_chars Pointer to a string of at least <dfn>size</dfn>
-         *                      16-bit Unicode characters
-         * \param size Length of the string <dfn>unicode_chars</dfn> points to
+         * \param unicode_chars Pointer to a string of at least
+         *                      <code>size</code> 16-bit Unicode characters
+         * \param size Length of the string <code>unicode_chars</code> points to
          * \see #jni_auto_local()
          * \see #jni_auto_local(JNIEnv *, jstring)
          *
          * Constructs a new string using
-         * <dfn>NewString(JNIEnv *, const jchar *, jsize)</dfn> and manages it
+         * <code>NewString(JNIEnv *, const jchar *, jsize)</code> and manages it
          * as an automatic local reference.
          */
         jni_auto_local(JNIEnv * env, const jchar * unicode_chars, jsize size);
@@ -1210,9 +1210,9 @@ class jni_auto_local<jstring>
         /**
          * \brief Constructs an automatic local reference managing an existing
          *        string (or an "empty" automatic local reference).
-         * \param env JNI environment; may be <dfn>null</dfn> but only if
-         *            <dfn>string</dfn> is also <dfn>null</dfn>
-         * \param string String to manage (may be <dfn>null</dfn>)
+         * \param env JNI environment; may be <code>null</code> but only if
+         *            <code>string</code> is also <code>null</code>
+         * \param string String to manage (may be <code>null</code>)
          * \see #reset(JNIEnv *, jstring)
          * \see #jni_auto_local()
          * \see #jni_auto_local(JNIEnv *, const jchar *, jsize)
@@ -1235,8 +1235,8 @@ class jni_auto_local<jstring>
 
     public:
 
-        /** \brief Implicit conversion to <dfn>jstring</dfn>.
-         *  \return The <dfn>jstring</dfn> managed by this auto local. */
+        /** \brief Implicit conversion to <code>jstring</code>.
+         *  \return The <code>jstring</code> managed by this auto local. */
         operator jstring();
 
         //
@@ -1246,15 +1246,16 @@ class jni_auto_local<jstring>
     public:
 
         /**
-         * \brief Stop managing the currently-managed <dfn>jstring</dfn>, if
-         *        any, and either begin managing a different <dfn>jstring</dfn>
-         *        or set this auto local empty.
-         * \param env JNI environment; may be <dfn>null</dfn> but only if
-         *            <dfn>string</dfn> is also <dfn>null</dfn>
-         * \param string New string to manage (may be <dfn>null</dfn>)
+         * \brief Stop managing the currently-managed <code>jstring</code>, if
+         *        any, and either begin managing a different
+         *        <code>jstring</code> or set this auto local empty.
+         * \param env JNI environment; may be <code>null</code> but only if
+         *            <code>string</code> is also <code>null</code>
+         * \param string New string to manage (may be <code>null</code>)
          *
-         * Before beginning to manage <dfn>string</dfn>, this auto local deletes
-         * the reference to <dfn>jstring</dfn> it is currently managing, if any.
+         * Before beginning to manage <code>string</code>, this auto local
+         * deletes the reference to <code>jstring</code> it is currently
+         * managing, if any.
          *
          * The following code:
          *
@@ -1320,7 +1321,7 @@ inline void jni_auto_local<jstring>::reset(JNIEnv * env, jstring string)
  *
  * As with all specializations of jni_auto_local, this class frees its
  * managed local reference on destruction via
- * <dfn>DeleteLocalRef(JNIEnv *, jobject)</dfn>.
+ * <code>DeleteLocalRef(JNIEnv *, jobject)</code>.
  */
 template<>
 class jni_auto_local<jthrowable>
@@ -1345,8 +1346,8 @@ class jni_auto_local<jthrowable>
          * \param throwable JNI value representing a Java throwable local
          *                  reference.
          *
-         * If <dfn>throwable</dfn> is <dfn>null</dfn>, this auto local will be
-         * constructed "empty" and no action will be taken on destruction.
+         * If <code>throwable</code> is <code>null</code>, this auto local will
+         * be constructed "empty" and no action will be taken on destruction.
          */
         jni_auto_local(JNIEnv * env, jthrowable throwable);
 
@@ -1358,8 +1359,8 @@ class jni_auto_local<jthrowable>
 
     public:
 
-        /** \brief Implicit conversion to <dfn>jthrowable</dfn>.
-         *  \return The <dfn>jthrowable</dfn> managed by this auto local. */
+        /** \brief Implicit conversion to <code>jthrowable</code>.
+         *  \return The <code>jthrowable</code> managed by this auto local. */
         operator jthrowable();
 };
 
@@ -1381,7 +1382,7 @@ inline jni_auto_local<jthrowable>::operator jthrowable()
 
 /**
  * \brief Automatic stack object for exception-safe simulation of Java
- *        <dfn>synchronized</dfn> blocks.
+ *        <code>synchronized</code> blocks.
  * \author Victor Schappert
  * \since 20131101
  */
@@ -1459,7 +1460,7 @@ class jni_utf8_string_region : private non_copyable
         typedef char value_type;
         /** \brief Type of a pointer to a #value_type. */
         typedef value_type * pointer;
-        /** \brief Type of <dfn>const</dfn> characters in this string region.
+        /** \brief Type of <code>const</code> characters in this string region.
          *  \see #value_type */
         typedef const char const_value_type;
         /** \brief Type of a pointer to a #const_value_type. */
@@ -1568,7 +1569,7 @@ class jni_utf16_string_region : private non_copyable
         typedef utf16char_t value_type;
         /** \brief Type of a pointer to a #value_type. */
         typedef value_type * pointer;
-        /** \brief Type of <dfn>const</dfn> characters in this string region.
+        /** \brief Type of <code>const</code> characters in this string region.
          *  \see #value_type */
         typedef const utf16char_t const_value_type;
         /** \brief Type of a pointer to a #const_value_type. */
@@ -1716,7 +1717,7 @@ inline std::ostream& operator<<(std::ostream& o,
  * and uses \link operator<<(jni_utf16_ostream&, jstring)\endlink to perform the
  * actual insertion.
  */
-utf16_ostream& operator<<(utf16_ostream& o, jstring str) throw(std::bad_cast);
+utf16_ostream& operator<<(utf16_ostream& o, jstring str);
 
 /**
  * \brief Inserts a \link jni_utf16_string_region\endlink into a
@@ -1813,9 +1814,9 @@ inline std::streamsize jni_utf16_output_streambuf::size() const
  * \note
  * If we are sending a lot of strings back to the Java side, it may be
  * worthwhile to refactor all of the string code in jsdi to use
- * <dfn>wchar_t</dfn>, <dfn>std::wstring</dfn>, and <dfn>std::wostream</dfn> in
- * order to eliminate an unnecessary conversion between 16-bit wide characters
- * and modified UTF-8.
+ * <code>wchar_t</code>, <code>std::wstring</code>, and
+ * <code>std::wostream</code> in order to eliminate an unnecessary conversion
+ * between 16-bit wide characters and modified UTF-8.
  */
 class jni_utf16_ostream : public utf16_ostream, private non_copyable
 {
@@ -1853,7 +1854,7 @@ class jni_utf16_ostream : public utf16_ostream, private non_copyable
     public:
 
         /**
-         * \brief Returns a newly allocated <dfn>jstring</dfn> containing the
+         * \brief Returns a newly allocated <code>jstring</code> containing the
          * contents of the stream.
          * \return A JNI reference to an immutable Java string containing the
          * contents of the stream.
@@ -1880,7 +1881,7 @@ jni_utf16_ostream& operator<<(jni_utf16_ostream&, jstring);
  *        of 16-bit Java characters.
  * \param sz Non-NULL pointer to a zero-terminated string
  * \return Vector containing the wide character equivalents of the characters
- *         in <dfn>sz</dfn> <em>but without the zero-terminator</em>
+ *         in <code>sz</code> <em>but without the zero-terminator</em>
  * \author Victor Schappert
  * \see make_jstring(JNIEnv *, jbyte)
  * \since 20130801

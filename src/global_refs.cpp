@@ -140,7 +140,7 @@ global_refs const * const GLOBAL_REFS(&global_refs_);
 //       the static constructor of a single 'factory' class on the Java side
 //       and ensuring that only that factory class is able construct other JSDI
 //       types.
-void global_refs::init(JNIEnv * env) throw(jni_exception)
+void global_refs::init(JNIEnv * env)
 {
     //
     // Load the global references
