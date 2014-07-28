@@ -630,7 +630,6 @@ bool com::create_from_progid(JNIEnv * env, jstring progid, IUnknown *& iunk,
 }
 
 DISPID com::get_dispid_of_name(IDispatch * idisp, JNIEnv * env, jstring name)
-    throw (jni_exception)
 {
     ASSERT_IDISPATCH(idisp);
     com_managed_bstr name_bstr(jstr_to_bstr(name, env));
@@ -649,7 +648,6 @@ DISPID com::get_dispid_of_name(IDispatch * idisp, JNIEnv * env, jstring name)
 }
 
 jobject com::property_get(IDispatch * idisp, DISPID dispid, JNIEnv * env)
-    throw (jni_exception)
 {
     ASSERT_IDISPATCH(idisp);
     DISPPARAMS args = { nullptr, nullptr, 0, 0 };
@@ -667,7 +665,7 @@ jobject com::property_get(IDispatch * idisp, DISPID dispid, JNIEnv * env)
 }
 
 void com::property_put(IDispatch * idisp, DISPID dispid, JNIEnv * env,
-                       jobject value) throw (jni_exception)
+                       jobject value)
 {
     ASSERT_IDISPATCH(idisp);
     VARIANT input;
@@ -686,7 +684,7 @@ void com::property_put(IDispatch * idisp, DISPID dispid, JNIEnv * env,
 }
 
 jobject com::call_method(IDispatch * idisp, DISPID dispid, JNIEnv * env,
-                         jobjectArray args) throw (jni_exception)
+                         jobjectArray args)
 {
     ASSERT_IDISPATCH(idisp);
     const jsize num_args(env->GetArrayLength(args));

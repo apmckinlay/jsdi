@@ -21,7 +21,7 @@ namespace jsdi {
 namespace {
 
 void throw_out_of_range(const char * func_name, int ordinal,
-                        const char * enum_name) throw(jni_exception)
+                        const char * enum_name)
 {
     std::ostringstream() << func_name << ": ordinal value " << ordinal
                          << " is outside the range of enumeration "
@@ -30,9 +30,9 @@ void throw_out_of_range(const char * func_name, int ordinal,
 
 } // anonymous namespace
 
-// [BEGIN:GENERATED CODE last updated Mon Jul 21 10:08:31 PDT 2014]
+// [BEGIN:GENERATED CODE last updated Mon Jul 28 00:00:36 PDT 2014]
 template <>
-suneido_jsdi_VariableIndirectInstruction jni_enum_to_cpp(JNIEnv * env, jclass clazz, jobject e) throw(jni_exception)
+suneido_jsdi_VariableIndirectInstruction jni_enum_to_cpp(JNIEnv * env, jclass clazz, jobject e)
 {
     jmethodID method_id = GLOBAL_REFS->java_lang_Enum__m_ordinal();
     jint ordinal = env->CallIntMethod(e, method_id);
@@ -41,7 +41,7 @@ suneido_jsdi_VariableIndirectInstruction jni_enum_to_cpp(JNIEnv * env, jclass cl
 }
 
 template <>
-suneido_jsdi_VariableIndirectInstruction ordinal_enum_to_cpp(int e) throw(jni_exception)
+suneido_jsdi_VariableIndirectInstruction ordinal_enum_to_cpp(int e)
 {
     if (! (0 <= e && e < 3))
     {
