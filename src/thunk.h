@@ -76,9 +76,9 @@ class thunk : private non_copyable
         // DATA
         //
 
-#ifndef _NDEBUG
+#ifndef NDEBUG
         int                         d_magic;
-#endif // _NDEBUG
+#endif // NDEBUG
         std::atomic_int_fast32_t    d_state;
         std::atomic<bool>           d_clearing;
         std::shared_ptr<callback>   d_callback;
