@@ -13,14 +13,7 @@
 
 C++ CONFORMANCE LIVE ISSUES
 
-    - Remove throw(ExceptionType) which is deprecated in C++11 (should eliminate many warnings)
     - Remove __FUNCTION__ which is a non-standard VC feature
-    - Put back delegating constructor in jsdi_callback.h
-
-VISUAL C++ ISSUES
-
-    - Try to eliminate warnings by eliminating throw(ExceptionType)
-    - Squelch constexpr warnings
 
 OUTSTANDING BUGS/FEATURES
 
@@ -28,6 +21,11 @@ OUTSTANDING BUGS/FEATURES
     - Should jsdi_callback_basic be split into direct and indirect?
     - Introduce SEH in native calls
     - Add ability to change dynamic log level from within Suneido 
+
+TO CLEAN UP AFTER POST-NOVEMBER 2013 CTP MSVC COMPILER RELEASE
+
+    - in util.h, remove '#pragma warning' commands that are squelching a
+      constexpr-related warning on the function array_length(...).
 
 ================================================================================
 DLL INTERFACE GRAMMAR CLAMPDOWNS

@@ -57,9 +57,13 @@ struct non_copyable
  * where <code>x</code> is a statically-available constant.
  * </p>
  */
+#pragma warning(push)            // Squelch C4425 warning caused by November
+#pragma warning(disable:4425)    // 2013 CTP not handling all constexpr cases
 template<typename T, size_t N>
 constexpr size_t array_length(T(&)[N])
 { return N; }
+#pragma warning(pop)            // TODO: Remove above to #pragmas and this line
+                                // this function no longer causes MSVC warnings
 
 /**
  * \brief Object which can be inserted into a stream in order to trigger a C++
