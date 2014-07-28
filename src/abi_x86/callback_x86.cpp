@@ -35,6 +35,7 @@ jobject globalize(JNIEnv * env, jobject value, const char * name)
     std::ostringstream() << "NewGlobalRef(env => " << env << ", " << name
                          << " => " << value << ')'
                          << throw_cpp<jni_bad_alloc, const char *>(__FUNCTION__);
+    return nullptr; // Squelch compiler warning (control never gets here)
 }
 
 } // anonymous namespace
