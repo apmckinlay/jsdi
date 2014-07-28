@@ -25,9 +25,9 @@ namespace jsdi {
 
 namespace {
 
-#ifndef _NDEBUG
+#ifndef NDEBUG
 constexpr int MAGIC = 0x1baddeed;
-#endif // _NDEBUG
+#endif // NDEBUG
 
 std::string bad_state_to_str(int_fast32_t state)
 {
@@ -98,9 +98,9 @@ void thunk::teardown_call()
 
 thunk::thunk(const std::shared_ptr<callback>& callback_ptr)
     :
-#ifndef _NDEBUG
+#ifndef NDEBUG
       d_magic(MAGIC),
-#endif // _NDEBUG
+#endif // NDEBUG
       d_state(thunk_state::READY)
     , d_clearing(false)
     , d_callback(callback_ptr)
@@ -108,9 +108,9 @@ thunk::thunk(const std::shared_ptr<callback>& callback_ptr)
 
 thunk::~thunk()
 {
-#ifndef _NDEBUG
+#ifndef NDEBUG
     d_magic = ~MAGIC;
-#endif
+#endif // NDEBUG
     int_fast32_t state = std::atomic_exchange(&d_state, thunk_state::DELETED);
     assert(thunk_state::CLEARED == state || thunk_state::READY == state);
 }
