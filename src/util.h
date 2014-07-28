@@ -91,7 +91,7 @@ class throw_cpp
          *            constructor.
          * \throws Exception
          */
-        void throw_(const std::string& str) const throw(Exception)
+        void throw_(const std::string& str) const
         { throw Exception(str, arg_); }
 };
 
@@ -124,7 +124,7 @@ struct throw_cpp<Exception, void>
          * \param str Message string argument to exception type's constructor.
          * \throws Exception
          */
-        void throw_(const std::string& str) const throw(Exception)
+        void throw_(const std::string& str) const
         { throw Exception(str); }
 };
 

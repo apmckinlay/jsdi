@@ -80,7 +80,7 @@ std::streamsize jni_utf16_output_streambuf::xsputn(const utf16char_t * s,
 //                 stream insertion operators for JNI types
 //==============================================================================
 
-utf16_ostream& operator<<(utf16_ostream& o, jstring jstr) throw(std::bad_cast)
+utf16_ostream& operator<<(utf16_ostream& o, jstring jstr)
 {
     auto& o2(dynamic_cast<jni_utf16_ostream&>(o)); // may throw std::bad_cast
     return o2 << jstr;

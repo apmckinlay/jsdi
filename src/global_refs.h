@@ -53,7 +53,7 @@ namespace jsdi {
  * eliminate unused global references.
  *
  * \par
- * \em eg <dfn>cppcheck --enable=unusedFunction</dfn>
+ * \em eg <code>cppcheck --enable=unusedFunction</code>
  * \endinternal
  */
 struct global_refs
@@ -518,8 +518,8 @@ struct global_refs
     public:
         /**
          * \brief Returns a global reference corresponding to
-         *        <dfn>java.lang.Boolean.TRUE</dfn>.
-         * \return <dfn>java.lang.Boolean.TRUE</dfn>
+         *        <code>java.lang.Boolean.TRUE</code>.
+         * \return <code>java.lang.Boolean.TRUE</code>
          * \see #FALSE_object() const
          * \see #ZERO_object() const
          */
@@ -527,17 +527,17 @@ struct global_refs
         { return TRUE_object_; }
         /**
          * \brief Returns a global reference corresponding to
-         *        <dfn>java.lang.Boolean.FALSE</dfn>.
-         * \return <dfn>java.lang.Boolean.FALSE</dfn>
+         *        <code>java.lang.Boolean.FALSE</code>.
+         * \return <code>java.lang.Boolean.FALSE</code>
          * \see #TRUE_object() const
          * \see #ZERO_object() const
          */
         jobject FALSE_object() const
         { return FALSE_object_; }
         /**
-         * \brief Returns a global reference to a Java <dfn>Integer</dfn>
+         * \brief Returns a global reference to a Java <code>Integer</code>
          *        which contains the value 0.
-         * \return A <dfn>java.lang.Integer</dfn> equal to zero
+         * \return A <code>java.lang.Integer</code> equal to zero
          * \see #TRUE_object() const
          * \see #FALSE_object() const
          * \see #EMPTY_STRING_object() const
@@ -545,9 +545,9 @@ struct global_refs
         jobject ZERO_object() const
         { return ZERO_object_; }
         /**
-         * \brief Returns a global reference to a Java <dfn>String</dfn> which
+         * \brief Returns a global reference to a Java <code>String</code> which
          *        contains the empty string.
-         * \return A <dfn>java.lang.String</dfn> equal to <dfn>""</dfn>.
+         * \return A <code>java.lang.String</code> equal to <code>""</code>.
          * \see #ZERO_object() const
          */
         jstring EMPTY_STRING_object() const
@@ -558,7 +558,7 @@ struct global_refs
     //
 
     /**
-     * \brief Initializes #GLOBAL_REFS.
+     * \brief Initializes #GLOBAL_REFS
      * \param env Valid pointer to the JNI environment
      * \throws jni_exception If a JNI error occurs initializing any global
      *         reference.
@@ -567,12 +567,12 @@ struct global_refs
      * global references. After initialization, the #GLOBAL_REFS pointer may
      * validly be used to access global references.
      */
-    static void init(JNIEnv * env) throw(jni_exception);
+    static void init(JNIEnv * env);
 };
 
 
 /**
- * \brief Global pointer to the global global_refs structure.
+ * \brief Global pointer to the global global_refs structure
  *
  * Do not use until global_refs::init(JNIEnv *) has been called!
  */

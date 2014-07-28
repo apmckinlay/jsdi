@@ -23,7 +23,7 @@ struct heap_impl;
  * \author Victor Schappert
  * \since 20130802
  *
- * This is basically a copy of Andrew's CSuneido Heap class. It is necessary
+ * This is basically a copy of Andrew's cSuneido Heap class. It is necessary
  * for allocating executable stubs on the heap in order to implement callbacks
  * (because the default process heap should not be executable).
  */
@@ -42,13 +42,13 @@ class heap : private non_copyable
     public:
 
         /**
-         * Constructs a heap.
+         * \brief Constructs a heap
          * \param name Non-NULL zero-terminated name for the heap
-         * \param is_executable Set <dfn>true</dfn> to allow blocks allocated
-         * from this heap to be executable, <dfn>false</dfn> otherwise
+         * \param is_executable Set <code>true</code> to allow blocks allocated
+         * from this heap to be executable, <code>false</code> otherwise
          * \throw std::bad_alloc If a Windows heap cannot be created
          */
-        heap(const char * name, bool is_executable) throw(std::bad_alloc);
+        heap(const char * name, bool is_executable);
 
         ~heap();
 
@@ -59,7 +59,7 @@ class heap : private non_copyable
     public:
 
         /**
-         * Returns the heap name.
+         * \brief Returns the heap name
          * \return Name of the heap
          */
         const std::string& name() const;
@@ -71,15 +71,14 @@ class heap : private non_copyable
     public:
 
         /**
-         * Allocates a block of <dfn>n</dfn> bytes on the heap.
+         * \brief Allocates a block of <code>n</code> bytes on the heap
          * \param n Size of the desired block, in bytes
          * \throw std::bad_alloc If the heap allocation fails
          */
-        void * alloc(size_t n) throw(std::bad_alloc);
+        void * alloc(size_t n);
 
         /**
-         * Frees a block previously allocated using
-         * #alloc(size_t) throw(std::bad_alloc)
+         * \brief Frees a block previously allocated using #alloc(size_t)
          * \param ptr Pointer to the block of memory to free
          */
         void free(void * ptr) noexcept;
