@@ -37,8 +37,7 @@ namespace jsdi {
  * \author Victor Schappert
  */
 template <typename EnumType>
-EnumType jni_enum_to_cpp(JNIEnv * env, jclass clazz, jobject e)
-    throw (jni_exception);
+EnumType jni_enum_to_cpp(JNIEnv * env, jclass clazz, jobject e);
 
 /**
  * \brief Converts an integer value to the corresponding C++ enumerator for the
@@ -51,9 +50,9 @@ EnumType jni_enum_to_cpp(JNIEnv * env, jclass clazz, jobject e)
  * \author Victor Schappert
  */
 template <typename EnumType>
-EnumType ordinal_enum_to_cpp(int e) throw (jni_exception);
+EnumType ordinal_enum_to_cpp(int e);
 
-// [BEGIN:GENERATED CODE last updated Mon Jul 21 10:08:31 PDT 2014]
+// [BEGIN:GENERATED CODE last updated Mon Jul 28 00:00:35 PDT 2014]
 /**
  * \brief C++ enumeration corresponding to the Java enumeration <code>suneido.jsdi.VariableIndirectInstruction</code>.
  * \author GenerateSharedEnums
@@ -69,12 +68,12 @@ enum suneido_jsdi_VariableIndirectInstruction
 
 /** \cond internal */
 template <>
-suneido_jsdi_VariableIndirectInstruction jni_enum_to_cpp(JNIEnv *, jclass, jobject) throw(jni_exception);
+suneido_jsdi_VariableIndirectInstruction jni_enum_to_cpp(JNIEnv *, jclass, jobject);
 /** \endcond */
 
 /** \cond internal */
 template <>
-suneido_jsdi_VariableIndirectInstruction ordinal_enum_to_cpp(int) throw(jni_exception);
+suneido_jsdi_VariableIndirectInstruction ordinal_enum_to_cpp(int);
 /** \endcond */
 
 /**
