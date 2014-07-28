@@ -49,7 +49,7 @@ constexpr int64_t _100_NANO_INTERVALS_PER_MILLISECOND = 10000;
 jstring bstr_to_jstr(BSTR bstr, JNIEnv * env)
 {
     assert(bstr && env);
-    size_t size(SysStringLen(bstr));
+    jsize const size(SysStringLen(bstr));
     jstring result = env->NewString(reinterpret_cast<const jchar *>(bstr),
                                     size);
     // NewString() returns NULL if it fails
@@ -632,10 +632,11 @@ bool com::create_from_progid(JNIEnv * env, jstring progid, IUnknown *& iunk,
 DISPID com::get_dispid_of_name(IDispatch * idisp, JNIEnv * env, jstring name)
 {
     ASSERT_IDISPATCH(idisp);
+    constexpr UINT NAME_COUNT = 1;
     com_managed_bstr name_bstr(jstr_to_bstr(name, env));
-    BSTR name_arr[1] = { name_bstr.get() };
+    BSTR name_arr[NAME_COUNT] = { name_bstr.get() };
     DISPID dispid(0);
-    if (FAILED(idisp->GetIDsOfNames(IID_NULL, name_arr, array_length(name_arr),
+    if (FAILED(idisp->GetIDsOfNames(IID_NULL, name_arr, NAME_COUNT,
                                     LOCALE_SYSTEM_DEFAULT, &dispid)))
     {
         jni_utf16_ostream o(env);

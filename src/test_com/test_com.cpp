@@ -344,7 +344,8 @@ HRESULT __stdcall TestJSDIComImpl::get_StringValue(BSTR * value)
     std::lock_guard<std::recursive_mutex> lock(d_mutex);
     // Contract is caller must release with SysFreeString
     // http://stackoverflow.com/a/19523652/1911388
-    *value = SysAllocStringLen(d_string_value.data(), d_string_value.size());
+    UINT const len(static_cast<UINT>(d_string_value.size()));
+    *value = SysAllocStringLen(d_string_value.data(), len);
     return S_OK;
 }
 

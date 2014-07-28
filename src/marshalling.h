@@ -110,11 +110,11 @@ class marshalling_vi_container : private non_copyable
         // INTERNALS
         //
 
-        void put_not_null(size_t pos, jbyteArray array, jbyte ** pp_array);
+        void put_not_null(jint pos, jbyteArray array, jbyte ** pp_array);
 
-        void put_null(size_t pos, jbyte ** pp_array);
+        void put_null(jint pos, jbyte ** pp_array);
 
-        void replace_byte_array(size_t pos, jobject new_object);
+        void replace_byte_array(jint pos, jobject new_object);
 
         //
         // CONSTRUCTORS
@@ -175,16 +175,18 @@ inline marshalling_vi_container::marshalling_vi_container(
 inline size_t marshalling_vi_container::size() const
 { return d_arrays.size(); }
 
-inline void marshalling_vi_container::put_null(size_t pos, jbyte ** pp_array)
+inline void marshalling_vi_container::put_null(jint pos, jbyte ** pp_array)
 {
+    assert(0 <= pos && pos < d_arrays.size());
     tuple& t = d_arrays[pos];
     assert(! t.d_elems || !"duplicate variable indirect pointer");
     t.d_pp_arr = pp_array;
 }
 
 inline void marshalling_vi_container::replace_byte_array(
-    size_t pos, jobject new_object /* may be null */)
+    jint pos, jobject new_object /* may be null */)
 {
+    assert(0 <= pos && pos < d_arrays.size());
 #ifndef NDEBUG
     tuple& t = d_arrays[pos];
     if (t.d_elems)

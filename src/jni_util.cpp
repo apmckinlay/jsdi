@@ -47,7 +47,7 @@ void jni_utf16_output_streambuf::expand(size_t min_capacity)
     d_buf.resize(new_size);
     char_type * base = &d_buf.front();
     setp(base, base + new_size);
-    pbump(old_size);
+    pbump(static_cast<int>(old_size));
 }
 
 jni_utf16_output_streambuf::int_type jni_utf16_output_streambuf::overflow(
@@ -122,8 +122,9 @@ jstring make_jstring(JNIEnv * env, const char * sz)
 {
     assert(env || !"environment cannot be NULL");
     assert(sz || !"string cannot be null");
-    const std::vector<jchar> jchars(widen(sz));
-    jstring result = env->NewString(jchars.data(), jchars.size());
+    std::vector<jchar> const jchars(widen(sz));
+    jsize const jlen(static_cast<jsize>(jchars.size()));
+    jstring result = env->NewString(jchars.data(), jlen);
     // According to the NewString docs, it can either:
     //   -- return NULL (if the string "cannot be constructed"); or
     //   -- throw OutOfMemoryError if JVM runs out of memory

@@ -43,9 +43,10 @@ marshalling_vi_container::~marshalling_vi_container()
     { }
 }
 
-inline void marshalling_vi_container::put_not_null(size_t pos, jbyteArray array,
+inline void marshalling_vi_container::put_not_null(jint pos, jbyteArray array,
                                                    jbyte ** pp_array)
 { // NORMAL USE (arguments)
+    assert(0 <= pos && pos < d_arrays.size());
     tuple& t = d_arrays[pos];
     assert(! t.d_elems || !"duplicate variable indirect pointer");
     t.d_elems = d_env->GetByteArrayElements(array, &t.d_is_copy);
@@ -123,7 +124,7 @@ void marshalling_roundtrip::ptrs_finish_vi(
     jobjectArray vi_array_java, marshalling_vi_container& vi_array_cpp,
     const jni_array_region<jint>& vi_inst_array)
 {
-    const jsize N(vi_array_cpp.d_arrays.size());
+    const jsize N(static_cast<jsize>(vi_array_cpp.d_arrays.size()));
     JNIEnv * const env(vi_array_cpp.d_env);
     assert(
         N == vi_inst_array.size() || !"variable indirect array size mismatch");
@@ -434,9 +435,12 @@ constexpr int byte_offset(const T& t, const U& u)
                             reinterpret_cast<const char *>(&t));
 }
 
+#pragma warning(push)
+#pragma warning(disable: 4592) // MS bug 931288, http://goo.gl/SvVcbg
 template<typename T, typename U>
 constexpr int word_offset(const T& t, const U& u)
 { return word_size(byte_offset(t, u)); }
+#pragma warning(pop)
 
 template<typename FuncPtr>
 inline uint64_t invoke_basic(FuncPtr f, size_t size_bytes,
@@ -470,8 +474,8 @@ TEST(ptrs_init,
         {
             word_offset(u.x, u.x.ptr), byte_offset(u.x, u.x.value)
         };
-        marshalling_roundtrip::ptrs_init(u.args, ptr_array,
-                                         array_length(ptr_array));
+        marshalling_roundtrip::ptrs_init(
+            u.args, ptr_array, static_cast<jsize>(array_length(ptr_array)));
         *u.x.ptr = 0x19820207;
         assert_equals(u.x.value, 0x19820207);
     }
@@ -492,8 +496,8 @@ TEST(ptrs_init,
             word_offset(u.x, u.x.ptr_ptr), byte_offset(u.x, u.x.ptr),
             word_offset(u.x, u.x.ptr),     byte_offset(u.x, u.x.value)
         };
-        marshalling_roundtrip::ptrs_init(u.args, ptr_array,
-                                         array_length(ptr_array));
+        marshalling_roundtrip::ptrs_init(
+            u.args, ptr_array, static_cast<jsize>(array_length(ptr_array)));
         **u.x.ptr_ptr = 0x19900606;
         assert_equals(0x19900606, u.x.value);
     }
@@ -516,8 +520,8 @@ TEST(ptrs_init,
             word_offset(u.x, u.x.ptr_ptr),     byte_offset(u.x, u.x.ptr),
             word_offset(u.x, u.x.ptr),         byte_offset(u.x, u.x.value)
         };
-        marshalling_roundtrip::ptrs_init(u.args, ptr_array,
-                                         array_length(ptr_array));
+        marshalling_roundtrip::ptrs_init(
+            u.args, ptr_array, static_cast<jsize>(array_length(ptr_array)));
         const double expect = -123456789.0 + (1.0 / 32.0);
         ***u.x.ptr_ptr_ptr = expect;
         assert_equals(expect, u.x.value);
@@ -528,8 +532,8 @@ TEST(ptrs_init,
             std::vector<jint> ptr_vector(ptr_array,
                                          ptr_array + array_length(ptr_array));
             assert(array_length(ptr_array) == ptr_vector.size());
-            marshalling_roundtrip::ptrs_init(u2->args, &ptr_vector[0],
-                                             ptr_vector.size());
+            marshalling_roundtrip::ptrs_init(
+                u2->args, &ptr_vector[0], static_cast<jsize>(ptr_vector.size()));
             const double expect2 = double(k) * double(k) * double(k);
             ***u2->x.ptr_ptr_ptr = expect2;
             union
@@ -813,17 +817,17 @@ TEST(unmarshall_level_three_with_vi,
         // vi ptr: indirect[2].str <=> s2.str
         word_offset(EXPECTED, EXPECTED.data.indirect[1].str), SIZE_TOTAL + 3,
     };
-   unmarshaller_vi_test y(sizeof(DIRECT), SIZE_TOTAL, PTR_ARRAY,
-                          PTR_ARRAY + array_length(PTR_ARRAY), VI_COUNT);
-   static int VI_INST_ARRAY[VI_COUNT] = { };
-   static combined result;
-   y.unmarshall_vi(DIRECT.args, result.args, NULL_JNI_ENV,
-                   NULL_JOBJ_ARR, VI_INST_ARRAY);
-   assert_equals(0, std::memcmp(&EXPECTED, &result, SIZE_TOTAL));
-   assert_false(y.vi_at(0));
-   assert_equals("level3", *y.vi_at(1));
-   assert_equals("level2", *y.vi_at(2));
-   assert_equals("level1", *y.vi_at(3));
+    unmarshaller_vi_test y(sizeof(DIRECT), SIZE_TOTAL, PTR_ARRAY,
+                           PTR_ARRAY + array_length(PTR_ARRAY), VI_COUNT);
+    static int VI_INST_ARRAY[VI_COUNT] = { };
+    static combined result;
+    y.unmarshall_vi(DIRECT.args, result.args, NULL_JNI_ENV,
+                    NULL_JOBJ_ARR, VI_INST_ARRAY);
+    assert_equals(0, std::memcmp(&EXPECTED, &result, SIZE_TOTAL));
+    assert_false(y.vi_at(0));
+    assert_equals("level3", *y.vi_at(1));
+    assert_equals("level2", *y.vi_at(2));
+    assert_equals("level1", *y.vi_at(3));
 );
 
 #endif // __NOTEST__
