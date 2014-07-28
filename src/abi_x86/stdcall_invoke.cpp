@@ -63,13 +63,13 @@ TEST(basic,
     a[0] = 0x80; // this is -128 as a char
     a[1] = 0x7f; // this is 127 as a char
     assert_equals(
-        static_cast<int8_t>(0xff),
+        static_cast<int8_t>(0xffu),
         static_cast<int8_t>(basic_invoke(TestSumTwoInt8s, 2, a))
     );
     a[0] = 0x8000;
     a[1] = 0x7fff;
     assert_equals(
-        static_cast<int16_t>(0xffff),
+        static_cast<int16_t>(0xffffu),
         static_cast<int16_t>(basic_invoke(TestSumTwoInt16s, 2, a))
     );
     a[0] = std::numeric_limits<int32_t>::min() + 5;
