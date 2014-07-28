@@ -46,7 +46,7 @@ marshalling_vi_container::~marshalling_vi_container()
 inline void marshalling_vi_container::put_not_null(jint pos, jbyteArray array,
                                                    jbyte ** pp_array)
 { // NORMAL USE (arguments)
-    assert(0 <= pos && pos < d_arrays.size());
+    assert(0 <= pos && static_cast<size_t>(pos) < d_arrays.size());
     tuple& t = d_arrays[pos];
     assert(! t.d_elems || !"duplicate variable indirect pointer");
     t.d_elems = d_env->GetByteArrayElements(array, &t.d_is_copy);

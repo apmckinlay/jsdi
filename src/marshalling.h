@@ -177,7 +177,7 @@ inline size_t marshalling_vi_container::size() const
 
 inline void marshalling_vi_container::put_null(jint pos, jbyte ** pp_array)
 {
-    assert(0 <= pos && pos < d_arrays.size());
+    assert(0 <= pos && static_cast<size_t>(pos) < d_arrays.size());
     tuple& t = d_arrays[pos];
     assert(! t.d_elems || !"duplicate variable indirect pointer");
     t.d_pp_arr = pp_array;
@@ -186,7 +186,7 @@ inline void marshalling_vi_container::put_null(jint pos, jbyte ** pp_array)
 inline void marshalling_vi_container::replace_byte_array(
     jint pos, jobject new_object /* may be null */)
 {
-    assert(0 <= pos && pos < d_arrays.size());
+    assert(0 <= pos && static_cast<size_t>(pos) < d_arrays.size());
 #ifndef NDEBUG
     tuple& t = d_arrays[pos];
     if (t.d_elems)
