@@ -1454,7 +1454,7 @@ class jni_utf8_string_region : private non_copyable
     public:
 
         /** \brief An unsigned integral type. */
-        typedef size_t size_type;
+        typedef jsize size_type;
         /** \brief Type of the characters in this string region.
          *  \see #const_value_type */
         typedef char value_type;
@@ -1563,7 +1563,7 @@ class jni_utf16_string_region : private non_copyable
     public:
 
         /** \brief An unsigned integral type. */
-        typedef size_t size_type;
+        typedef jsize size_type;
         /** \brief Type of the characters in this string region.
          *  \see #const_value_type */
         typedef utf16char_t value_type;

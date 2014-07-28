@@ -122,7 +122,7 @@ TEST(basic_oversize_byval,
     r.x[1].a = -5; r.x[1].b = -15; r.x[1].c = -25; r.x[1].d = -35;
     r.str = "-45";
     r.buffer = buffer;
-    r.len = jsdi::array_length(buffer);
+    r.len = static_cast<int32_t>(jsdi::array_length(buffer));
     r.inner = nullptr;
     int32_t result = static_cast<int32_t>(invoke64_basic(sizeof(pr), &pr,
                                                          sum_string_byval));

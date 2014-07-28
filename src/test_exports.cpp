@@ -191,7 +191,7 @@ EXPORT_STDCALL(int64_t) TestSumManyInts(int8_t a, int16_t b, int32_t c,
 }
 
 EXPORT_STDCALL(int32_t) TestStrLen(const char * str)
-{ return str ? std::strlen(str) : 0; }
+{ return str ? static_cast<int32_t>(std::strlen(str)) : 0; }
 
 EXPORT_STDCALL(const char *) TestHelloWorldReturn(int32_t flag)
 { return flag ? "hello world" : 0; }
@@ -407,13 +407,13 @@ TEST(TestSumString,
     rss[1].buffer = buffer[1];
     assert_equals(-1, TestSumString(rss));
     assert_equals(std::string(), rss[1].buffer);
-    rss[1].len = jsdi::array_length(buffer[1]);
+    rss[1].len = static_cast<int32_t>(jsdi::array_length(buffer[1]));
     assert_equals(-1, TestSumString(rss));
     assert_equals(std::string("995"), rss[1].buffer);
     rss[0].buffer = buffer[0];
     assert_equals(-1, TestSumString(rss));
     assert_equals(std::string(), rss[0].buffer);
-    rss[0].len = jsdi::array_length(buffer[0]);
+    rss[0].len = static_cast<int32_t>(jsdi::array_length(buffer[0]));
     assert_equals(-1, TestSumString(rss));
     assert_equals(std::string("-1"), buffer[0]);
     rss[1].inner = &rss[2];

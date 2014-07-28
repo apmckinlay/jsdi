@@ -78,13 +78,14 @@ ULONG __stdcall basic_unknown<COMInterface>::Release()
 //                                  INTERNALS
 //==============================================================================
 
-std::string narrow(const wchar_t * wstr, int len)
+std::string narrow(const wchar_t * wstr, size_t len)
 {   // Convert wchar_t string to char string for logging purposes
-    const int utf8_len = WideCharToMultiByte(CP_UTF8, 0, wstr, len, nullptr,
-                                             0, nullptr, nullptr);
+    int const wchar_len = static_cast<int>(len);
+    int const utf8_len = WideCharToMultiByte(CP_UTF8, 0, wstr, wchar_len,
+                                             nullptr, 0, nullptr, nullptr);
     std::string result(utf8_len, '\0');
-    WideCharToMultiByte(CP_UTF8, 0, wstr, len, &result[0], utf8_len, nullptr,
-                        nullptr);
+    WideCharToMultiByte(CP_UTF8, 0, wstr, wchar_len, &result[0], utf8_len,
+                        nullptr, nullptr);
     return result;
 }
 
@@ -167,7 +168,7 @@ HRESULT __stdcall protocol::Start(LPCWSTR szUrl,
     // never make the URL string longer, but just in case we check to see if a
     // larger buffer is required.
     const size_t orig_url_len(std::wcslen(szUrl));
-    DWORD url_len(orig_url_len);
+    DWORD url_len(static_cast<DWORD>(orig_url_len));
     std::unique_ptr<wchar_t[]> url_dec(new wchar_t[url_len]);
     if (! InternetCanonicalizeUrlW(szUrl, url_dec.get(), &url_len,
                                    ICU_DECODE | ICU_NO_ENCODE))
@@ -231,11 +232,12 @@ canonicalized_ok:
         "data size mismatch"
     );
     d_data.resize(env->GetArrayLength(data_array));
-    env->GetByteArrayRegion(data_array, 0, d_data.size(),
+    env->GetByteArrayRegion(data_array, 0, static_cast<jsize>(d_data.size()),
                             reinterpret_cast<jbyte *>(d_data.data()));
     // Report to the sink that the data is available.
     pOIProtSink->ReportData(BSCF_DATAFULLYAVAILABLE | BSCF_LASTDATANOTIFICATION,
-                            d_data.size(), d_data.size());
+                            static_cast<ULONG>(d_data.size()),
+                            static_cast<ULONG>(d_data.size()));
     LOG_DEBUG("Fetched " << d_data.size() << " bytes for URL '"
                          << narrow(szUrl, orig_url_len) << '\'');
     // Done
@@ -264,7 +266,7 @@ HRESULT __stdcall protocol::Read(void __RPC_FAR *pv, ULONG cb,
     const size_t len = std::min(static_cast<size_t>(cb), d_data.size() - d_pos);
     std::memcpy(pv, &d_data[d_pos], len);
     d_pos += len;
-    *pcbRead = len;
+    *pcbRead = static_cast<ULONG>(len);
     return d_pos < d_data.size() ? S_OK : S_FALSE;
 }
 

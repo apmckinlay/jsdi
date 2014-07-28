@@ -329,7 +329,7 @@ test_java_vm::test_java_vm()
         std::unique_ptr<JavaVMOption[]> options(new JavaVMOption[nopt]);
         vm_args.version             = JNI_VERSION_1_2;
         vm_args.options             = options.get();
-        vm_args.nOptions            = nopt;
+        vm_args.nOptions            = static_cast<jint>(nopt);
         vm_args.ignoreUnrecognized  = true;
         for (size_t k = 0; k < nopt; ++k)
         {
