@@ -30,33 +30,188 @@
 namespace jsdi {
 
 //==============================================================================
-//                          typdef marshall_word_t
-//                         typdef marshall_jarray_t
+//                          typedef marshall_word_t
 //==============================================================================
 
 /**
- * \brief Type of the data word processed by the marshalling algorithms on the
- *        current platform
+ * \brief Type of the data word processed by the marshalling algorithms
  * \author Victor Schappert
  * \since 20140722
- * \see marshall_jarray_t
  */
-typedef
-#if defined(_M_IX86)
-jint
-#elif defined(_M_AMD64)
-jlong
-#else
-#error unknown CPU architecture
-#endif // defined
-marshall_word_t;
+typedef jlong marshall_word_t;
+
+//==============================================================================
+//                         struct marshalling_util
+//==============================================================================
 
 /**
- * \brief Type of a JNI array of \link marshall_word_t\endlink
+ * \brief Utility types and functions used by marshalling code
  * \author Victor Schappert
- * \since 20140722
+ * \since 20140729
  */
-typedef jni_traits<marshall_word_t>::array_type marshall_jarray_t;
+struct marshalling_util
+{
+        /**
+         * \brief Type of a pointer, itself located within a marshalled data
+         *        block, to a pointer that also lives within the marshalled data
+         *        block
+         * \see #addr_of_ptr(marshall_word_t *, jint)
+         * \see #ptr_to_anywhere_ptr_t
+         * \see #ptr_to_datablock_t
+         */
+        typedef jbyte ** ptr_to_ptr_t;
+
+        /**
+         * \brief Type of a pointer, itself located within a marshalled data
+         *        block, to a pointer at an arbitrary location in the address
+         *        space
+         * \see #addr_of_ptr(marshall_word_t const *, jint)
+         * \see #ptr_to_ptr_t
+         * \see #ptr_to_datablock_t
+         */
+        typedef jbyte * const * ptr_to_anywhere_ptr_t;
+
+        /**
+         * \brief Type of a pointer to an address at some offset within the
+         *        marshalled data block
+         * \see #addr_of_byte(marshall_word_t *, jint)
+         * \see #ptr_to_ptr_t
+         * \see #ptr_to_anywhere_ptr_t
+         */
+        typedef jbyte * ptr_to_datablock_t;
+
+        /**
+         * \brief Returns the address of a pointer within a marshalled data
+         *        block that points to another location also within the
+         *        marshalled data block
+         * \param data Pointer to start of data block
+         * \param byte_offset Amount, in bytes, the desired pointer is offset
+         *        from the start of the data block
+         * \return Address of the pointer at position <code>byte_offset</code>
+         *         typed as a #ptr_to_ptr_t
+         * \see #addr_of_ptr(marshall_word_t const *, jint)
+         * \see #addr_of_byte(marshall_word_t *, jint)
+         */
+        static ptr_to_ptr_t addr_of_ptr(marshall_word_t * data,
+                                        jint byte_offset);
+
+        /**
+         * \brief Returns the address of a pointer within a marshalled data
+         *        block that points to an arbitrary (valid) address in the
+         *        process address space
+         * \param data Pointer to start of data block
+         * \param byte_offset Amount, in bytes, the desired pointer is offset
+         *        from the start of the data block
+         * \return Address of the pointer at position <code>byte_offset</code>
+         *         typed as a #ptr_to_anywhere_ptr_t
+         * \see #addr_of_ptr(marshall_word_t *, jint)
+         * \see #addr_of_byte(marshall_word_t *, jint)
+         *
+         * The return value is typed as <code><b>const</b></code>
+         * #ptr_to_anywhere_ptr_t for the following reasons:
+         * - this function is useful only for data that is being unmarshalled,
+         *   where the pointer locations themselves do not need to be touched,
+         *   hence the <code>const</code>;
+         * - the pointer may point to any arbitrary byte location within the
+         *   process address space, therefore it is a #ptr_to_anywhere_ptr_t;
+         *   and
+         * - such an arbitrary location may be read-only, thus the reason
+         *   #ptr_to_anywhere_ptr_t is itself a pointer to a <code>const</code>
+         *   byte location.
+         */
+        static const ptr_to_anywhere_ptr_t addr_of_ptr(
+            marshall_word_t const * data, jint byte_offset);
+
+        /**
+         * \brief Returns the address of a byte within a marshalled data block
+         * \param data Pointer to start of data block
+         * \param byte_offset Amount, in bytes, the desired address is offset
+         *        from the start of the data block
+         * \return Address of the byte <code>byte_offset</code> bytes past
+         *         <code>data</code>
+         * \see #addr_of_ptr(marshall_word_t *, jint)
+         * \see #addr_of_ptr(const marshall_word_t *, jint)
+         */
+        static ptr_to_datablock_t addr_of_byte(marshall_word_t * data,
+                                               jint byte_offset);
+
+        /**
+         * \brief Returns number of \link marshall_word_t\endlink occupied by a
+         *        given number of bytes that is an exact multiple of the size of
+         *        \link marshall_word_t\endlink
+         * \param bytes Non-negative exactly multiple of the size of a
+         *              \link marshall_word_t\endlink
+         * \return Number of words occupied by <code>bytes</code>
+         */
+        static jsize num_whole_words_exact(jsize bytes);
+};
+
+inline marshalling_util::ptr_to_ptr_t
+marshalling_util::addr_of_ptr(marshall_word_t * data, jint byte_offset)
+{ return reinterpret_cast<ptr_to_ptr_t>(addr_of_byte(data, byte_offset)); }
+
+inline const marshalling_util::ptr_to_anywhere_ptr_t
+marshalling_util::addr_of_ptr(marshall_word_t const * data, jint byte_offset)
+{ return addr_of_ptr(const_cast<marshall_word_t *>(data), byte_offset); }
+
+inline marshalling_util::ptr_to_datablock_t marshalling_util::addr_of_byte(
+    marshall_word_t * data, jint byte_offset)
+{ return reinterpret_cast<ptr_to_datablock_t>(data) + byte_offset; }
+
+inline jsize marshalling_util::num_whole_words_exact(jsize bytes)
+{
+    assert(0 <= bytes);
+    assert(0 == bytes % sizeof(marshall_word_t) ||
+        !"word size must exactly divide byte size");
+    return bytes / sizeof(marshall_word_t);
+}
+
+/**
+ * \brief Returns the minimum number of contiguous words required to hold a
+ *        given number of bytes
+ * \param bytes Non-negative number of bytes
+ * \tparam WordType An integral primitive type
+ * \return Minimum number of contiguous <code>WordType</code> values required
+ *         to hold <code>bytes</code>
+ * \see size_whole_words(jsize)
+ * \todo Remove the <code>\#pragma warning</code> wrappers and make this a
+ *       member of \link jsdi::marshalling_util\endlink when Microsoft fixes the
+ *       C++ compiler to properly support <code><b>constexpr</b></code>. As of
+ *       November 2013 CTP on 20140729, <code><b>constexpr</b></code> member
+ *       functions are not supported and, as a separate problem, MSVC emits a
+ *       large number of pointless C4592 warnings for the subset of
+ *       <code><b>constexpr</b></code> members it does support (see \em eg
+ *       http://goo.gl/SvVcbg).
+ */
+template<typename WordType = marshall_word_t>
+inline constexpr jsize min_whole_words(jsize bytes)
+{
+    static_assert(std::is_integral<WordType>::value, "integer type required");
+    return (bytes + sizeof(WordType)-1) / sizeof(WordType);
+}
+
+/**
+ * \brief Returns the size, in bytes, of the minimum number of contiguous words
+ *        required to hold a given number of bytes
+ * \param bytes Non-negative number of bytes
+ * \tparam WordType An integral primitive type
+ * \return Size in bytes of \link min_whole_words<WordType>(jsize)
+ *         min_whole_words(bytes)\endlink
+ * \todo Remove the <code>\#pragma warning</code> wrappers and make this a
+ *       member of \link jsdi::marshalling_util\endlink when Microsoft fixes the
+ *       C++ compiler to properly support <code><b>constexpr</b></code>. As of
+ *       November 2013 CTP on 20140729, <code><b>constexpr</b></code> member
+ *       functions are not supported and, as a separate problem, MSVC emits a
+ *       large number of pointless C4592 warnings for the subset of
+ *       <code><b>constexpr</b></code> members it does support (see \em eg
+ *       http://goo.gl/SvVcbg).
+ */
+template<typename WordType = marshall_word_t>
+inline constexpr jsize size_whole_words(jsize bytes)
+#pragma warning(push) // TODO: remove after http://goo.gl/SvVcbg fixed
+#pragma warning(disable:4592)
+{ return min_whole_words<WordType>(bytes) * sizeof(WordType); }
+#pragma warning(pop)
 
 //==============================================================================
 //                      class marshalling_vi_container
@@ -245,7 +400,7 @@ inline void marshalling_vi_container::put_return_value(jbyte * str)
  * <code>struct</code>, or the callback invoker. In these cases, the appropriate
  * class derived from \link unmarshaller_base\endlink should be used.
  */
-struct marshalling_roundtrip
+struct marshalling_roundtrip : private marshalling_util
 {
         /**
          * \brief Constant value indicating a <code>null</code> pointer
@@ -286,7 +441,7 @@ struct marshalling_roundtrip
          * an empty pointer array implies only direct storage (<em>ie</em> no
          * pointers). Pure direct storage does not need an "init" phase.
          */
-        static void ptrs_init(marshall_word_t * args, const jint * ptr_array,
+        static void ptrs_init(marshall_word_t * args, jint const * ptr_array,
                               jsize ptr_array_size);
 
         /**
@@ -315,7 +470,7 @@ struct marshalling_roundtrip
          * \link marshall_word_t\endlink, not bytes!
          */
         static void ptrs_init_vi(marshall_word_t * args, jsize args_size,
-                                 const jint * ptr_array, jsize ptr_array_size,
+                                 jint const * ptr_array, jsize ptr_array_size,
                                  JNIEnv * env, jobjectArray vi_array_in,
                                  marshalling_vi_container& vi_array_out);
 
@@ -339,14 +494,14 @@ struct marshalling_roundtrip
 };
 
 inline void marshalling_roundtrip::ptrs_init(marshall_word_t * args,
-                                             const jint * ptr_array,
+                                             jint const * ptr_array,
                                              jsize ptr_array_size)
 {
     assert(0 == ptr_array_size % 2 || !"pointer array must have even size");
     jint const * i(ptr_array), * e(ptr_array + ptr_array_size);
     while (i < e)
     {
-        jint ptr_word_index = *i++;
+        jint ptr_byte_offset = *i++;
         jint ptd_to_byte_offset = *i++;
         // If the Java-side marshaller put UNKNOWN_LOCATION as the location to
         // point to, just skip this pointer -- we will trust that the Java side
@@ -354,9 +509,8 @@ inline void marshalling_roundtrip::ptrs_init(marshall_word_t * args,
         // the data array to point to the appropriate location.
         if (UNKNOWN_LOCATION != ptd_to_byte_offset)
         {
-            jbyte ** ptr_addr = reinterpret_cast<jbyte **>(&args[ptr_word_index]);
-            jbyte * ptd_to_addr = reinterpret_cast<jbyte *>(args) +
-                                  ptd_to_byte_offset;
+            auto ptr_addr = addr_of_ptr(args, ptr_byte_offset);
+            auto ptd_to_addr = addr_of_byte(args, ptd_to_byte_offset);
             // Possible alignment issue if the Java-side marshaller didn't set
             // things up so that the pointers are word-aligned. This is the
             // Java side's job, however, and we trust it was done properly.
@@ -389,73 +543,9 @@ class unmarshaller_base : private non_copyable
     protected:
 
         /** \cond internal */
-        const int   d_size_direct;
-        const int   d_size_total;
+        const jint d_size_direct;
+        const jint d_size_total;
         /** \endcond internal */
-
-        //
-        // INTERNAL TYPES
-        //
-
-    protected:
-
-        /**
-         * \brief Type of a pointer, itself located within a marshalled data
-         *        block, to a pointer at an arbitrary location in the address
-         *        space
-         * \see #addr_of_ptr(const marshall_word_t *, int)
-         * \see #ptr_to_datablock_t
-         */
-        typedef uint8_t * const * ptr_to_anywhere_ptr_t;
-        /**
-         * \brief Type of a pointer to an address at some offset within the
-         *        marshalled data block
-         * \see #addr_of_byte(marshall_word_t *, int)
-         * \see #ptr_to_anywhere_ptr_t
-         */
-        typedef uint8_t * ptr_to_datablock_t;
-
-        //
-        // INTERNALS
-        //
-
-    protected:
-
-        /**
-         * \brief Returns the address of a pointer within a marshalled data
-         *        block
-         * \param data Pointer to start of data block
-         * \param word_index Index of the pointer within <code>data</code>
-         * \return Address of the <code>marshall_word_t</code> at position
-         *         <code>word_index</code>, typed as a <code>const</code>
-         *         #ptr_to_anywhere_ptr_t
-         * \see #addr_of_byte(marshall_word_t *, int)
-         *
-         * The return value is typed as <code><b>const</b></code>
-         * #ptr_to_anywhere_ptr_t for the following reasons:
-         * - since the data is being unmarshalled, the pointer locations
-         *   themselves do not need to be touched, hence the <code>const</code>;
-         * - the pointer may point to any arbitrary byte location within the
-         *   process address space, therefore it is a #ptr_to_anywhere_ptr_t;
-         *   and
-         * - such an arbitrary location may be read-only, thus the reason
-         *   #ptr_to_anywhere_ptr_t is itself a pointer to a <code>const</code>
-         *   byte location.
-         */
-        static const ptr_to_anywhere_ptr_t addr_of_ptr(
-            const marshall_word_t * data, int word_index);
-
-        /**
-         * \brief Returns the address of a byte within a marshalled data block
-         * \param data Pointer to start of data block
-         * \param byte_offset Amount, in bytes, the desired address is offset
-         *        from the start of the data block
-         * \return Address of the byte <code>byte_offset</code> bytes past
-         *         <code>data</code>
-         * \see #addr_of_ptr(const marshall_word_t *, int word_index)
-         */
-        static ptr_to_datablock_t addr_of_byte(marshall_word_t * data,
-                                               int byte_offset);
 
         //
         // CONSTRUCTORS
@@ -468,29 +558,19 @@ class unmarshaller_base : private non_copyable
          *        given total size containing a direct block of a given size
          * \param size_direct Size, in bytes, of the direct data at the start of
          *        the marshalled data block: <code>0 &lt; size_direct &le;
-         *        size_total</code> <em>must be a multiple of
-         *        <code>sizeof(marshall_word_t)</code></em>
+         *        size_total</code>
          * \param size_total Size, in bytes, of the whole marshalled data block
          *        <em>must be a multiple of
          *        <code>sizeof(marshall_word_t)</code></em>
          */
-        unmarshaller_base(int size_direct, int size_total);
+        unmarshaller_base(jint size_direct, jint size_total);
 };
 
-inline const unmarshaller_base::ptr_to_anywhere_ptr_t
-unmarshaller_base::addr_of_ptr(const marshall_word_t * data, int word_index)
-{ return reinterpret_cast<const ptr_to_anywhere_ptr_t>(&data[word_index]); }
-
-inline unmarshaller_base::ptr_to_datablock_t unmarshaller_base::addr_of_byte(
-    marshall_word_t * data, int byte_offset)
-{ return reinterpret_cast<ptr_to_datablock_t>(data) + byte_offset; }
-
-inline unmarshaller_base::unmarshaller_base(int size_direct, int size_total)
+inline unmarshaller_base::unmarshaller_base(jint size_direct, jint size_total)
     : d_size_direct(size_direct)
     , d_size_total(size_total)
 {
     assert(0 <= size_direct && size_direct <= size_total);
-    assert(0 == size_direct % sizeof(marshall_word_t));
     assert(0 == size_total % sizeof(marshall_word_t));
 }
 
@@ -518,7 +598,7 @@ class unmarshaller_indirect : public unmarshaller_base
         /**
          * \brief Type of an iterator over a pointer list
          */
-        typedef const int * ptr_iterator_t;
+        typedef jint const * ptr_iterator_t;
 
         //
         // DATA
@@ -537,8 +617,8 @@ class unmarshaller_indirect : public unmarshaller_base
 
     private:
 
-        void normal_ptr(marshall_word_t * data, int ptr_word_index,
-                        int ptd_to_byte_offset,  ptr_iterator_t& ptr_i) const;
+        void normal_ptr(marshall_word_t * data, jint ptr_byte_offset,
+                        jint ptd_to_byte_offset,  ptr_iterator_t& ptr_i) const;
 
         //
         // CONSTRUCTORS
@@ -550,8 +630,7 @@ class unmarshaller_indirect : public unmarshaller_base
          * \brief Constructs an indirect storage unmarshaller
          * \param size_direct Size, in bytes, of the direct data at the start of
          *        the marshalled data block: <code>0 &lt; size_direct &le;
-         *        size_total</code> <em>must be a multiple of
-         *        <code>sizeof(marshall_word_t)</code></em>
+         *        size_total</code>
          * \param size_total Size, in bytes, of the whole marshalled data block
          *        <em>must be a multiple of
          *        <code>sizeof(marshall_word_t)</code></em>
@@ -560,7 +639,7 @@ class unmarshaller_indirect : public unmarshaller_base
          *
          * The pointer list must contain an even number of elements.
          */
-        unmarshaller_indirect(int size_direct, int size_total,
+        unmarshaller_indirect(jint size_direct, jint size_total,
                               const ptr_iterator_t& ptr_begin,
                               const ptr_iterator_t& ptr_end);
 
@@ -580,8 +659,8 @@ class unmarshaller_indirect : public unmarshaller_base
 };
 
 inline unmarshaller_indirect::unmarshaller_indirect(
-    int size_direct,
-    int size_total,
+    jint size_direct,
+    jint size_total,
     const ptr_iterator_t& ptr_begin,
     const ptr_iterator_t& ptr_end)
     : unmarshaller_base(size_direct, size_total)
@@ -596,9 +675,9 @@ inline void unmarshaller_indirect::unmarshall_indirect(
     ptr_iterator_t ptr_i(d_ptr_begin), ptr_e(d_ptr_end);
     while (ptr_i != ptr_e)
     {
-        int ptr_word_index = *ptr_i++;
-        int ptd_to_byte_offset = *ptr_i++;
-        normal_ptr(to, ptr_word_index, ptd_to_byte_offset, ptr_i);
+        jint ptr_byte_offset = *ptr_i++;
+        jint ptd_to_byte_offset = *ptr_i++;
+        normal_ptr(to, ptr_byte_offset, ptd_to_byte_offset, ptr_i);
     }
 }
 
@@ -624,7 +703,7 @@ class unmarshaller_vi_base : public unmarshaller_indirect
         // DATA
         //
 
-        int          d_vi_count;
+        jint d_vi_count;
 
         //
         // INTERNALS
@@ -632,16 +711,16 @@ class unmarshaller_vi_base : public unmarshaller_indirect
 
     private:
 
-        bool is_vi_ptr(int ptd_to_pos) const;
+        bool is_vi_ptr(jint ptd_to_pos) const;
 
-        void vi_ptr(marshall_word_t * data, int ptr_word_index, int ptd_to_pos,
-                    JNIEnv * env, jobjectArray vi_array,
-                    const int * vi_inst_array);
+        void vi_ptr(marshall_word_t * data, jint ptr_word_index,
+                    jint ptd_to_pos, JNIEnv * env, jobjectArray vi_array,
+                    jint const * vi_inst_array);
 
-        void normal_ptr(marshall_word_t * data, int ptr_word_index,
-                        int ptd_to_byte_offset, ptr_iterator_t& ptr_i,
+        void normal_ptr(marshall_word_t * data, jint ptr_word_index,
+                        jint ptd_to_byte_offset, ptr_iterator_t& ptr_i,
                         JNIEnv * env, jobjectArray vi_array,
-                        const int * vi_inst_array);
+                        jint const * vi_inst_array);
 
     protected:
 
@@ -659,12 +738,13 @@ class unmarshaller_vi_base : public unmarshaller_indirect
          * \param vi_inst Variable indirect instruction (specifies what kind of
          *        Java value <code>str</code> should be converted to)
          *
-         * Called by \link #unmarshall_vi(const void *, marshall_word_t *, JNIEnv *, jobjectArray, const int *)
+         * Called by \link #unmarshall_vi(const void *, marshall_word_t *, JNIEnv *, jobjectArray, jint const *)
          * unmarshall_vi(...)\endlink when a variable indirect pointer is
          * encountered.
          */
-        virtual void vi_string_ptr(const char * str, int vi_index, JNIEnv * env,
-                                   jobjectArray vi_array, int vi_inst) = 0;
+        virtual void vi_string_ptr(char const * str, jint vi_index,
+                                   JNIEnv * env, jobjectArray vi_array,
+                                   jint vi_inst) = 0;
 
         //
         // CONSTRUCTORS
@@ -676,8 +756,7 @@ class unmarshaller_vi_base : public unmarshaller_indirect
          * \brief Constructs a base variable indirect storage unmarshaller
          * \param size_direct Size, in bytes, of the direct data at the start of
          *        the marshalled data block: <code>0 &lt; size_direct &le;
-         *        size_total</code> <em>must be a multiple of
-         *        <code>sizeof(marshall_word_t)</code></em>
+         *        size_total</code>
          * \param size_total Size, in bytes, of the whole marshalled data block
          *        <em>must be a multiple of
          *        <code>sizeof(marshall_word_t)</code></em>
@@ -688,9 +767,9 @@ class unmarshaller_vi_base : public unmarshaller_indirect
          *
          * The pointer list must contain an even number of elements.
          */
-        unmarshaller_vi_base(int size_direct, int size_total,
+        unmarshaller_vi_base(jint size_direct, jint size_total,
                              const ptr_iterator_t& ptr_begin,
-                             const ptr_iterator_t& ptr_end, int vi_count);
+                             const ptr_iterator_t& ptr_end, jint vi_count);
 
         virtual ~unmarshaller_vi_base() = default;
 
@@ -714,35 +793,35 @@ class unmarshaller_vi_base : public unmarshaller_indirect
          */
         void unmarshall_vi(const void * from, marshall_word_t * to,
                            JNIEnv * env, jobjectArray vi_array,
-                           const int * vi_inst_array);
+                           jint const * vi_inst_array);
 };
 
-inline bool unmarshaller_vi_base::is_vi_ptr(int ptd_to_pos) const
+inline bool unmarshaller_vi_base::is_vi_ptr(jint ptd_to_pos) const
 { return unmarshaller_base::d_size_total <= ptd_to_pos; }
 
 inline unmarshaller_vi_base::unmarshaller_vi_base(
-    int size_direct, int size_total, const ptr_iterator_t& ptr_begin,
-    const ptr_iterator_t& ptr_end, int vi_count)
+    jint size_direct, jint size_total, const ptr_iterator_t& ptr_begin,
+    const ptr_iterator_t& ptr_end, jint vi_count)
     : unmarshaller_indirect(size_direct, size_total, ptr_begin, ptr_end)
     , d_vi_count(vi_count)
 { assert(0 <= vi_count); }
 
 inline void unmarshaller_vi_base::unmarshall_vi(
     const void * from, marshall_word_t * to, JNIEnv * env,
-    jobjectArray vi_array, const int * vi_inst_array)
+    jobjectArray vi_array, jint const * vi_inst_array)
 {
     std::memcpy(to, from, unmarshaller_base::d_size_direct);
     ptr_iterator_t ptr_i(unmarshaller_indirect::d_ptr_begin),
                    ptr_e(unmarshaller_indirect::d_ptr_end);
     while (ptr_i != ptr_e)
     {
-        int ptr_word_index = *ptr_i++;
-        int ptd_to_byte_offset = *ptr_i++;
+        jint ptr_byte_offset = *ptr_i++;
+        jint ptd_to_byte_offset = *ptr_i++;
         if (is_vi_ptr(ptd_to_byte_offset))  // vi pointer
-            vi_ptr(to, ptr_word_index, ptd_to_byte_offset, env,
-                   vi_array, vi_inst_array);
+            vi_ptr(to, ptr_byte_offset, ptd_to_byte_offset, env, vi_array,
+                   vi_inst_array);
         else                                // normal pointer
-            normal_ptr(to, ptr_word_index, ptd_to_byte_offset, ptr_i, env,
+            normal_ptr(to, ptr_byte_offset, ptd_to_byte_offset, ptr_i, env,
                        vi_array, vi_inst_array);
     }
 }
@@ -780,8 +859,9 @@ class unmarshaller_vi_test : public unmarshaller_vi_base
 
     protected:
 
-        virtual void vi_string_ptr(const char * str, int vi_index, JNIEnv * env,
-                                   jobjectArray vi_array, int vi_inst);
+        virtual void vi_string_ptr(char const * str, jint vi_index,
+                                   JNIEnv * env, jobjectArray vi_array,
+                                   jint vi_inst);
 
         //
         // CONSTRUCTORS
@@ -789,9 +869,9 @@ class unmarshaller_vi_test : public unmarshaller_vi_base
 
     public:
 
-        unmarshaller_vi_test(int size_direct, int size_total,
-                        const ptr_iterator_t& ptr_begin,
-                        const ptr_iterator_t& ptr_end, int vi_count);
+        unmarshaller_vi_test(jint size_direct, jint size_total,
+                             const ptr_iterator_t& ptr_begin,
+                             const ptr_iterator_t& ptr_end, jint vi_count);
 
         //
         // ACCESSORS
@@ -803,8 +883,8 @@ class unmarshaller_vi_test : public unmarshaller_vi_base
 };
 
 inline unmarshaller_vi_test::unmarshaller_vi_test(
-    int size_direct, int size_total, const ptr_iterator_t& ptr_begin,
-    const ptr_iterator_t& ptr_end, int vi_count)
+    jint size_direct, jint size_total, const ptr_iterator_t& ptr_begin,
+    const ptr_iterator_t& ptr_end, jint vi_count)
     : unmarshaller_vi_base(size_direct, size_total, ptr_begin, ptr_end,
                            vi_count)
     , d_vi_data(vi_count)
@@ -845,8 +925,9 @@ class unmarshaller_vi : public unmarshaller_vi_base
 
     protected:
 
-        virtual void vi_string_ptr(const char * str, int vi_index, JNIEnv * env,
-                                   jobjectArray vi_array, int vi_inst);
+        virtual void vi_string_ptr(char const * str, jint vi_index,
+                                   JNIEnv * env, jobjectArray vi_array,
+                                   jint vi_inst);
 
         //
         // CONSTRUCTORS
@@ -858,8 +939,7 @@ class unmarshaller_vi : public unmarshaller_vi_base
          * \brief Constructs a variable indirect storage unmarshaller
          * \param size_direct Size, in bytes, of the direct data at the start of
          *        the marshalled data block: <code>0 &lt; size_direct &le;
-         *        size_total</code> <em>must be a multiple of
-         *        <code>sizeof(marshall_word_t)</code></em>
+         *        size_total</code>
          * \param size_total Size, in bytes, of the whole marshalled data block
          *        <em>must be a multiple of
          *        <code>sizeof(marshall_word_t)</code></em>
@@ -870,15 +950,15 @@ class unmarshaller_vi : public unmarshaller_vi_base
          *
          * The pointer list must contain an even number of elements.
          */
-        unmarshaller_vi(int size_direct, int size_total,
+        unmarshaller_vi(jint size_direct, jint size_total,
                         const ptr_iterator_t& ptr_begin,
-                        const ptr_iterator_t& ptr_end, int vi_count);
+                        const ptr_iterator_t& ptr_end, jint vi_count);
 };
 
-inline unmarshaller_vi::unmarshaller_vi(int size_direct, int size_total,
+inline unmarshaller_vi::unmarshaller_vi(jint size_direct, jint size_total,
                                         const ptr_iterator_t& ptr_begin,
                                         const ptr_iterator_t& ptr_end,
-                                        int vi_count)
+                                        jint vi_count)
     : unmarshaller_vi_base(size_direct, size_total, ptr_begin, ptr_end,
                            vi_count)
 { }

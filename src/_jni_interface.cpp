@@ -13,10 +13,11 @@
 
 #include "com.h"
 #include "global_refs.h"
-#include "log.h"
 #include "jni_exception.h"
 #include "jni_util.h"
 #include "jsdi_windows.h"
+#include "log.h"
+#include "marshalling.h"
 #include "suneido_protocol.h"
 #include "version.h"
 
@@ -48,6 +49,15 @@ void check_array_atleast(jsize size, const char * array_name, JNIEnv * env,
 
 void check_array_atleast_1(const char * array_name, JNIEnv * env, jarray array)
 { check_array_atleast(1, array_name, env, array); }
+
+inline const char * get_struct_ptr(jlong struct_addr)
+{
+    assert(struct_addr || !"can't copy out a NULL pointer");
+    return reinterpret_cast<const char *>(struct_addr);
+}
+
+inline void check_struct_size(jint size_direct)
+{ assert(0 < size_direct || !"structure must have positive size"); }
 
 } // anonymous namespace
 
@@ -157,6 +167,94 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_DllFactory_getProcAddress
     LOG_DEBUG("GetProcAddress('" << procName_.str() << "') => " << addr);
     JNI_EXCEPTION_SAFE_END(env);
     return result;
+}
+
+//==============================================================================
+//                 JAVA CLASS: suneido.jsdi.type.Structure
+//==============================================================================
+
+#include "gen/suneido_jsdi_type_Structure.h"
+    // This #include isn't strictly necessary -- the only caller of these
+    // functions is the JVM. However, it is useful to have the generated code
+    // around. Also, because you can only have one extern "C" symbol with the
+    // same name, including the header allows the compiler to find prototype
+    // declaration/definition conflicts.
+
+/*
+ * Class:     suneido_jsdi_type_Structure
+ * Method:    copyOutDirect
+ * Signature: (J[JI)V
+ */
+JNIEXPORT void JNICALL Java_suneido_jsdi_type_Structure_copyOutDirect(
+    JNIEnv * env, jclass, jlong structAddr, jlongArray data, jint sizeDirect)
+{
+    JNI_EXCEPTION_SAFE_BEGIN
+    LOG_TRACE("structAddr => "   << reinterpret_cast<void *>(structAddr) <<
+              ", sizeDirect => " << sizeDirect);
+    check_struct_size(sizeDirect);
+    auto ptr(get_struct_ptr(structAddr));
+    // NOTE: In contrast to most other situations, it is safe to use a primitive
+    // critical array here because in a struct copy out, we don't call any other
+    // JNI functions (nor is it possible to surreptitiously re-enter the Java
+    // world via a callback).
+#pragma warning(push) // TODO: remove after http://goo.gl/SvVcbg fixed
+#pragma warning(disable:4592)
+    jni_critical_array<jlong> data_(env, data, min_whole_words(sizeDirect));
+#pragma warning(pop)
+    std::memcpy(data_.data(), ptr, sizeDirect);
+    JNI_EXCEPTION_SAFE_END(env);
+}
+
+/*
+ * Class:     suneido_jsdi_type_Structure
+ * Method:    copyOutIndirect
+ * Signature: (J[JI[I)V
+ */
+JNIEXPORT void JNICALL Java_suneido_jsdi_type_Structure_copyOutIndirect(
+    JNIEnv * env, jclass, jlong structAddr, jlongArray data, jint sizeDirect,
+    jintArray ptrArray)
+{
+    JNI_EXCEPTION_SAFE_BEGIN
+    LOG_TRACE("structAddr => "   << reinterpret_cast<void *>(structAddr) <<
+              ", sizeDirect => " << sizeDirect);
+    check_struct_size(sizeDirect);
+    auto ptr(get_struct_ptr(structAddr));
+    // See note above: critical arrays safe here.
+    const jni_array_region<jint> ptr_array(env, ptrArray);
+    jni_critical_array<jlong> data_(env, data);
+    unmarshaller_indirect u(sizeDirect,
+                            data_.size() * sizeof(decltype(data_)::value_type),
+                            ptr_array.begin(), ptr_array.end());
+    u.unmarshall_indirect(ptr,
+                          reinterpret_cast<marshall_word_t *>(data_.data()));
+    JNI_EXCEPTION_SAFE_END(env);
+}
+
+/*
+ * Class:     suneido_jsdi_type_Structure
+ * Method:    copyOutVariableIndirect
+ * Signature: (J[JI[I[Ljava/lang/Object;[I)V
+ */
+JNIEXPORT void JNICALL Java_suneido_jsdi_type_Structure_copyOutVariableIndirect(
+    JNIEnv * env, jclass, jlong structAddr, jlongArray data, jint sizeDirect,
+    jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
+{
+    JNI_EXCEPTION_SAFE_BEGIN
+    LOG_TRACE("structAddr => "   << reinterpret_cast<void *>(structAddr) <<
+              ", sizeDirect => " << sizeDirect);
+    check_struct_size(sizeDirect);
+    auto ptr(get_struct_ptr(structAddr));
+    // Can't use critical arrays here because the unmarshalling process isn't
+    // guaranteed to follow the JNI critical array function restrictions.
+    jni_array<jlong> data_(env, data);
+    const jni_array_region<jint> ptr_array(env, ptrArray);
+    const jni_array_region<jint> vi_inst_array(env, viInstArray);
+    unmarshaller_vi u(sizeDirect,
+                      data_.size() * sizeof(decltype(data_)::value_type),
+                      ptr_array.begin(), ptr_array.end(), vi_inst_array.size());
+    u.unmarshall_vi(ptr, reinterpret_cast<marshall_word_t *>(data_.data()),
+                    env, viArray, vi_inst_array.begin());
+    JNI_EXCEPTION_SAFE_END(env);
 }
 
 //==============================================================================

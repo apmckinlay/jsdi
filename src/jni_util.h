@@ -120,6 +120,11 @@ inline void jni_array_get_region<jint>(JNIEnv * env, jintArray array,
 { env->GetIntArrayRegion(array, start, len, buf); }
 
 template<>
+inline void jni_array_get_region<jlong>(JNIEnv * env, jlongArray array,
+                                        jsize start, jsize len, jlong * buf)
+{ env->GetLongArrayRegion(array, start, len, buf); }
+
+template<>
 inline void jni_array_get_region<jboolean>(JNIEnv * env, jbooleanArray array,
                                            jsize start, jsize len, jboolean * buf)
 { env->GetBooleanArrayRegion(array, start, len, buf); }

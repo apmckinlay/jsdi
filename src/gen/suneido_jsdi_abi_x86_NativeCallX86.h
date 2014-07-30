@@ -10,58 +10,58 @@ extern "C" {
 /*
  * Class:     suneido_jsdi_abi_x86_NativeCallX86
  * Method:    callDirectReturnInt64
- * Signature: (JI[B)J
+ * Signature: (JI[J)J
  */
 JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callDirectReturnInt64
-  (JNIEnv *, jclass, jlong, jint, jbyteArray);
+  (JNIEnv *, jclass, jlong, jint, jlongArray);
 
 /*
  * Class:     suneido_jsdi_abi_x86_NativeCallX86
  * Method:    callIndirectReturnInt64
- * Signature: (JI[B[I)J
+ * Signature: (JI[J[I)J
  */
 JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callIndirectReturnInt64
-  (JNIEnv *, jclass, jlong, jint, jbyteArray, jintArray);
+  (JNIEnv *, jclass, jlong, jint, jlongArray, jintArray);
 
 /*
  * Class:     suneido_jsdi_abi_x86_NativeCallX86
  * Method:    callVariableIndirectReturnInt64
- * Signature: (JI[B[I[Ljava/lang/Object;[I)J
+ * Signature: (JI[J[I[Ljava/lang/Object;[I)J
  */
 JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callVariableIndirectReturnInt64
-  (JNIEnv *, jclass, jlong, jint, jbyteArray, jintArray, jobjectArray, jintArray);
+  (JNIEnv *, jclass, jlong, jint, jlongArray, jintArray, jobjectArray, jintArray);
 
 /*
  * Class:     suneido_jsdi_abi_x86_NativeCallX86
  * Method:    callDirectReturnDouble
- * Signature: (JI[B)J
+ * Signature: (JI[J)J
  */
 JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callDirectReturnDouble
-  (JNIEnv *, jclass, jlong, jint, jbyteArray);
+  (JNIEnv *, jclass, jlong, jint, jlongArray);
 
 /*
  * Class:     suneido_jsdi_abi_x86_NativeCallX86
  * Method:    callIndirectReturnDouble
- * Signature: (JI[B[I)J
+ * Signature: (JI[J[I)J
  */
 JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callIndirectReturnDouble
-  (JNIEnv *, jclass, jlong, jint, jbyteArray, jintArray);
+  (JNIEnv *, jclass, jlong, jint, jlongArray, jintArray);
 
 /*
  * Class:     suneido_jsdi_abi_x86_NativeCallX86
  * Method:    callVariableIndirectReturnDouble
- * Signature: (JI[B[I[Ljava/lang/Object;[I)J
+ * Signature: (JI[J[I[Ljava/lang/Object;[I)J
  */
 JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callVariableIndirectReturnDouble
-  (JNIEnv *, jclass, jlong, jint, jbyteArray, jintArray, jobjectArray, jintArray);
+  (JNIEnv *, jclass, jlong, jint, jlongArray, jintArray, jobjectArray, jintArray);
 
 /*
  * Class:     suneido_jsdi_abi_x86_NativeCallX86
  * Method:    callVariableIndirectReturnVariableIndirect
- * Signature: (JI[B[I[Ljava/lang/Object;[I)V
+ * Signature: (JI[J[I[Ljava/lang/Object;[I)V
  */
 JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callVariableIndirectReturnVariableIndirect
-  (JNIEnv *, jclass, jlong, jint, jbyteArray, jintArray, jobjectArray, jintArray);
+  (JNIEnv *, jclass, jlong, jint, jlongArray, jintArray, jobjectArray, jintArray);
 
 #ifdef __cplusplus
 }
