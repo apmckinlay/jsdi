@@ -99,7 +99,9 @@ JNIEXPORT jstring JNICALL Java_suneido_jsdi_JSDI_when
     jstring result(0);
     JNI_EXCEPTION_SAFE_BEGIN
     jni_utf16_ostream o(env);
-    o << version::BUILD_DATE << " (" << version::PLATFORM << ')';
+    o << version::BUILD_DATE << " (" << version::PLATFORM;
+    if (! version::IS_RELEASE) o << " debug";
+    o << ')';
     result = o.jstr();
     JNI_EXCEPTION_SAFE_END(env);
     return result;

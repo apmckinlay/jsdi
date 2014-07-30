@@ -38,6 +38,17 @@ struct version
      *        built for
      */
     static char const * const PLATFORM;
+
+    /**
+     * \brief Indicates whether this is a release build of the library
+     */
+    static constexpr bool IS_RELEASE =
+#if defined(NDEBUG)
+        true
+#else
+        false
+#endif // defined(NDEBUG)
+        ;
 };
 
 } // namespace jsdi
