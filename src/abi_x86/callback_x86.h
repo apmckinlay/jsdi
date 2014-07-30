@@ -60,9 +60,9 @@ class callback_x86_basic : public callback, private non_copyable
 
         /** \cond internal */
         callback_x86_basic(JNIEnv * env, jobject suneido_callback,
-                           jobject suneido_bound_value, int size_direct,
-                           int size_total, const int * ptr_array,
-                           int ptr_array_size, int vi_count);
+                           jobject suneido_bound_value, jint size_direct,
+                           jint size_total, jint const * ptr_array,
+                           jint ptr_array_size, jint vi_count);
         /** \endcond internal */
 
     public:
@@ -90,9 +90,9 @@ class callback_x86_basic : public callback, private non_copyable
          * \param ptr_array_size Size of <code>ptr_array</code>
          */
         callback_x86_basic(JNIEnv * env, jobject suneido_callback,
-                           jobject suneido_bound_value, int size_direct,
-                           int size_total, const int * ptr_array,
-                           int ptr_array_size);
+                           jobject suneido_bound_value, jint size_direct,
+                           jint size_total, jint const * ptr_array,
+                           jint ptr_array_size);
 
         ~callback_x86_basic();
 
@@ -102,7 +102,7 @@ class callback_x86_basic : public callback, private non_copyable
 
     protected:
 
-        virtual uint64_t call(const marshall_word_t * args);
+        virtual uint64_t call(marshall_word_t const * args);
 
         //
         // ACCESSORS
@@ -132,7 +132,7 @@ class callback_x86_vi : public callback_x86_basic
         // DATA
         //
 
-        std::vector<int> d_vi_inst_array;
+        std::vector<jint> d_vi_inst_array;
 
         //
         // CONSTRUCTORS
@@ -165,9 +165,9 @@ class callback_x86_vi : public callback_x86_basic
          *        vi_count</code>
          */
         callback_x86_vi(JNIEnv * env, jobject suneido_callback,
-                         jobject suneido_bound_value, int size_direct,
-                         int size_total, const int * ptr_array,
-                         int ptr_array_size, int vi_count);
+                         jobject suneido_bound_value, jint size_direct,
+                         jint size_total, jint const * ptr_array,
+                         jint ptr_array_size, jint vi_count);
 
         //
         // MUTATORS
@@ -175,21 +175,21 @@ class callback_x86_vi : public callback_x86_basic
 
     protected:
 
-        virtual uint64_t call(const marshall_word_t * args);
+        virtual uint64_t call(marshall_word_t const * args);
 };
 
 inline callback_x86_vi::callback_x86_vi(JNIEnv * env, jobject suneido_callback,
                                         jobject suneido_bound_value,
-                                        int size_direct, int size_total,
-                                        const int * ptr_array,
-                                        int ptr_array_size, int vi_count)
+                                        jint size_direct, jint size_total,
+                                        jint const * ptr_array,
+                                        jint ptr_array_size, jint vi_count)
     : callback_x86_basic(env, suneido_callback, suneido_bound_value,
                          size_direct, size_total, ptr_array, ptr_array_size,
                          vi_count)
     , d_vi_inst_array(
           vi_count,
-          static_cast<int>(
-              suneido_jsdi_VariableIndirectInstruction::RETURN_JAVA_STRING)
+          static_cast<jint>(
+              suneido_jsdi_marshall_VariableIndirectInstruction::RETURN_JAVA_STRING)
       )
 { }
 

@@ -104,6 +104,8 @@ TEST(basic,
         static_cast<int32_t>(basic_invoke(
             TestSumPackedInt8Int8Int16Int32,
             (sizeof(p_ccsl) + sizeof(uint32_t) - 1) / sizeof(uint32_t),
+            // TODO: use marshalling.h's min_whole_words<uint32_t> for this
+            //       (it is crashing MSVC November 2013 CTP as of 20140729)
             a
         ))
     );

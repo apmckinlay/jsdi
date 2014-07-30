@@ -393,8 +393,8 @@ using namespace jsdi::abi_amd64::test64;
 
 namespace {
 
-static const int EMPTY_PTR_ARRAY[1] = { };
-static const param_register_types DEFAULT_REGISTERS;
+static jint const EMPTY_PTR_ARRAY[1] = { };
+static param_register_types const DEFAULT_REGISTERS;
 
 typedef std::shared_ptr<jsdi::callback> callback_ptr_t;
 
@@ -407,12 +407,12 @@ struct direct_callback : public jsdi::callback
     template<typename FuncPtr>
     direct_callback(FuncPtr func_ptr, size_t size_direct,
                     param_register_types register_types)
-        : callback(static_cast<int>(size_direct), static_cast<int>(size_direct),
+        : callback(static_cast<jint>(size_direct), static_cast<jint>(size_direct),
                    EMPTY_PTR_ARRAY, 0, 0)
         , d_func_ptr(reinterpret_cast<void *>(func_ptr))
         , d_register_types(register_types)
     { }
-    virtual uint64_t call(const jsdi::marshall_word_t * args)
+    virtual uint64_t call(jsdi::marshall_word_t const * args)
     {
         const size_t args_size_bytes(static_cast<size_t>(d_size_direct));
         return d_register_types.has_fp()

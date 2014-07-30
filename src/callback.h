@@ -41,10 +41,11 @@ class callback
     protected:
 
         /** \cond internal */
-        std::vector<int> d_ptr_array;
-        int              d_size_direct;
-        int              d_size_total;
-        int              d_vi_count;
+        std::vector<jint> d_ptr_array;
+        jint              d_size_direct;
+        jint              d_size_total_bytes;
+        jsize             d_size_total_words;
+        jint              d_vi_count;
         /** \endcond internal */
 
         //
@@ -69,8 +70,8 @@ class callback
          * \param vi_count Number of variable indirect pointers that must be
          * unmarshalled
          */
-        callback(int size_direct, int size_total, const int * ptr_array,
-                 int ptr_array_size, int vi_count);
+        callback(jint size_direct, jint size_total, jint const * ptr_array,
+                 jint ptr_array_size, jint vi_count);
 
         virtual ~callback() = default;
 
@@ -85,7 +86,7 @@ class callback
          *  bytes
          * \return Direct argument size in bytes
          */
-        int size_direct() const;
+        jint size_direct() const;
 
         //
         // MUTATORS
@@ -100,10 +101,10 @@ class callback
          * base of the on-stack arguments in <code>stdcall</code> format
          * \return Return value of the callback function
          */
-        virtual uint64_t call(const marshall_word_t * args) = 0;
+        virtual uint64_t call(marshall_word_t const * args) = 0;
 };
 
-inline int callback::size_direct() const { return d_size_direct; }
+inline jint callback::size_direct() const { return d_size_direct; }
 
 } // namespace jsdi
 

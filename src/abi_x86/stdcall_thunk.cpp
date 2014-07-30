@@ -266,7 +266,7 @@ using namespace jsdi::abi_x86;
 
 namespace {
 
-static const int EMPTY_PTR_ARRAY[1] = { };
+static jint const EMPTY_PTR_ARRAY[1] = { };
 
 // callback that can invoke a stdcall func and return its value
 struct stdcall_invoke_basic_callback : public callback
@@ -274,24 +274,30 @@ struct stdcall_invoke_basic_callback : public callback
     void * d_func_ptr;
     template<typename FuncPtr>
     stdcall_invoke_basic_callback(FuncPtr func_ptr, size_t size_direct,
-                                  size_t size_total, const int * ptr_array,
-                                  int ptr_array_size, int vi_count)
-        : callback(static_cast<int>(size_direct), static_cast<int>(size_total),
-                   ptr_array, ptr_array_size, vi_count)
+                                  size_t size_total, jint const * ptr_array,
+                                  jint ptr_array_size, jint vi_count)
+        : callback(static_cast<jint>(size_direct),
+                   static_cast<jint>(size_total), ptr_array, ptr_array_size,
+                   vi_count)
         , d_func_ptr(reinterpret_cast<void *>(func_ptr))
     { }
     template<typename FuncPtr>
     stdcall_invoke_basic_callback(FuncPtr func_ptr, size_t size_direct)
-        : stdcall_invoke_basic_callback(func_ptr, size_direct, size_direct,
+        : stdcall_invoke_basic_callback(func_ptr, size_direct,
+#pragma warning(push) // TODO: remove after http://goo.gl/SvVcbg fixed
+#pragma warning(disable:4592)
+                                        size_whole_words(size_direct),
+#pragma warning(pop)
                                         EMPTY_PTR_ARRAY, 0, 0)
     { }
-    virtual uint64_t call(const marshall_word_t * args)
+    virtual uint64_t call(marshall_word_t const * args)
     {
-        std::vector<uint8_t> data(d_size_total, 0);
-        std::vector<int> vi_inst_array(
+        std::vector<uint8_t> data(d_size_total_bytes, 0);
+        std::vector<jint> vi_inst_array(
             d_vi_count,
-            static_cast<int>(suneido_jsdi_VariableIndirectInstruction::RETURN_JAVA_STRING));
-        unmarshaller_vi_test u(d_size_direct, d_size_total, d_ptr_array.data(),
+            static_cast<jint>(suneido_jsdi_marshall_VariableIndirectInstruction::RETURN_JAVA_STRING));
+        unmarshaller_vi_test u(d_size_direct, d_size_total_bytes,
+                               d_ptr_array.data(),
                                d_ptr_array.data() + d_ptr_array.size(),
                                d_vi_count);
         u.unmarshall_vi(args, reinterpret_cast<marshall_word_t *>(data.data()),
@@ -316,14 +322,6 @@ struct Func
         return f(c, args...);
     };
 };
-
-int word_offset(ptrdiff_t byte_offset)
-{
-    assert(0 <= byte_offset || !"byte offset cannot be negative");
-    assert(0 == byte_offset % sizeof(marshall_word_t) || !"can't word-align");
-    return static_cast<int>(
-        (byte_offset + sizeof(marshall_word_t)-1) / sizeof(marshall_word_t));
-}
 
 } // anonymous namespace
 
@@ -370,6 +368,9 @@ TEST(sum_packed,
     assert_equals(54422, result);
 );
 
+#pragma warning(push) // TODO: remove after http://goo.gl/SvVcbg fixed
+#pragma warning(disable:4592)
+
 TEST(sum_string,
     static Recursive_StringSum r_ss[2]; // zeroed
     r_ss[0].x[0] = { 0, 1, 2, 3 };
@@ -381,27 +382,27 @@ TEST(sum_string,
     r_ss[1].str = "17";
     enum
     {
-        SIZE_DIRECT = sizeof(Recursive_StringSum *),
+        SIZE_DIRECT   = sizeof(Recursive_StringSum *),
         SIZE_INDIRECT = sizeof(r_ss),
-        SIZE_TOTAL = SIZE_DIRECT + SIZE_INDIRECT,
+        SIZE_TOTAL = size_whole_words(SIZE_DIRECT + SIZE_INDIRECT),
         VI_COUNT = 4,
     };
-    const ptrdiff_t STR_OFFSET =   reinterpret_cast<char *>(&r_ss[0].str) -
+    const ptrdiff_t STR_OFFSET = reinterpret_cast<char *>(&r_ss[0].str) -
                                    reinterpret_cast<char *>(&r_ss[0]),
                     BUF_OFFSET =   reinterpret_cast<char *>(&r_ss[0].buffer) -
                                    reinterpret_cast<char *>(&r_ss[0]),
                     INNER_OFFSET = reinterpret_cast<char *>(&r_ss[0].inner) -
                                    reinterpret_cast<char *>(&r_ss[0]);
-    static int const PTR_ARRAY[12] =
+    static jint const PTR_ARRAY[12] =
     {
         0, SIZE_DIRECT,
         // rss[0]
-        word_offset(SIZE_DIRECT + STR_OFFSET), SIZE_TOTAL + 0,
-        word_offset(SIZE_DIRECT + BUF_OFFSET), SIZE_TOTAL + 1,
-        word_offset(SIZE_DIRECT + INNER_OFFSET), SIZE_DIRECT + sizeof(r_ss[0]),
+        SIZE_DIRECT + STR_OFFSET, SIZE_TOTAL + 0,
+        SIZE_DIRECT + BUF_OFFSET, SIZE_TOTAL + 1,
+        SIZE_DIRECT + INNER_OFFSET, SIZE_DIRECT + sizeof(r_ss[0]),
         // rss[1]
-        word_offset(SIZE_DIRECT + sizeof(r_ss[0]) + STR_OFFSET), SIZE_TOTAL + 2,
-        word_offset(SIZE_DIRECT + sizeof(r_ss[0]) + BUF_OFFSET), SIZE_TOTAL + 3,
+        SIZE_DIRECT + sizeof(r_ss[0]) + STR_OFFSET, SIZE_TOTAL + 2,
+        SIZE_DIRECT + sizeof(r_ss[0]) + BUF_OFFSET, SIZE_TOTAL + 3,
     };
     std::shared_ptr<callback> cb(
     new stdcall_invoke_basic_callback(TestSumString, SIZE_DIRECT, SIZE_TOTAL,
@@ -413,5 +414,7 @@ TEST(sum_string,
     thunk.clear();
     assert_equals(0+1+2+3+4+5+6+7+8+9+10+11+12+13+14+15+16+17, result);
 );
+
+#pragma warning(pop)
 
 #endif // __NOTEST__

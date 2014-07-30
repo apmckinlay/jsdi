@@ -30,48 +30,48 @@ void throw_out_of_range(const char * func_name, int ordinal,
 
 } // anonymous namespace
 
-// [BEGIN:GENERATED CODE last updated Mon Jul 28 00:00:36 PDT 2014]
+// [BEGIN:GENERATED CODE last updated Tue Jul 29 14:18:10 PDT 2014]
 template <>
-suneido_jsdi_VariableIndirectInstruction jni_enum_to_cpp(JNIEnv * env, jclass clazz, jobject e)
+suneido_jsdi_marshall_VariableIndirectInstruction jni_enum_to_cpp(JNIEnv * env, jclass clazz, jobject e)
 {
     jmethodID method_id = GLOBAL_REFS->java_lang_Enum__m_ordinal();
     jint ordinal = env->CallIntMethod(e, method_id);
     JNI_EXCEPTION_CHECK(env);
-    return ordinal_enum_to_cpp<suneido_jsdi_VariableIndirectInstruction>(ordinal);
+    return ordinal_enum_to_cpp<suneido_jsdi_marshall_VariableIndirectInstruction>(ordinal);
 }
 
 template <>
-suneido_jsdi_VariableIndirectInstruction ordinal_enum_to_cpp(int e)
+suneido_jsdi_marshall_VariableIndirectInstruction ordinal_enum_to_cpp(int e)
 {
     if (! (0 <= e && e < 3))
     {
         throw_out_of_range(
             __FUNCTION__,
             e,
-            "suneido.jsdi.VariableIndirectInstruction"
+            "suneido.jsdi.marshall.VariableIndirectInstruction"
         );
     }
-    return static_cast<suneido_jsdi_VariableIndirectInstruction>(e);
+    return static_cast<suneido_jsdi_marshall_VariableIndirectInstruction>(e);
 }
 
-static const char * const suneido_jsdi_VariableIndirectInstruction__NAME[] =
+static const char * const suneido_jsdi_marshall_VariableIndirectInstruction__NAME[] =
 {
     "NO_ACTION",
     "RETURN_JAVA_STRING",
     "RETURN_RESOURCE",
 };
 
-std::ostream& operator<<(std::ostream& o, const suneido_jsdi_VariableIndirectInstruction& e)
+std::ostream& operator<<(std::ostream& o, const suneido_jsdi_marshall_VariableIndirectInstruction& e)
 {
     if (! (0 <= e && e < 3))
     {
         throw_out_of_range(
             __FUNCTION__,
             e,
-            "suneido.jsdi.VariableIndirectInstruction"
+            "suneido.jsdi.marshall.VariableIndirectInstruction"
         );
     }
-    o << suneido_jsdi_VariableIndirectInstruction__NAME[e]
+    o << suneido_jsdi_marshall_VariableIndirectInstruction__NAME[e]
       << '<' << static_cast<int>(e) << '>';
     return o;
 }

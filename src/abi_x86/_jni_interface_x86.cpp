@@ -37,7 +37,7 @@ using namespace jsdi::abi_x86;
 namespace {
 
 inline jlong invoke_stdcall_basic(JNIEnv * env, int args_size_bytes,
-                                  jint * args_ptr, jlong func_ptr)
+                                  jlong * args_ptr, jlong func_ptr)
 {
     jlong result = stdcall_invoke::basic(args_size_bytes, args_ptr,
                                          reinterpret_cast<void *>(func_ptr));
@@ -46,7 +46,7 @@ inline jlong invoke_stdcall_basic(JNIEnv * env, int args_size_bytes,
 }
 
 inline jlong invoke_stdcall_return_double(JNIEnv * env, int args_size_bytes,
-                                          jint * args_ptr,
+                                          jlong * args_ptr,
                                           jlong func_ptr)
 {
     union {
@@ -61,7 +61,7 @@ inline jlong invoke_stdcall_return_double(JNIEnv * env, int args_size_bytes,
 
 template<typename InvokeFunc>
 inline jlong call_direct(JNIEnv * env, jlong funcPtr, jint sizeDirect,
-                         jintArray args, InvokeFunc invokeFunc)
+                         jlongArray args, InvokeFunc invokeFunc)
 {
     jlong result(0);
     JNI_EXCEPTION_SAFE_BEGIN
@@ -87,7 +87,10 @@ inline jlong call_direct(JNIEnv * env, jlong funcPtr, jint sizeDirect,
     //       and the immediate native call might therefore not take a callback
     //       parameter ... because to invoke the callback it just needs to look
     //       at state previously stored.
-    jni_array_region<jint> args_(env, args, sizeDirect / sizeof(jint));
+#pragma warning(push) // TODO: remove after http://goo.gl/SvVcbg fixed
+#pragma warning(disable:4592)
+    jni_array_region<jlong> args_(env, args, min_whole_words(sizeDirect));
+#pragma warning(pop)
     result = invokeFunc(env, sizeDirect, args_.data(), funcPtr);
     JNI_EXCEPTION_SAFE_END(env);
     return result;
@@ -95,14 +98,14 @@ inline jlong call_direct(JNIEnv * env, jlong funcPtr, jint sizeDirect,
 
 template<typename InvokeFunc>
 inline jlong call_indirect(JNIEnv * env, jlong funcPtr, jint sizeDirect,
-                           jintArray args, jintArray ptrArray,
+                           jlongArray args, jintArray ptrArray,
                            InvokeFunc invokeFunc)
 {
     jlong result(0);
     JNI_EXCEPTION_SAFE_BEGIN
     LOG_TRACE("funcPtr => "    << reinterpret_cast<void *>(funcPtr) << ", " <<
               "sizeDirect => " << sizeDirect);
-    jni_array<jint> args_(env, args);
+    jni_array<jlong> args_(env, args);
     jni_array_region<jint> ptr_array(env, ptrArray);
     marshalling_roundtrip::ptrs_init(args_.data(), ptr_array.data(),
                                      ptr_array.size());
@@ -113,14 +116,14 @@ inline jlong call_indirect(JNIEnv * env, jlong funcPtr, jint sizeDirect,
 
 template <typename InvokeFunc>
 inline jlong call_vi(JNIEnv * env, jlong funcPtr, jint sizeDirect,
-                     jintArray args, jintArray ptrArray, jobjectArray viArray,
+                     jlongArray args, jintArray ptrArray, jobjectArray viArray,
                      jintArray viInstArray, InvokeFunc invokeFunc)
 {
     jlong result(0);
     JNI_EXCEPTION_SAFE_BEGIN
     LOG_TRACE("funcPtr => "    << reinterpret_cast<void *>(funcPtr) << ", " <<
               "sizeDirect => " << sizeDirect);
-    jni_array<jint> args_(env, args);
+    jni_array<jlong> args_(env, args);
     jni_array_region<jint> ptr_array(env, ptrArray);
     marshalling_vi_container vi_array_cpp(env->GetArrayLength(viArray), env,
                                           viArray);
@@ -133,15 +136,6 @@ inline jlong call_vi(JNIEnv * env, jlong funcPtr, jint sizeDirect,
     JNI_EXCEPTION_SAFE_END(env);
     return result;
 }
-
-inline const char * get_struct_ptr(jlong struct_addr)
-{
-    assert(struct_addr || !"can't copy out a NULL pointer");
-    return reinterpret_cast<const char *>(struct_addr);
-}
-
-inline void check_struct_size(jint size_direct)
-{ assert(0 < size_direct || !"structure must have positive size"); }
 
 // FIXME: The thunks are being allocated on a heap that has static storage
 //        duration, so this can't well have it too or there's likely to be some
@@ -164,19 +158,19 @@ thunk_clearing_list clearing_list;
 /*
  * Class:     suneido_jsdi_abi_x86_NativeCallX86
  * Method:    callDirectReturnInt64
- * Signature: (JI[I)J
+ * Signature: (JI[J)J
  */
 JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callDirectReturnInt64(
-    JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jintArray args)
+    JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jlongArray args)
 { return call_direct(env, funcPtr, sizeDirect, args, invoke_stdcall_basic); }
 
 /*
  * Class:     suneido_jsdi_abi_x86_NativeCallX86
  * Method:    callIndirectReturnInt64
- * Signature: (JI[I[I)J
+ * Signature: (JI[J[I)J
  */
 JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callIndirectReturnInt64(
-    JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jintArray args,
+    JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jlongArray args,
     jintArray ptrArray)
 {
     return call_indirect(env, funcPtr, sizeDirect, args, ptrArray,
@@ -186,10 +180,10 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callIndirectRetu
 /*
  * Class:     suneido_jsdi_abi_x86_NativeCallX86
  * Method:    callVariableIndirectReturnInt64
- * Signature: (JI[I[I[Ljava/lang/Object;[I)J
+ * Signature: (JI[J[I[Ljava/lang/Object;[I)J
  */
 JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callVariableIndirectReturnInt64(
-    JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jintArray args,
+    JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jlongArray args,
     jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
 {
     return call_vi(env, funcPtr, sizeDirect, args, ptrArray, viArray,
@@ -199,10 +193,10 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callVariableIndi
 /*
  * Class:     suneido_jsdi_abi_x86_NativeCallX86
  * Method:    callDirectReturnDouble
- * Signature: (JI[I)J
+ * Signature: (JI[J)J
  */
 JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callDirectReturnDouble(
-    JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jintArray args)
+    JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jlongArray args)
 {
     return call_direct(env, funcPtr, sizeDirect, args,
                        invoke_stdcall_return_double);
@@ -211,10 +205,10 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callDirectReturn
 /*
  * Class:     suneido_jsdi_abi_x86_NativeCallX86
  * Method:    callIndirectReturnDouble
- * Signature: (JI[I[I)J
+ * Signature: (JI[J[I)J
  */
 JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callIndirectReturnDouble(
-    JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jintArray args,
+    JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jlongArray args,
     jintArray ptrArray)
 {
     return call_indirect(env, funcPtr, sizeDirect, args, ptrArray,
@@ -224,10 +218,10 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callIndirectRetu
 /*
  * Class:     suneido_jsdi_abi_x86_NativeCallX86
  * Method:    callVariableIndirectReturnDouble
- * Signature: (JI[I[I[Ljava/lang/Object;[I)J
+ * Signature: (JI[J[I[Ljava/lang/Object;[I)J
  */
 JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callVariableIndirectReturnDouble(
-    JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jintArray args,
+    JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jlongArray args,
     jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
 {
     return call_vi(env, funcPtr, sizeDirect, args, ptrArray, viArray,
@@ -237,16 +231,16 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callVariableIndi
 /*
  * Class:     suneido_jsdi_abi_x86_NativeCallX86
  * Method:    callVariableIndirectReturnVariableIndirect
- * Signature: (JI[I[I[Ljava/lang/Object;[I)V
+ * Signature: (JI[J[I[Ljava/lang/Object;[I)V
  */
 JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callVariableIndirectReturnVariableIndirect(
-    JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jintArray args,
+    JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jlongArray args,
     jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
 {
     JNI_EXCEPTION_SAFE_BEGIN
     LOG_TRACE("funcPtr => "    << reinterpret_cast<void *>(funcPtr) << ", " <<
               "sizeDirect => " << sizeDirect);
-    jni_array<jint> args_(env, args);
+    jni_array<jlong> args_(env, args);
     jni_array_region<jint> ptr_array(env, ptrArray);
     marshalling_vi_container vi_array_cpp(env->GetArrayLength(viArray), env, viArray);
     marshalling_roundtrip::ptrs_init_vi(args_.data(), args_.size(),
@@ -291,17 +285,15 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_ThunkManagerX86_newThunkX86(
     {
         callback_ptr.reset(
             new callback_x86_basic(env, callback, boundValue, sizeDirect,
-                                   sizeTotal,
-                                   reinterpret_cast<int *>(ptr_array.data()),
+                                   sizeTotal, ptr_array.begin(),
                                    ptr_array.size()));
     }
     else
     {
         callback_ptr.reset(
             new callback_x86_vi(env, callback, boundValue, sizeDirect,
-                                sizeTotal,
-                                reinterpret_cast<int *>(ptr_array.data()),
-                                ptr_array.size(), variableIndirectCount));
+                                sizeTotal, ptr_array.begin(), ptr_array.size(),
+                                variableIndirectCount));
     }
     stdcall_thunk * thunk(new stdcall_thunk(callback_ptr));
     void * func_addr(thunk->func_addr());
@@ -325,93 +317,4 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_ThunkManagerX86_deleteThunkX86
     static_assert(sizeof(stdcall_thunk *) <= sizeof(jlong), "fatal data loss");
     auto thunk(reinterpret_cast<stdcall_thunk *>(thunkObjectAddr));
     clearing_list.clear_thunk(thunk);
-}
-
-//==============================================================================
-//               JAVA CLASS: suneido.jsdi.abi.x86.StructureX86
-//==============================================================================
-
-#include "gen/suneido_jsdi_abi_x86_StructureX86.h"
-    // This #include isn't strictly necessary -- the only caller of these
-    // functions is the JVM. However, it is useful to have the generated code
-    // around. Also, because you can only have one extern "C" symbol with the
-    // same name, including the header allows the compiler to find prototype
-    // declaration/definition conflicts.
-
-/*
- * Class:     suneido_jsdi_abi_x86_StructureX86
- * Method:    copyOutDirect
- * Signature: (J[II)V
- */
-JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_StructureX86_copyOutDirect(
-    JNIEnv * env, jclass, jlong structAddr, jintArray data, jint sizeDirect)
-{
-    JNI_EXCEPTION_SAFE_BEGIN
-    LOG_TRACE("structAddr => "   << reinterpret_cast<void *>(structAddr) <<
-              ", sizeDirect => " << sizeDirect);
-    check_struct_size(sizeDirect);
-    auto ptr(get_struct_ptr(structAddr));
-    // NOTE: In contrast to most other situations, it is safe to use a primitive
-    // critical array here because in a struct copy out, we don't call any other
-    // JNI functions (nor is it possible to surreptitiously re-enter the Java
-    // world via a callback).
-    jni_critical_array<jint> data_(env, data, sizeDirect / sizeof(jint));
-    std::memcpy(data_.data(), ptr, sizeDirect);
-    JNI_EXCEPTION_SAFE_END(env);
-}
-
-/*
- * Class:     suneido_jsdi_abi_x86_StructureX86
- * Method:    copyOutIndirect
- * Signature: (J[II[I)V
- */
-JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_StructureX86_copyOutIndirect(
-    JNIEnv * env, jclass, jlong structAddr, jintArray data, jint sizeDirect,
-    jintArray ptrArray)
-{
-    JNI_EXCEPTION_SAFE_BEGIN
-    LOG_TRACE("structAddr => "   << reinterpret_cast<void *>(structAddr) <<
-              ", sizeDirect => " << sizeDirect);
-    check_struct_size(sizeDirect);
-    auto ptr(get_struct_ptr(structAddr));
-    // See note above: critical arrays safe here.
-    const jni_array_region<jint> ptr_array(env, ptrArray);
-    jni_critical_array<jint> data_(env, data);
-    unmarshaller_indirect u(sizeDirect, data_.size() * sizeof(jint),
-                            reinterpret_cast<const int *>(ptr_array.data()),
-                            reinterpret_cast<const int *>(ptr_array.data() +
-                                ptr_array.size()));
-    u.unmarshall_indirect(ptr,
-                          reinterpret_cast<marshall_word_t *>(data_.data()));
-    JNI_EXCEPTION_SAFE_END(env);
-}
-
-/*
- * Class:     suneido_jsdi_abi_x86_StructureX86
- * Method:    copyOutVariableIndirect
- * Signature: (J[II[I[Ljava/lang/Object;[I)V
- */
-JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_StructureX86_copyOutVariableIndirect(
-    JNIEnv * env, jclass, jlong structAddr, jintArray data, jint sizeDirect,
-    jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
-{
-    JNI_EXCEPTION_SAFE_BEGIN
-    LOG_TRACE("structAddr => "   << reinterpret_cast<void *>(structAddr) <<
-              ", sizeDirect => " << sizeDirect);
-    check_struct_size(sizeDirect);
-    auto ptr(get_struct_ptr(structAddr));
-    // Can't use critical arrays here because the unmarshalling process isn't
-    // guaranteed to follow the JNI critical array function restrictions.
-    jni_array<jint> data_(env, data);
-    const jni_array_region<jint> ptr_array(env, ptrArray);
-    const jni_array_region<jint> vi_inst_array(env, viInstArray);
-    unmarshaller_vi u(sizeDirect, data_.size() * sizeof(jint),
-                      reinterpret_cast<const int *>(ptr_array.data()),
-                      reinterpret_cast<const int *>(ptr_array.data() +
-                          ptr_array.size()),
-                      vi_inst_array.size());
-    u.unmarshall_vi(ptr, reinterpret_cast<marshall_word_t *>(data_.data()),
-                    env, viArray,
-                    reinterpret_cast<const int *>(vi_inst_array.data()));
-    JNI_EXCEPTION_SAFE_END(env);
 }

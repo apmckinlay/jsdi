@@ -25,7 +25,7 @@ namespace abi_x86 {
 
 namespace {
 
-jobject globalize(JNIEnv * env, jobject value, const char * name)
+jobject globalize(JNIEnv * env, jobject value, char const * name)
 {
     assert(env || !"environment cannot be NULL");
     assert(value || !"can't globalize a null reference");
@@ -42,9 +42,9 @@ jobject globalize(JNIEnv * env, jobject value, const char * name)
 
 callback_x86_basic::callback_x86_basic(JNIEnv * env, jobject suneido_callback,
                                        jobject suneido_sucallable,
-                                       int size_direct, int size_total,
-                                       const int * ptr_array,
-                                       int ptr_array_size, int vi_count)
+                                       jint size_direct, jint size_total,
+                                       jint const * ptr_array,
+                                       jint ptr_array_size, jint vi_count)
     : callback(size_direct, size_total, ptr_array, ptr_array_size, vi_count)
     , d_suneido_callback_global_ref(
           globalize(env, suneido_callback, "callback"))
@@ -63,9 +63,9 @@ callback_x86_basic::callback_x86_basic(JNIEnv * env, jobject suneido_callback,
 
 callback_x86_basic::callback_x86_basic(JNIEnv * env, jobject suneido_callback,
                                        jobject suneido_bound_value,
-                                       int size_direct, int size_total,
-                                       const int * ptr_array,
-                                       int ptr_array_size)
+                                       jint size_direct, jint size_total,
+                                       jint const * ptr_array,
+                                       jint ptr_array_size)
     : callback_x86_basic(env, suneido_callback, suneido_bound_value,
                          size_direct, size_total, ptr_array, ptr_array_size, 0)
 { }
@@ -80,7 +80,7 @@ callback_x86_basic::~callback_x86_basic()
     }
 }
 
-uint64_t callback_x86_basic::call(const marshall_word_t * args)
+uint64_t callback_x86_basic::call(marshall_word_t const * args)
 {
     uint64_t result(0);
     LOG_TRACE("callback_x86_basic::call( this => " << this << ", args => "
@@ -133,9 +133,9 @@ uint64_t callback_x86_basic::call(const marshall_word_t * args)
     //
     // SET UP
     //
-    static_assert(sizeof(marshall_word_t) == sizeof(jint), "word size issue");
-    const int num_words = d_size_total / sizeof(marshall_word_t);
-    jni_auto_local<jobject> out_jarray(env, env->NewIntArray(num_words));
+    static_assert(sizeof(marshall_word_t) == sizeof(jlong), "word size issue");
+    jni_auto_local<jobject> out_jarray(env, env->NewLongArray(
+                                                d_size_total_words));
     JNI_EXCEPTION_CHECK(env);
     if (! out_jarray) throw jni_bad_alloc("NewIntArray", __FUNCTION__);
     jvalue out_args[2];
@@ -146,16 +146,15 @@ uint64_t callback_x86_basic::call(const marshall_word_t * args)
     //
     {
         // The reason this code is in a sub-block is because we want the
-        // destructor of the jni_critical_array<jint> to run before we invoke
+        // destructor of the jni_critical_array<jlong> to run before we invoke
         // the callback. This is because the destructor releases the critical
         // array and the changes to the array aren't guaranteed to propagate
         // back to the Java side until that moment.
-        static_assert(sizeof(marshall_word_t) == sizeof(jint),
-                      "word size mismatch");
-        jni_critical_array<jint> out(
-            env, static_cast<jintArray>(static_cast<jobject>(out_jarray)),
-            num_words);
-        unmarshaller_indirect u(d_size_direct, d_size_total, d_ptr_array.data(),
+        jni_critical_array<jlong> out(
+            env, static_cast<jlongArray>(static_cast<jobject>(out_jarray)),
+            d_size_total_words);
+        unmarshaller_indirect u(d_size_direct, d_size_total_bytes,
+                                d_ptr_array.data(),
                                 d_ptr_array.data() + d_ptr_array.size());
         u.unmarshall_indirect(args,
                               reinterpret_cast<marshall_word_t *>(out.data()));
@@ -163,8 +162,9 @@ uint64_t callback_x86_basic::call(const marshall_word_t * args)
     //
     // CALL
     //
-    result = env->CallLongMethodA(
+    result = env->CallNonvirtualLongMethodA(
         d_suneido_callback_global_ref,
+        GLOBAL_REFS->suneido_jsdi_type_Callback(),
         GLOBAL_REFS->suneido_jsdi_type_Callback__m_invoke(), out_args);
     /* NOTE B: The above JNI call need not be followed by a JNI_EXCEPTION_CHECK
      *         as long as it is the the last non-exception-handling code in the
@@ -198,7 +198,7 @@ JNIEnv * callback_x86_basic::fetch_env() const
 //                           class callback_x86_vi
 //==============================================================================
 
-uint64_t callback_x86_vi::call(const marshall_word_t * args)
+uint64_t callback_x86_vi::call(marshall_word_t const * args)
 {
     uint64_t result(0);
     LOG_TRACE("callback_x86_vi::call( this => " << this << ", args => "
@@ -211,9 +211,9 @@ uint64_t callback_x86_vi::call(const marshall_word_t * args)
     //
     // SET UP
     //
-    static_assert(sizeof(marshall_word_t) == sizeof(jint), "word size issue");
-    const int num_words = d_size_total / sizeof(marshall_word_t);
-    jni_auto_local<jobject> out_data_jarray(env, env->NewIntArray(num_words));
+    static_assert(sizeof(marshall_word_t) == sizeof(jlong), "word size issue");
+    jni_auto_local<jobject> out_data_jarray(env, env->NewLongArray(
+                                                     d_size_total_words));
     JNI_EXCEPTION_CHECK(env);
     if (! out_data_jarray) throw jni_bad_alloc("NewIntArray", __FUNCTION__);
     jni_auto_local<jobject> out_vi_jarray(
@@ -234,10 +234,10 @@ uint64_t callback_x86_vi::call(const marshall_word_t * args)
         // callback. This is because the destructor releases the byte array
         // elements, which is necessary to ensure that the unmarshalled data is
         // propagated into the Java side before the callback runs.
-        jni_array<jint> out(
-            env, static_cast<jintArray>(static_cast<jobject>(out_data_jarray)),
-            num_words);
-        unmarshaller_vi u(d_size_direct, d_size_total, d_ptr_array.data(),
+        jni_array<jlong> out(
+            env, static_cast<jlongArray>(static_cast<jobject>(out_data_jarray)),
+            d_size_total_words);
+        unmarshaller_vi u(d_size_direct, d_size_total_bytes, d_ptr_array.data(),
                           d_ptr_array.data() + d_ptr_array.size(), d_vi_count);
         u.unmarshall_vi(
             args,  reinterpret_cast<marshall_word_t *>(out.data()), env,
@@ -247,8 +247,9 @@ uint64_t callback_x86_vi::call(const marshall_word_t * args)
     //
     // CALL
     //
-    result = env->CallLongMethodA(
+    result = env->CallNonvirtualLongMethodA(
         d_suneido_callback_global_ref,
+        GLOBAL_REFS->suneido_jsdi_type_Callback(),
         GLOBAL_REFS->suneido_jsdi_type_Callback__m_invokeVariableIndirect(),
         out_args
     );
