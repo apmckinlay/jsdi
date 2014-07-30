@@ -384,23 +384,6 @@ void unmarshaller_vi::vi_string_ptr(char const * str, jint vi_index,
 #include <algorithm>
 #include <array>
 
-#include <iostream> // FIXME: delete this include TODO: delete me
-#include <iomanip>  // FIXME: delete this include TODO: delete me
-template<typename T> // TODO: delete me
-std::ostream& dump_bytes_todo_deleteme(std::ostream& o, const T& t) // TODO: delete me
-{
-    uint8_t const * i(reinterpret_cast<const uint8_t *>(&t)),
-                  * e(i + sizeof(T));
-    if (i != e)
-    {
-        o << std::hex << std::setw(2) << std::setfill('0')
-          << static_cast<int>(*i);
-        for (++i; i != e; ++i)
-            o << ' ' << std::setw(2) << static_cast<int>(*i);
-    }
-    return o;
-} // TODO: this func needs to be deleted!!
-
 #if defined(_M_IX86)
 #include "abi_x86/stdcall_invoke.h"
 #elif defined(_M_AMD64)
@@ -788,13 +771,6 @@ TEST(unmarshall_level_three_with_vi,
     static combined result;
     y.unmarshall_vi(DIRECT.args, result.args, NULL_JNI_ENV,
                     NULL_JOBJ_ARR, VI_INST_ARRAY);
-// TODO: delete the commented lines below, and clean up the dependencies above
-//std::cout << "DIRECT:" << std::endl << '\t';
-//dump_bytes_todo_deleteme(std::cout, DIRECT) << std::endl;
-//std::cout << "EXPECTED:" << std::endl << '\t';
-//dump_bytes_todo_deleteme(std::cout, EXPECTED) << std::endl;
-//std::cout << "result:" << std::endl << '\t';
-//dump_bytes_todo_deleteme(std::cout, result) << std::endl;
     assert_equals(0, std::memcmp(&EXPECTED.data.direct, &result.data.direct,
                                  sizeof(EXPECTED.data.direct)));
     assert_equals(0, std::memcmp(&EXPECTED.data.indirect, &result.data.indirect,
