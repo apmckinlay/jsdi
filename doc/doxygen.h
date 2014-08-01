@@ -4,6 +4,12 @@
  */
 
 /**
+ * \namespace jsdi::java_enum
+ * \brief Contains automatically-generated C++ equivalents of Java enumerations
+ * \since 20140731
+ */
+
+/**
  * \namespace jsdi::abi_x86
  * \brief Objects for invoking functions and thunking callbacks using the
  *        Windows x86 <code>__stdcall</code> calling convention.

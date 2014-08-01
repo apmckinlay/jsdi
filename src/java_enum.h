@@ -66,7 +66,7 @@ EnumType jni_enum_to_cpp(JNIEnv * env, jobject e);
 template <typename EnumType>
 EnumType ordinal_enum_to_cpp(int e);
 
-// [BEGIN:GENERATED CODE last updated Thu Jul 31 19:37:28 PDT 2014]
+// [BEGIN:GENERATED CODE last updated Fri Aug 01 00:03:55 PDT 2014]
 /**
  * \brief C++ enumeration corresponding to the Java enumeration <code>suneido.jsdi.marshall.VariableIndirectInstruction</code>.
  * \author GenerateSharedEnums
@@ -123,7 +123,7 @@ suneido_jsdi_LogLevel ordinal_enum_to_cpp(int);
 /** \endcond */
 
 /**
- * \brief Stream insertion operator for \link suneido_jsdi_LogLevel\endlink.
+ * \brief Stream insertion operator for \link jsdi::java_enum::suneido_jsdi_LogLevel\endlink
  * \author GenerateSharedEnums
  * \param o Stream to insert into
  * \param e Enumerator to insert
