@@ -295,7 +295,7 @@ uint64_t jsdi_callback_direct::call(marshall_word_t const * args)
             env, static_cast<jlongArray>(static_cast<jobject>(out_jarray)),
             d_size_total_words);
         // Unmarshall
-        std::memcpy(out_args, args, d_size_direct);
+        std::memcpy(out.data(), args, d_size_direct);
     }
     result = env->CallNonvirtualLongMethodA(
         d_suneido_callback_global_ref,
@@ -389,7 +389,8 @@ uint64_t jsdi_callback_vi::call(marshall_word_t const * args)
     if (! out_data_jarray) throw jni_bad_alloc("NewLongArray", __FUNCTION__);
     jni_auto_local<jobject> out_vi_jarray(
         env,
-        env->NewObjectArray(d_vi_count, GLOBAL_REFS->java_lang_Object(), 0));
+        env->NewObjectArray(d_vi_count, GLOBAL_REFS->java_lang_Object(),
+                            nullptr));
     JNI_EXCEPTION_CHECK(env);
     if (! out_vi_jarray) throw jni_bad_alloc("NewObjectArray", __FUNCTION__);
     jvalue out_args[3];
