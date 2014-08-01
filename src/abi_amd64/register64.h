@@ -84,6 +84,7 @@ class param_register_types
          * \param param2 Register type for the third parameter
          * \param param3 Register type for the fourth parameter
          * \see #param_register_types()
+         * \see #param_register_types(uint32_t)
          */
         param_register_types(param_register_type param0,
                              param_register_type param1,
@@ -97,6 +98,17 @@ class param_register_types
          *                            param_register_type, param_register_type)
          */
         param_register_types();
+
+        /**
+         * \brief Initializes all four register parameter types based on an
+         *        encoded value
+         * \param encoding Encoded value
+         * \since 20140801
+         * \see #param_register_types(param_register_type, param_register_type,
+         *                            param_register_type, param_register_type)
+         * \throws std::invalid_argument If <code>encoding</code> is not valid
+         */
+        param_register_types(uint32_t encoding);
 
         //
         // ACCESSORS

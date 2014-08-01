@@ -43,6 +43,9 @@
     <Filter Include="Header Files\src\gen\abi_x86">
       <UniqueIdentifier>{59304c6a-98e5-43ab-aedc-44a6be7fa3d6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\src\gen\abi_amd64">
+      <UniqueIdentifier>{4ab03526-db2e-4913-8aec-8c5d5bcfdb84}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\test_com\test_com.h">
@@ -132,17 +135,20 @@
     <ClInclude Include="..\..\..\src\gen\suneido_jsdi_abi_x86_NativeCallX86.h">
       <Filter>Header Files\src\gen\abi_x86</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\gen\suneido_jsdi_abi_x86_StructureX86.h">
-      <Filter>Header Files\src\gen\abi_x86</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\gen\suneido_jsdi_abi_x86_ThunkManagerX86.h">
       <Filter>Header Files\src\gen\abi_x86</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\marshalling.h">
       <Filter>Header Files\src</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\abi_x86\callback_x86.h">
-      <Filter>Header Files\src\abi_x86</Filter>
+    <ClInclude Include="..\..\..\src\gen\suneido_jsdi_abi_amd64_NativeCall64.h">
+      <Filter>Header Files\src\gen\abi_amd64</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\gen\suneido_jsdi_abi_amd64_ThunkManager64.h">
+      <Filter>Header Files\src\gen\abi_amd64</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\jsdi_callback.h">
+      <Filter>Header Files\src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -233,8 +239,11 @@
     <ClCompile Include="..\..\..\src\marshalling.cpp">
       <Filter>Source Files\src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\abi_x86\callback_x86.cpp">
-      <Filter>Source Files\src\abi_x86</Filter>
+    <ClCompile Include="..\..\..\src\abi_amd64\_jni_interface64.cpp">
+      <Filter>Source Files\src\abi_x64</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\jsdi_callback.cpp">
+      <Filter>Source Files\src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

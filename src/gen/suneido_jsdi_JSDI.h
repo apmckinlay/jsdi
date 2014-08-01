@@ -25,14 +25,6 @@ JNIEXPORT jstring JNICALL Java_suneido_jsdi_JSDI_when
 
 /*
  * Class:     suneido_jsdi_JSDI
- * Method:    setFast
- * Signature: (Z)V
- */
-JNIEXPORT void JNICALL Java_suneido_jsdi_JSDI_setFast
-  (JNIEnv *, jclass, jboolean);
-
-/*
- * Class:     suneido_jsdi_JSDI
  * Method:    logThreshold
  * Signature: (Lsuneido/jsdi/LogLevel;)Lsuneido/jsdi/LogLevel;
  */

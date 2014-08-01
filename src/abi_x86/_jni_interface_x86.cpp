@@ -11,10 +11,10 @@
 
 #include "global_refs.h"
 #include "jni_exception.h"
+#include "jsdi_callback.h"
 #include "log.h"
 #include "marshalling.h"
 
-#include "callback_x86.h"
 #include "stdcall_invoke.h"
 #include "stdcall_thunk.h"
 
@@ -273,27 +273,34 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callVariableIndir
  * Signature: (Lsuneido/jsdi/type/Callback;Lsuneido/SuValue;II[II[J)V
  */
 JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_ThunkManagerX86_newThunkX86(
-    JNIEnv * env, jclass thunkManager, jobject callback, jobject boundValue,
-    jint sizeDirect, jint sizeTotal, jintArray ptrArray,
-    jint variableIndirectCount, jlongArray outThunkAddrs)
+    JNIEnv * env, jclass, jobject callback, jobject boundValue, jint sizeDirect,
+    jint sizeTotal, jintArray ptrArray, jint variableIndirectCount,
+    jlongArray outThunkAddrs)
 {
     JNI_EXCEPTION_SAFE_BEGIN
     jni_array_region<jint> ptr_array(env, ptrArray);
     jni_array<jlong> out_thunk_addrs(env, outThunkAddrs);
     std::shared_ptr<jsdi::callback> callback_ptr;
-    if (variableIndirectCount < 1)
+    if (0 == ptr_array.size() && variableIndirectCount < 1)
     {
         callback_ptr.reset(
-            new callback_x86_basic(env, callback, boundValue, sizeDirect,
-                                   sizeTotal, ptr_array.begin(),
-                                   ptr_array.size()));
+            new jsdi_callback_direct(env, callback, boundValue, sizeDirect,
+                                     sizeTotal));
+    }
+    else if (variableIndirectCount < 1)
+    {
+        callback_ptr.reset(
+            new jsdi_callback_indirect(env, callback, boundValue, sizeDirect,
+                                       sizeTotal, ptr_array.begin(),
+                                       ptr_array.size()));
+
     }
     else
     {
         callback_ptr.reset(
-            new callback_x86_vi(env, callback, boundValue, sizeDirect,
-                                sizeTotal, ptr_array.begin(), ptr_array.size(),
-                                variableIndirectCount));
+            new jsdi_callback_vi(env, callback, boundValue, sizeDirect,
+                                 sizeTotal, ptr_array.begin(), ptr_array.size(),
+                                 variableIndirectCount));
     }
     stdcall_thunk * thunk(new stdcall_thunk(callback_ptr));
     void * func_addr(thunk->func_addr());
