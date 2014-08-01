@@ -295,7 +295,7 @@ struct stdcall_invoke_basic_callback : public callback
         std::vector<uint8_t> data(d_size_total_bytes, 0);
         std::vector<jint> vi_inst_array(
             d_vi_count,
-            static_cast<jint>(suneido_jsdi_marshall_VariableIndirectInstruction::RETURN_JAVA_STRING));
+            static_cast<jint>(java_enum::suneido_jsdi_marshall_VariableIndirectInstruction::RETURN_JAVA_STRING));
         unmarshaller_vi_test u(d_size_direct, d_size_total_bytes,
                                d_ptr_array.data(),
                                d_ptr_array.data() + d_ptr_array.size(),

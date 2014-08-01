@@ -23,6 +23,22 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_JSDI_init
 JNIEXPORT jstring JNICALL Java_suneido_jsdi_JSDI_when
   (JNIEnv *, jclass);
 
+/*
+ * Class:     suneido_jsdi_JSDI
+ * Method:    setFast
+ * Signature: (Z)V
+ */
+JNIEXPORT void JNICALL Java_suneido_jsdi_JSDI_setFast
+  (JNIEnv *, jclass, jboolean);
+
+/*
+ * Class:     suneido_jsdi_JSDI
+ * Method:    logThreshold
+ * Signature: (Lsuneido/jsdi/LogLevel;)Lsuneido/jsdi/LogLevel;
+ */
+JNIEXPORT jobject JNICALL Java_suneido_jsdi_JSDI_logThreshold
+  (JNIEnv *, jclass, jobject);
+
 #ifdef __cplusplus
 }
 #endif

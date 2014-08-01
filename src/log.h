@@ -79,7 +79,7 @@
  *
  * To override the static log threshold during the compile phase, simply use the
  * preprocessor or compiler's command-line interface to set the value of
- * <dfn>STATIC_LOG_THRESHOLD</dfn>. For example, if you wanted to avoid
+ * <code>STATIC_LOG_THRESHOLD</code>. For example, if you wanted to avoid
  * compile-time stripping of all log messages of severity "DEBUG" or higher, you
  * might do something like:
  *
@@ -91,8 +91,8 @@
 /**
  * \brief Logs a fatal error message at the current location.
  * \param expr Any expression that can appear on the left side of a stream
- *             insertion operator (e.g. <dfn>"str literal"</dfn> or
- *             <dfn>"strlit1" "strlit2" << 14 << std::endl</dfn>)
+ *             insertion operator (e.g. <code>"str literal"</code> or
+ *             <code>"strlit1" "strlit2" << 14 << std::endl</code>)
  *
  * \warning
  * Do not log during static initialization or static destruction phases.
@@ -104,8 +104,8 @@
 /**
  * \brief Logs a non-fatal error message at the current location.
  * \param expr Any expression that can appear on the left side of a stream
- *             insertion operator (e.g. <dfn>"str literal"</dfn> or
- *             <dfn>"strlit1" "strlit2" << 14 << std::endl</dfn>)
+ *             insertion operator (e.g. <code>"str literal"</code> or
+ *             <code>"strlit1" "strlit2" << 14 << std::endl</code>)
  *
  * \warning
  * Do not log during static initialization or static destruction phases.
@@ -117,8 +117,8 @@
 /**
  * \brief Logs a warning message at the current location.
  * \param expr Any expression that can appear on the left side of a stream
- *             insertion operator (e.g. <dfn>"str literal"</dfn> or
- *             <dfn>"strlit1" "strlit2" << 14 << std::endl</dfn>)
+ *             insertion operator (e.g. <code>"str literal"</code> or
+ *             <code>"strlit1" "strlit2" << 14 << std::endl</code>)
  *
  * \warning
  * Do not log during static initialization or static destruction phases.
@@ -130,8 +130,8 @@
 /**
  * \brief Logs an informational message at the current location.
  * \param expr Any expression that can appear on the left side of a stream
- *             insertion operator (e.g. <dfn>"str literal"</dfn> or
- *             <dfn>"strlit1" "strlit2" << 14 << std::endl</dfn>)
+ *             insertion operator (e.g. <code>"str literal"</code> or
+ *             <code>"strlit1" "strlit2" << 14 << std::endl</code>)
  * \see LOG_FATAL(expr)
  * \see LOG_ERROR(expr)
  * \see LOG_WARN(expr)
@@ -146,14 +146,14 @@
  * conditions are met: (1) the STATIC_LOG_THRESHOLD is at least LOG_LEVEL_INFO;
  * and (2) the \link jsdi::log_manager::threshold() const dynamic log
  * threshold\endlink is at least jsdi::log_level::INFO. These conditions apply,
- * <i>mutatis mutandi</i> to the other <dfn>LOG_*</dfn> macros.
+ * <i>mutatis mutandi</i> to the other <code>LOG_*</code> macros.
  */
 #define LOG_INFO(expr)  (nullptr)
 /**
  * \brief Logs a debug message at the current location.
  * \param expr Any expression that can appear on the left side of a stream
- *             insertion operator (e.g. <dfn>"str literal"</dfn> or
- *             <dfn>"strlit1" "strlit2" << 14 << std::endl</dfn>)
+ *             insertion operator (e.g. <code>"str literal"</code> or
+ *             <code>"strlit1" "strlit2" << 14 << std::endl</code>)
  *
  * \warning
  * Do not log during static initialization or static destruction phases.
@@ -165,8 +165,8 @@
 /**
  * \brief Logs a trace message at the current location.
  * \param expr Any expression that can appear on the left side of a stream
- *             insertion operator (e.g. <dfn>"str literal"</dfn> or
- *             <dfn>"strlit1" "strlit2" << 14 << std::endl</dfn>)
+ *             insertion operator (e.g. <code>"str literal"</code> or
+ *             <code>"strlit1" "strlit2" << 14 << std::endl</code>)
  *
  * \warning
  * Do not log during static initialization or static destruction phases.
@@ -352,9 +352,9 @@ class log_manager : private non_copyable
          * \see #threshold() const
          * \see #set_path(const std::string&)
          *
-         * If <dfn>threshold</dfn> is log_level::NONE, no messages at all will
-         * be logged at runtime. If <dfn>threshold</dfn> is log_level::FATAL,
-         * only fatal messages will be logged. If <dfn>threshold</dfn> is
+         * If <code>threshold</code> is log_level::NONE, no messages at all will
+         * be logged at runtime. If <code>threshold</code> is log_level::FATAL,
+         * only fatal messages will be logged. If <code>threshold</code> is
          * log_level::TRACE, all messages will be logged.
          */
         void set_threshold(log_level threshold);

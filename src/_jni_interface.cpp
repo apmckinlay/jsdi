@@ -26,6 +26,16 @@
 using namespace jsdi;
 
 //==============================================================================
+//                             EXPORTED SYMBOLS
+//==============================================================================
+
+namespace jsdi {
+
+bool FAST = true;
+
+} // namespace jsdi
+
+//==============================================================================
 //                                INTERNALS
 //==============================================================================
 
@@ -36,6 +46,68 @@ using namespace jsdi;
  */
 
 namespace {
+
+log_level log_level_java_to_cpp(JNIEnv * env, jobject java_log_level)
+{
+    assert(java_log_level);
+    auto level = java_enum::jni_enum_to_cpp<java_enum::suneido_jsdi_LogLevel>(
+        env, java_log_level);
+    switch (level)
+    {
+        case java_enum::suneido_jsdi_LogLevel::NONE:
+            return log_level::NONE;
+        case java_enum::suneido_jsdi_LogLevel::FATAL:
+            return log_level::FATAL;
+        case java_enum::suneido_jsdi_LogLevel::ERROR:
+            return log_level::ERROR;
+        case java_enum::suneido_jsdi_LogLevel::WARN:
+            return log_level::WARN;
+        case java_enum::suneido_jsdi_LogLevel::INFO:
+            return log_level::INFO;
+        case java_enum::suneido_jsdi_LogLevel::DEBUG:
+            return log_level::DEBUG;
+        case java_enum::suneido_jsdi_LogLevel::TRACE:
+            return log_level::TRACE;
+        default:
+            std::ostringstream() << "no conversion for " << level
+                                 << " from Java to C++"
+                                 << throw_cpp<jni_exception, bool>(false);
+            return log_level::NONE; // control never passes here
+    }
+}
+
+jobject log_level_cpp_to_java(JNIEnv * env, log_level cpp_level)
+{
+    auto level = java_enum::suneido_jsdi_LogLevel::NONE;
+    switch (cpp_level)
+    {
+        case log_level::NONE:
+            break;
+        case log_level::FATAL:
+            level = java_enum::suneido_jsdi_LogLevel::FATAL;
+            break;
+        case log_level::ERROR:
+            level = java_enum::suneido_jsdi_LogLevel::ERROR;
+            break;
+        case log_level::WARN:
+            level = java_enum::suneido_jsdi_LogLevel::WARN;
+            break;
+        case log_level::INFO:
+            level = java_enum::suneido_jsdi_LogLevel::INFO;
+            break;
+        case log_level::DEBUG:
+            level = java_enum::suneido_jsdi_LogLevel::DEBUG;
+            break;
+        case log_level::TRACE:
+            level = java_enum::suneido_jsdi_LogLevel::TRACE;
+            break;
+        default:
+            std::ostringstream() << "no conversion for " << cpp_level
+                                 << " from C++ to Java"
+                                 << throw_cpp<jni_exception, bool>(false);
+    }
+    return java_enum::cpp_to_jni_enum(env, level);
+}
 
 void check_array_atleast(jsize size, const char * array_name, JNIEnv * env,
                          jarray array)
@@ -106,6 +178,44 @@ JNIEXPORT jstring JNICALL Java_suneido_jsdi_JSDI_when
     JNI_EXCEPTION_SAFE_END(env);
     return result;
 }
+
+/*
+ * Class:     suneido_jsdi_JSDI
+ * Method:    setFast
+ * Signature: (Z)V
+ */
+JNIEXPORT void JNICALL Java_suneido_jsdi_JSDI_setFast
+  (JNIEnv * env, jclass, jboolean fast)
+{
+    JNI_EXCEPTION_SAFE_BEGIN(env);
+    FAST = fast ? true : false; // Compiler warns on static_cast<bool>()
+    LOG_INFO("setFast( " << FAST << " )");
+    JNI_EXCEPTION_SAFE_END(env);
+}
+
+/*
+ * Class:     suneido_jsdi_JSDI
+ * Method:    logLevel
+ * Signature: (Lsuneido/jsdi/LogLevel;)Lsuneido/jsdi/LogLevel;
+ */
+JNIEXPORT jobject JNICALL Java_suneido_jsdi_JSDI_logThreshold
+  (JNIEnv * env, jclass, jobject threshold)
+{
+    jobject result(nullptr);
+    JNI_EXCEPTION_SAFE_BEGIN(env);
+    // Level can be null, which indicates just to return the value.
+    if (threshold)
+    {
+        auto cpp_level = log_level_java_to_cpp(env, threshold);
+        log_manager::instance().set_threshold(cpp_level);
+        LOG_INFO("logThreshold( " << cpp_level << " ) => "
+                                  << log_manager::instance().threshold());
+    }
+    result = log_level_cpp_to_java(env, log_manager::instance().threshold());
+    JNI_EXCEPTION_SAFE_END(env);
+    return result;
+}
+
 
 //==============================================================================
 //                    JAVA CLASS: suneido.jsdi.DllFactory
