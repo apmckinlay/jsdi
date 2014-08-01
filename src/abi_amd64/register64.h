@@ -50,7 +50,7 @@ constexpr size_t NUM_PARAM_REGISTER_TYPES =  3;
  */
 enum param_register_type
 {
-    /** \brief Non-floating point value passed in a general-purpose register */
+    /** \brief Non-floating-point value passed in a general-purpose register */
     UINT64 = 0x0,
     /** \brief 64-bit <code>double</code> value passed in an SSE register */
     DOUBLE = 0x1,
