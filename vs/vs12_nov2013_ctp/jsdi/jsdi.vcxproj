@@ -263,19 +263,20 @@
     <ClInclude Include="..\..\..\src\abi_amd64\register64.h" />
     <ClInclude Include="..\..\..\src\abi_amd64\test64.h" />
     <ClInclude Include="..\..\..\src\abi_amd64\thunk64.h" />
-    <ClInclude Include="..\..\..\src\abi_x86\callback_x86.h" />
     <ClInclude Include="..\..\..\src\abi_x86\stdcall_invoke.h" />
     <ClInclude Include="..\..\..\src\abi_x86\stdcall_thunk.h" />
     <ClInclude Include="..\..\..\src\callback.h" />
     <ClInclude Include="..\..\..\src\com.h" />
     <ClInclude Include="..\..\..\src\com_util.h" />
+    <ClInclude Include="..\..\..\src\gen\suneido_jsdi_abi_amd64_NativeCall64.h" />
+    <ClInclude Include="..\..\..\src\gen\suneido_jsdi_abi_amd64_ThunkManager64.h" />
     <ClInclude Include="..\..\..\src\gen\suneido_jsdi_abi_x86_NativeCallX86.h" />
-    <ClInclude Include="..\..\..\src\gen\suneido_jsdi_abi_x86_StructureX86.h" />
     <ClInclude Include="..\..\..\src\gen\suneido_jsdi_abi_x86_ThunkManagerX86.h" />
     <ClInclude Include="..\..\..\src\gen\suneido_jsdi_com_COMobject.h" />
     <ClInclude Include="..\..\..\src\gen\suneido_jsdi_DllFactory.h" />
     <ClInclude Include="..\..\..\src\gen\suneido_jsdi_JSDI.h" />
     <ClInclude Include="..\..\..\src\global_refs.h" />
+    <ClInclude Include="..\..\..\src\jsdi_callback.h" />
     <ClInclude Include="..\..\..\src\jsdi_windef.h" />
     <ClInclude Include="..\..\..\src\heap.h" />
     <ClInclude Include="..\..\..\src\java_enum.h" />
@@ -306,6 +307,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-exe|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-dll|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\abi_amd64\_jni_interface64.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-exe|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-dll|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-exe|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-dll|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\abi_amd64\test64.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-exe|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-dll|Win32'">true</ExcludedFromBuild>
@@ -317,12 +324,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-dll|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-exe|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-dll|Win32'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\abi_x86\callback_x86.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-exe|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-dll|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-exe|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-dll|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\src\abi_x86\stdcall_invoke.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-exe|x64'">true</ExcludedFromBuild>
@@ -368,6 +369,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-dll|Win32'">_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-dll|x64'">_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\jsdi_callback.cpp" />
     <ClCompile Include="..\..\..\src\log.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-exe|Win32'">_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-exe|x64'">_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>

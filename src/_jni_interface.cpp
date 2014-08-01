@@ -26,16 +26,6 @@
 using namespace jsdi;
 
 //==============================================================================
-//                             EXPORTED SYMBOLS
-//==============================================================================
-
-namespace jsdi {
-
-bool FAST = true;
-
-} // namespace jsdi
-
-//==============================================================================
 //                                INTERNALS
 //==============================================================================
 
@@ -177,20 +167,6 @@ JNIEXPORT jstring JNICALL Java_suneido_jsdi_JSDI_when
     result = o.jstr();
     JNI_EXCEPTION_SAFE_END(env);
     return result;
-}
-
-/*
- * Class:     suneido_jsdi_JSDI
- * Method:    setFast
- * Signature: (Z)V
- */
-JNIEXPORT void JNICALL Java_suneido_jsdi_JSDI_setFast
-  (JNIEnv * env, jclass, jboolean fast)
-{
-    JNI_EXCEPTION_SAFE_BEGIN;
-    FAST = fast ? true : false; // Compiler warns on static_cast<bool>()
-    LOG_INFO("setFast( " << FAST << " )");
-    JNI_EXCEPTION_SAFE_END(env);
 }
 
 /*
