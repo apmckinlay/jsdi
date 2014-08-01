@@ -187,7 +187,7 @@ JNIEXPORT jstring JNICALL Java_suneido_jsdi_JSDI_when
 JNIEXPORT void JNICALL Java_suneido_jsdi_JSDI_setFast
   (JNIEnv * env, jclass, jboolean fast)
 {
-    JNI_EXCEPTION_SAFE_BEGIN(env);
+    JNI_EXCEPTION_SAFE_BEGIN;
     FAST = fast ? true : false; // Compiler warns on static_cast<bool>()
     LOG_INFO("setFast( " << FAST << " )");
     JNI_EXCEPTION_SAFE_END(env);
@@ -202,7 +202,7 @@ JNIEXPORT jobject JNICALL Java_suneido_jsdi_JSDI_logThreshold
   (JNIEnv * env, jclass, jobject threshold)
 {
     jobject result(nullptr);
-    JNI_EXCEPTION_SAFE_BEGIN(env);
+    JNI_EXCEPTION_SAFE_BEGIN;
     // Level can be null, which indicates just to return the value.
     if (threshold)
     {
@@ -255,9 +255,11 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_DllFactory_loadLibrary
 JNIEXPORT void JNICALL Java_suneido_jsdi_DllFactory_freeLibrary
   (JNIEnv * env, jclass, jlong hModule)
 {
+    JNI_EXCEPTION_SAFE_BEGIN
     HMODULE hmodule = reinterpret_cast<HMODULE>(hModule);
     BOOL result = FreeLibrary(hmodule);
     LOG_INFO("FreeLibrary(" << hmodule << ") => " << result);
+    JNI_EXCEPTION_SAFE_END(env);
 }
 
 /*
