@@ -314,7 +314,7 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_ThunkManagerX86_newThunkX86(
 JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_ThunkManagerX86_deleteThunkX86
   (JNIEnv * env, jclass, jlong thunkObjectAddr)
 {
-    JNI_EXCEPTION_SAFE_BEGIN(env);
+    JNI_EXCEPTION_SAFE_BEGIN
     static_assert(sizeof(stdcall_thunk *) <= sizeof(jlong), "fatal data loss");
     auto thunk(reinterpret_cast<stdcall_thunk *>(thunkObjectAddr));
     clearing_list.clear_thunk(thunk);
