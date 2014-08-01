@@ -189,7 +189,7 @@ inline callback_x86_vi::callback_x86_vi(JNIEnv * env, jobject suneido_callback,
     , d_vi_inst_array(
           vi_count,
           static_cast<jint>(
-              suneido_jsdi_marshall_VariableIndirectInstruction::RETURN_JAVA_STRING)
+              java_enum::suneido_jsdi_marshall_VariableIndirectInstruction::RETURN_JAVA_STRING)
       )
 { }
 

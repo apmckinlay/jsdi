@@ -6,6 +6,7 @@
 
 #include "util.h"
 
+#include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <iomanip>
@@ -129,6 +130,8 @@ void log_manager::set_path(const std::string& log_file_path)
 void log_manager::set_threshold(log_level threshold)
 {
     CHECK_LEVEL(threshold);
+    log_level const static_threshold(static_to_dynamic());
+    threshold = std::min(threshold, static_threshold);
     std::lock_guard<log_manager> lock(*this);
     d_threshold = threshold;
 }

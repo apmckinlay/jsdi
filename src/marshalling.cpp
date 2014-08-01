@@ -133,13 +133,13 @@ void marshalling_roundtrip::ptrs_finish_vi(
     for (jsize k = 0; k < N; ++k)
     {
         const marshalling_vi_container::tuple& tuple(vi_array_cpp.d_arrays[k]);
-        switch (ordinal_enum_to_cpp<
-            suneido_jsdi_marshall_VariableIndirectInstruction>(vi_inst_array[k])
+        switch (java_enum::ordinal_enum_to_cpp<
+            java_enum::suneido_jsdi_marshall_VariableIndirectInstruction>(vi_inst_array[k])
         )
         {
-            case NO_ACTION:
+            case java_enum::suneido_jsdi_marshall_VariableIndirectInstruction::NO_ACTION:
                 break;
-            case RETURN_JAVA_STRING:
+            case java_enum::suneido_jsdi_marshall_VariableIndirectInstruction::RETURN_JAVA_STRING:
                 if (! *tuple.d_pp_arr)
                 {   // null pointer, so return a null String ref
                     vi_array_cpp.replace_byte_array(k, nullptr);
@@ -151,7 +151,7 @@ void marshalling_roundtrip::ptrs_finish_vi(
                     vi_array_cpp.replace_byte_array(k, str);
                 }
                 break;
-            case RETURN_RESOURCE:
+            case java_enum::suneido_jsdi_marshall_VariableIndirectInstruction::RETURN_RESOURCE:
                 if (IS_INTRESOURCE(*tuple.d_pp_arr))
                 {   // it's an INT resource, not a string, so return an Integer
                     jni_auto_local<jobject> int_resource(
@@ -330,13 +330,13 @@ void unmarshaller_vi::vi_string_ptr(char const * str, jint vi_index,
 {
     assert(env || !"JNI environment cannot be NULL");
     assert(env || !"vi_array cannot be NULL");
-    switch (ordinal_enum_to_cpp<
-        suneido_jsdi_marshall_VariableIndirectInstruction>(vi_inst)
+    switch (java_enum::ordinal_enum_to_cpp<
+        java_enum::suneido_jsdi_marshall_VariableIndirectInstruction>(vi_inst)
     )
     {
-        case NO_ACTION:
+        case java_enum::suneido_jsdi_marshall_VariableIndirectInstruction::NO_ACTION:
             break;
-        case RETURN_RESOURCE:
+        case java_enum::suneido_jsdi_marshall_VariableIndirectInstruction::RETURN_RESOURCE:
             if (IS_INTRESOURCE(str))
             {   // it's an INT resource, not a string, so return an Integer
                 jni_auto_local<jobject> int_resource(
@@ -356,7 +356,7 @@ void unmarshaller_vi::vi_string_ptr(char const * str, jint vi_index,
             }
             // Deliberately fall through if not IS_INTRESOURCE, because if it's
             // not an INTRESOURCE, it's a string.
-        case RETURN_JAVA_STRING:
+        case java_enum::suneido_jsdi_marshall_VariableIndirectInstruction::RETURN_JAVA_STRING:
             if (str)
             {
                 jni_auto_local<jstring> jstr(env, make_jstring(env, str));
