@@ -45,7 +45,11 @@ void assign(Recursive_StringSum_Storage& t, const struct Recursive_StringSum& u,
         TestReturnStringOutBuffer(u.str, t.buffer, sizeof(t.buffer));
         t.rss.str = t.buffer;
     }
-    else t.buffer[0] = '\0';
+    else
+    {
+        t.buffer[0] = '\0';
+        t.rss.str = nullptr;
+    }
     if (u.buffer && 0 < u.len)
     {
         size_t pos = std::strlen(t.buffer) + 1;
