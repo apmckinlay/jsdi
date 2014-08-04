@@ -9,8 +9,6 @@ extern "C" {
 #endif
 #undef suneido_jsdi_abi_amd64_NativeCall64_MAX_LONGMARSHALL_PARAMS
 #define suneido_jsdi_abi_amd64_NativeCall64_MAX_LONGMARSHALL_PARAMS 4L
-#undef suneido_jsdi_abi_amd64_NativeCall64_MAX_RTINDEX
-#define suneido_jsdi_abi_amd64_NativeCall64_MAX_RTINDEX 7L
 #undef suneido_jsdi_abi_amd64_NativeCall64_MAX_NUMPARAMS_VALUE
 #define suneido_jsdi_abi_amd64_NativeCall64_MAX_NUMPARAMS_VALUE 5L
 /*
