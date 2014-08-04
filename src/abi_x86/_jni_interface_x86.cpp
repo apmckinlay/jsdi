@@ -149,11 +149,6 @@ thunk_clearing_list clearing_list;
 //==============================================================================
 
 #include "gen/suneido_jsdi_abi_x86_NativeCallX86.h"
-    // This #include isn't strictly necessary -- the only caller of these
-    // functions is the JVM. However, it is useful to have the generated code
-    // around. Also, because you can only have one extern "C" symbol with the
-    // same name, including the header allows the compiler to find prototype
-    // declaration/definition conflicts.
 
 /*
  * Class:     suneido_jsdi_abi_x86_NativeCallX86
@@ -261,11 +256,6 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callVariableIndir
 //==============================================================================
 
 #include "gen/suneido_jsdi_abi_x86_ThunkManagerX86.h"
-    // This #include isn't strictly necessary -- the only caller of these
-    // functions is the JVM. However, it is useful to have the generated code
-    // around. Also, because you can only have one extern "C" symbol with the
-    // same name, including the header allows the compiler to find prototype
-    // declaration/definition conflicts.
 
 /*
  * Class:     suneido_jsdi_abi_x86_ThunkManagerX86

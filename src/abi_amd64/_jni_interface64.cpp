@@ -201,6 +201,8 @@ thunk_clearing_list clearing_list;
 //              JAVA CLASS: suneido.jsdi.abi.amd64.NativeCall64
 //==============================================================================
 
+#include "gen/suneido_jsdi_abi_amd64_NativeCall64.h"
+
 /*
  * Class:     suneido_jsdi_abi_amd64_NativeCall64
  * Method:    callJ0
@@ -394,11 +396,6 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_amd64_NativeCall64_callVariableIndi
 //==============================================================================
 
 #include "gen/suneido_jsdi_abi_amd64_ThunkManager64.h"
-    // This #include isn't strictly necessary -- the only caller of these
-    // functions is the JVM. However, it is useful to have the generated code
-    // around. Also, because you can only have one extern "C" symbol with the
-    // same name, including the header allows the compiler to find prototype
-    // declaration/definition conflicts.
 
 /*
  * Class:     suneido_jsdi_abi_amd64_ThunkManager64
