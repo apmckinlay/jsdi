@@ -189,6 +189,7 @@ CoerceReturnType
     ReturnType return_value = InvokeFunc(sizeDirect, args_.data(),
                                          reinterpret_cast<void *>(funcPtr),
                                          registers);
+    JNI_EXCEPTION_CHECK(env);
     call_vi_coerce<ReturnType, CoerceReturnType>(return_value, result,
                                                  vi_array_cpp);
     jni_array_region<jint> vi_inst_array(env, viInstArray);
