@@ -130,11 +130,6 @@ extern "C" {
 //==============================================================================
 
 #include "gen/suneido_jsdi_JSDI.h"
-    // This #include isn't strictly necessary -- the only caller of these
-    // functions is the JVM. However, it is useful to have the generated code
-    // around. Also, because you can only have one extern "C" symbol with the
-    // same name, including the header allows the compiler to find prototype
-    // declaration/definition conflicts.
 
 JNIEXPORT void JNICALL Java_suneido_jsdi_JSDI_init
   (JNIEnv * env, jclass)
@@ -198,11 +193,6 @@ JNIEXPORT jobject JNICALL Java_suneido_jsdi_JSDI_logThreshold
 //==============================================================================
 
 #include "gen/suneido_jsdi_DllFactory.h"
-    // This #include isn't strictly necessary -- the only caller of these
-    // functions is the JVM. However, it is useful to have the generated code
-    // around. Also, because you can only have one extern "C" symbol with the
-    // same name, including the header allows the compiler to find prototype
-    // declaration/definition conflicts.
 
 /*
  * Class:     suneido_jsdi_DllFactory
@@ -264,11 +254,6 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_DllFactory_getProcAddress
 //==============================================================================
 
 #include "gen/suneido_jsdi_type_Structure.h"
-    // This #include isn't strictly necessary -- the only caller of these
-    // functions is the JVM. However, it is useful to have the generated code
-    // around. Also, because you can only have one extern "C" symbol with the
-    // same name, including the header allows the compiler to find prototype
-    // declaration/definition conflicts.
 
 /*
  * Class:     suneido_jsdi_type_Structure
@@ -352,11 +337,6 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_type_Structure_copyOutVariableIndirect(
 //==============================================================================
 
 #include "gen/suneido_jsdi_com_COMobject.h"
-    // This #include isn't strictly necessary -- the only caller of these
-    // functions is the JVM. However, it is useful to have the generated code
-    // around. Also, because you can only have one extern "C" symbol with the
-    // same name, including the header allows the compiler to find prototype
-    // declaration/definition conflicts.
 
 /*
  * Class:     suneido_jsdi_com_COMobject
