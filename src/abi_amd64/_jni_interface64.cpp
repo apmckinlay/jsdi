@@ -59,6 +59,14 @@ jlong call_fast(JNIEnv * env, jlong funcPtr, ArgTypes ... args)
     return r;
 }
 
+template<typename T>
+jlong coerce_to_jlong(T value)
+{ return *reinterpret_cast<jlong const *>(&value); }
+
+template<>
+jlong coerce_to_jlong<float>(float value)
+{ return coerce_to_jlong(static_cast<double>(value)); }
+
 jlong call_direct_nofp(JNIEnv * env, jlong funcPtr, jint sizeDirect,
                        jlongArray args)
 {
@@ -77,8 +85,8 @@ jlong call_direct_nofp(JNIEnv * env, jlong funcPtr, jint sizeDirect,
 }
 
 template<
-    typename ReturnValue,
-    ReturnValue (*InvokeFunc)(size_t, const void *, void *, param_register_types)
+    typename ReturnType,
+    ReturnType (*InvokeFunc)(size_t, const void *, void *, param_register_types)
 >
 jlong call_direct_fp(JNIEnv * env, jlong funcPtr, jint sizeDirect,
                      jlongArray args, jint registers)
@@ -93,10 +101,10 @@ jlong call_direct_fp(JNIEnv * env, jlong funcPtr, jint sizeDirect,
     jni_array_region<jlong> args_(env, args, min_whole_words(sizeDirect));
 #pragma warning(pop)
     param_register_types const registers_(static_cast<uint32_t>(registers));
-    ReturnValue return_value = InvokeFunc(sizeDirect, args_.data(),
-                                          reinterpret_cast<void *>(funcPtr),
-                                          registers);
-    result = static_cast<jlong>(return_value);
+    ReturnType return_value = InvokeFunc(sizeDirect, args_.data(),
+                                         reinterpret_cast<void *>(funcPtr),
+                                         registers);
+    result = coerce_to_jlong(return_value);
     JNI_EXCEPTION_SAFE_END(env);
     return result;
 }
@@ -119,8 +127,8 @@ jlong call_indirect_nofp(JNIEnv * env, jlong funcPtr, jint sizeDirect,
 }
 
 template<
-    typename ReturnValue,
-    ReturnValue (*InvokeFunc)(size_t, const void *, void *, param_register_types)
+    typename ReturnType,
+    ReturnType (*InvokeFunc)(size_t, const void *, void *, param_register_types)
 >
 jlong call_indirect_fp(JNIEnv * env, jlong funcPtr, jint sizeDirect,
                        jlongArray args, jint registers, jintArray ptrArray)
@@ -135,37 +143,37 @@ jlong call_indirect_fp(JNIEnv * env, jlong funcPtr, jint sizeDirect,
     param_register_types const registers_(static_cast<uint32_t>(registers));
     marshalling_roundtrip::ptrs_init(args_.data(), ptr_array.data(),
                                      ptr_array.size());
-    ReturnValue return_value = InvokeFunc(sizeDirect, args_.data(),
-                                          reinterpret_cast<void *>(funcPtr),
-                                          registers);
-    result = static_cast<jlong>(return_value);
+    ReturnType return_value = InvokeFunc(sizeDirect, args_.data(),
+                                         reinterpret_cast<void *>(funcPtr),
+                                         registers);
+    result = coerce_to_jlong(return_value);
     JNI_EXCEPTION_SAFE_END(env);
     return result;
 }
 
 template<typename Value, typename CoercedValue>
-CoercedValue call_vi_coerce(const Value& x, marshalling_vi_container& y)
-{ return static_cast<CoercedValue>(x); }
+void call_vi_coerce(Value const& x, CoercedValue& y, marshalling_vi_container&)
+{ *reinterpret_cast<Value *>(&y) = x; }
 
 template<>
-jbyte * call_vi_coerce(const uint64_t& x, marshalling_vi_container& y)
+void call_vi_coerce(const uint64_t& x, jbyte *& y, marshalling_vi_container& z)
 {
     jbyte * str = reinterpret_cast<jbyte *>(x);
-    y.put_return_value(str);
-    return str;
+    y = str;
+    z.put_return_value(str);
 }
 
 template<
-    typename ReturnValue,
-    ReturnValue (*InvokeFunc)(size_t, const void *, void *, param_register_types),
-    typename CoerceReturnValue = jlong
+    typename ReturnType,
+    ReturnType (*InvokeFunc)(size_t, const void *, void *, param_register_types),
+    typename CoerceReturnType = jlong
 >
-CoerceReturnValue
+CoerceReturnType
     call_vi_fp(JNIEnv * env, jlong funcPtr, jint sizeDirect, jlongArray args,
                jint registers, jintArray ptrArray, jobjectArray viArray,
                jintArray viInstArray)
 {
-    CoerceReturnValue result(0);
+    CoerceReturnType result(0);
     JNI_EXCEPTION_SAFE_BEGIN
     LOG_TRACE("funcPtr => "    << reinterpret_cast<void *>(funcPtr) << ", " <<
               "sizeDirect => " << sizeDirect << ", registers " << registers
@@ -178,11 +186,11 @@ CoerceReturnValue
                                         ptr_array.data(), ptr_array.size(),
                                         env, viArray, vi_array_cpp);
     param_register_types const registers_(static_cast<uint32_t>(registers));
-    ReturnValue return_value = InvokeFunc(sizeDirect, args_.data(),
-                                          reinterpret_cast<void *>(funcPtr),
-                                          registers);
-    result = call_vi_coerce<ReturnValue, CoerceReturnValue>(return_value,
-                                                            vi_array_cpp);
+    ReturnType return_value = InvokeFunc(sizeDirect, args_.data(),
+                                         reinterpret_cast<void *>(funcPtr),
+                                         registers);
+    call_vi_coerce<ReturnType, CoerceReturnType>(return_value, result,
+                                                 vi_array_cpp);
     jni_array_region<jint> vi_inst_array(env, viInstArray);
     marshalling_roundtrip::ptrs_finish_vi(viArray, vi_array_cpp, vi_inst_array);
     JNI_EXCEPTION_SAFE_END(env);
