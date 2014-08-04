@@ -61,10 +61,10 @@ void assign(Recursive_StringSum_Storage& t, const struct Recursive_StringSum& u,
     }
     else
     {
-        t.rss.buffer = 0;
+        t.rss.buffer = nullptr;
         t.rss.len = 0;
     }
-    t.rss.inner = u.inner && next ? &next->rss : 0;
+    t.rss.inner = u.inner && next ? &next->rss : nullptr;
 }
 
 template <typename T, typename U, size_t N>
@@ -72,7 +72,7 @@ void recursive_copy(const T * ptr, U(&x)[N] )
 {
     for (size_t k = 0; ptr && k < N; ++k)
     {
-        assign(x[k], *ptr, k < N - 1 ? &x[k + 1] : 0);
+        assign(x[k], *ptr, k < N - 1 ? &x[k + 1] : nullptr);
         ptr = ptr->inner;
     }
 }
