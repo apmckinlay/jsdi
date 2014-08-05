@@ -91,7 +91,7 @@ JNIEnv * jsdi_callback_base::fetch_env() const
 }
 
 //==============================================================================
-//                        struct jsdi_callback_fast0`
+//                        struct jsdi_callback_fast0
 //==============================================================================
 
 jsdi_callback_fast0::jsdi_callback_fast0(JNIEnv * env, jobject suneido_callback,
