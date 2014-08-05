@@ -50,33 +50,35 @@ struct mov_stack
     uint8_t  size_bytes;
 };
 
-
 constexpr uint8_t CODE_PROLOGUE[] =
 {
-   0x48, 0x83, 0xec, 0x20,                              // sub   rsp, 32
+   0x48, 0x83, 0xec, 0x28,                              // sub   rsp, 40
 };
+// NOTE: Only 32 bytes technically needed by the thunk code, but need to
+//       allocate 40 bytes instead to ensure we get the stack back to 16 bytes
+//       alignment.
 static_assert(sizeof(CODE_PROLOGUE) == CODE_SIZE_PROLOGUE, "check code");
 
 constexpr mov_stack CODE_MOV_STACK_TABLE[NUM_PARAM_REGISTER_TYPES]
                                         [NUM_PARAM_REGISTERS] =
 {
     { // uint64
-        { { 0x48, 0x89, 0x4c, 0x24, 0x28 }, 5 },        // mov   [rsp+40], rcx
-        { { 0x48, 0x89, 0x54, 0x24, 0x30 }, 5 },        // mov   [rsp+48], rdx
-        { { 0x4c, 0x89, 0x44, 0x24, 0x38 }, 5 },        // mov   [rsp+56], r8
-        { { 0x4c, 0x89, 0x4c, 0x24, 0x40 }, 5 },        // mov   [rsp+64], r9
+        { { 0x48, 0x89, 0x4c, 0x24, 0x30 }, 5 },        // mov   [rsp+48], rcx
+        { { 0x48, 0x89, 0x54, 0x24, 0x38 }, 5 },        // mov   [rsp+56], rdx
+        { { 0x4c, 0x89, 0x44, 0x24, 0x40 }, 5 },        // mov   [rsp+64], r8
+        { { 0x4c, 0x89, 0x4c, 0x24, 0x48 }, 5 },        // mov   [rsp+72], r9
     },
     { // double
-        { { 0xf2, 0x0f, 0x11, 0x44, 0x24, 0x28 }, 6 },  // movsd [rsp+40], xmm0
-        { { 0xf2, 0x0f, 0x11, 0x4c, 0x24, 0x30 }, 6 },  // movsd [rsp+48], xmm1
-        { { 0xf2, 0x0f, 0x11, 0x54, 0x24, 0x38 }, 6 },  // movsd [rsp+56], xmm2
-        { { 0xf2, 0x0f, 0x11, 0x5c, 0x24, 0x40 }, 6 },  // movsd [rsp+64], xmm3
+        { { 0xf2, 0x0f, 0x11, 0x44, 0x24, 0x30 }, 6 },  // movsd [rsp+48], xmm0
+        { { 0xf2, 0x0f, 0x11, 0x4c, 0x24, 0x38 }, 6 },  // movsd [rsp+56], xmm1
+        { { 0xf2, 0x0f, 0x11, 0x54, 0x24, 0x40 }, 6 },  // movsd [rsp+64], xmm2
+        { { 0xf2, 0x0f, 0x11, 0x5c, 0x24, 0x48 }, 6 },  // movsd [rsp+72], xmm3
     },
     { // float
-        { { 0xf3, 0x0f, 0x11, 0x44, 0x24, 0x28 }, 6 },  // movss [rsp+40], xmm0
-        { { 0xf3, 0x0f, 0x11, 0x4c, 0x24, 0x30 }, 6 },  // movss [rsp+48], xmm1
-        { { 0xf3, 0x0f, 0x11, 0x54, 0x24, 0x38 }, 6 },  // movss [rsp+56], xmm2
-        { { 0xf3, 0x0f, 0x11, 0x5c, 0x24, 0x38 }, 6 },  // movss [rsp+64], xmm3
+        { { 0xf3, 0x0f, 0x11, 0x44, 0x24, 0x30 }, 6 },  // movss [rsp+48], xmm0
+        { { 0xf3, 0x0f, 0x11, 0x4c, 0x24, 0x38 }, 6 },  // movss [rsp+56], xmm1
+        { { 0xf3, 0x0f, 0x11, 0x54, 0x24, 0x40 }, 6 },  // movss [rsp+64], xmm2
+        { { 0xf3, 0x0f, 0x11, 0x5c, 0x24, 0x48 }, 6 },  // movss [rsp+72], xmm3
     }
 };
 
@@ -85,7 +87,7 @@ constexpr uint8_t CODE_FIXED_BODY[] =
     0x48, 0xb9, 0x55, 0x55, 0x55, 0x55,                 // mov   rcx, 0x5555555555555555
                 0x55, 0x55, 0x55, 0x55,                 //    Placeholder for
                                                         //    impl. address
-    0x48, 0x8d, 0x54, 0x24, 0x28,                       // lea   rdx, [rsp+40]
+    0x48, 0x8d, 0x54, 0x24, 0x30,                       // lea   rdx, [rsp+48]
     0xff, 0x15, 0x66, 0x66, 0x66, 0x66                  // callq [rip+0x66666666]
                                                         //    Placeholder for
                                                         //    RIP-relative addr.
@@ -109,7 +111,7 @@ static_assert(0x66 == CODE_FIXED_BODY[CODE_OFFSET_FIXED_BODY_CALL_ADDR+3], "chec
 
 constexpr uint8_t CODE_EPILOGUE[] =
 {
-    0x48, 0x83, 0xc4, 0x20,                             // add   rsp, 32
+    0x48, 0x83, 0xc4, 0x28,                             // add   rsp, 40
     0xc3                                                // retq
 };
 static_assert(sizeof(CODE_EPILOGUE) == CODE_SIZE_EPILOGUE, "check code");
@@ -122,7 +124,7 @@ const uint8_t UNWIND_INFO[UNWIND_INFO_SIZE] =
     CODE_SIZE_PROLOGUE,
     0x01 /* count of unwind codes = 1 */,
     0x00 /* no frame register needed */,
-    0x32 /* UNWIND CODE #0: UWOP_ALLOC_SMALL, 3 * 8 + 8 = 32 bytes */,
+    0x42 /* UNWIND CODE #0: UWOP_ALLOC_SMALL, 4 * 8 + 8 = 40 bytes */,
     0x00 /* UNWIND CODE #1: Not used. (MSFT says we must allocate an even number
             of UNWIND_CODE's, the last being unused if unnecessary) */
 };
@@ -421,12 +423,12 @@ struct direct_callback : public jsdi::callback
     }
 };
 
-template<typename ... Params>
+template<typename IntT, typename ... Params>
 struct invoker
 {
-    typedef int32_t(* callback_function)(Params...);
-    typedef int32_t(* invoke_function)(callback_function, Params...);
-    static int32_t call(invoke_function f, thunk64& t, Params... args)
+    typedef IntT(* callback_function)(Params...);
+    typedef IntT(* invoke_function)(callback_function, Params...);
+    static IntT call(invoke_function f, thunk64& t, Params... args)
     {
         callback_function c = reinterpret_cast<callback_function>(t.
             func_addr());
@@ -434,14 +436,42 @@ struct invoker
     }
 };
 
+int64_t try_catch_chain2(int64_t arg, int64_t stop)
+{
+    try
+    {
+        if (0 < arg)
+            return try_catch_chain2(arg - 1, stop);
+    }
+    catch (int64_t value)
+    {
+        if (++value == stop)
+            return stop;
+        std::ostringstream() << (value)
+                             << jsdi::throw_cpp<std::runtime_error>();
+    }
+    catch (std::runtime_error const& error)
+    {
+        int64_t value(0);
+        std::istringstream(std::string(error.what())) >> value;
+        if (++value == stop)
+            return stop;
+        throw value;
+    }
+    throw int64_t(0);
+}
+
+int64_t try_catch_chain(int64_t arg)
+{ return try_catch_chain2(arg, arg); }
+
 } // anonymous namespace
 
 TEST(one_int32,
     callback_ptr_t cb(new direct_callback(TestInt32, sizeof(uint64_t),
                                           DEFAULT_REGISTERS));
     thunk64 thunk(cb, 1, DEFAULT_REGISTERS);
-    int32_t result = invoker<int32_t>::call(TestInvokeCallback_Int32_1, thunk,
-                                            0x19800725);
+    int32_t result = invoker<int32_t, int32_t>::call(TestInvokeCallback_Int32_1,
+                                                     thunk, 0x19800725);
     thunk.clear();
     assert_equals(0x19800725, result);
 );
@@ -450,7 +480,7 @@ TEST(sum_two_int32s,
     callback_ptr_t cb(new direct_callback(TestSumTwoInt32s, 2 * sizeof(uint64_t),
                                           DEFAULT_REGISTERS));
     thunk64 thunk(cb, 2, DEFAULT_REGISTERS);
-    int32_t result = invoker<int32_t, int32_t>::call(
+    int32_t result = invoker<int32_t, int32_t, int32_t>::call(
         TestInvokeCallback_Int32_2, thunk, std::numeric_limits<int32_t>::min(),
         std::numeric_limits<int32_t>::max());
     thunk.clear();
@@ -465,7 +495,7 @@ TEST(sum_six_mixed,
                                           registers));
     thunk64 thunk(cb, 4, registers);
     int32_t result = 
-    invoker<double, int8_t, float, int16_t, float, int64_t>::call(
+    invoker<int32_t, double, int8_t, float, int16_t, float, int64_t>::call(
         TestInvokeCallback_Mixed_6, thunk, -3.0, 5, -3.0f, 5, -3.0f, 5);
     thunk.clear();
     assert_equals(6, result);
@@ -477,7 +507,7 @@ TEST(sum_packed,
     callback_ptr_t cb(new direct_callback(TestSumPackedInt8Int8Int16Int32,
                                           sizeof(uint64_t), DEFAULT_REGISTERS));
     thunk64 thunk(cb, 1, DEFAULT_REGISTERS);
-    int32_t result = invoker<Packed_Int8Int8Int16Int32>::call(
+    int32_t result = invoker<int32_t, Packed_Int8Int8Int16Int32>::call(
         TestInvokeCallback_Packed_Int8Int8Int16Int32, thunk, packed);
     thunk.clear();
     assert_equals(54422, result);
@@ -528,6 +558,20 @@ TEST(fp_thorough,
             assert_equals(sum, result);
         } // lambda
     ); // std::for_each(FP_FUNCTIONS)
+);
+
+TEST(try_catch_chain,
+    // This is a regression test for a problem that came up because the thunk
+    // code wasn't keeping the stack 16-byte aligned. It manifested itself in
+    // the C++ exception unwind process where certain instructions that expected
+    // a 16-byte aligned stack would cause hardware exceptions.
+    callback_ptr_t cb(new direct_callback(try_catch_chain, sizeof(int64_t),
+                                          DEFAULT_REGISTERS));
+    thunk64 thunk(cb, 1, DEFAULT_REGISTERS);
+    int64_t result = invoker<int64_t, int64_t>::call(TestInvokeCallback_Int64,
+                                                     thunk, 100);
+    thunk.clear();
+    assert_equals(100, result);
 );
 
 #endif // __NOTEST__
