@@ -363,6 +363,10 @@ EXPORT_STDCALL(int32_t) TestInvokeCallback_Int32_2(TestCallback_Int32_2 f,
                                                    int32_t a, int32_t b)
 { return f ? f(a, b) : 0; }
 
+EXPORT_STDCALL(int64_t) TestInvokeCallback_Int64(TestCallback_Int64 f,
+                                                 int64_t a)
+{ return f ? f(a) : 0; }
+
 EXPORT_STDCALL(int32_t) TestInvokeCallback_Mixed_6(TestCallback_Mixed_6 g,
                                                    double a, int8_t b, float c,
                                                    int16_t d, float e,

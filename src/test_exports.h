@@ -75,6 +75,8 @@ typedef int32_t(__stdcall * TestCallback_Int32_1)(int32_t);
 
 typedef int32_t(__stdcall * TestCallback_Int32_2)(int32_t, int32_t);
 
+typedef int64_t(__stdcall * TestCallback_Int64)(int64_t);
+
 typedef int32_t(__stdcall * TestCallback_Mixed_6)(double, int8_t, float,
                                                   int16_t, float, int64_t);
 
@@ -203,6 +205,9 @@ EXPORT_STDCALL(int32_t) TestInvokeCallback_Int32_1_2(TestCallback_Int32_1 f,
 
 EXPORT_STDCALL(int32_t) TestInvokeCallback_Int32_2(TestCallback_Int32_2 f,
                                                    int32_t a, int32_t b);
+
+EXPORT_STDCALL(int64_t) TestInvokeCallback_Int64(TestCallback_Int64 f,
+                                                 int64_t a);
 
 EXPORT_STDCALL(int32_t) TestInvokeCallback_Mixed_6(TestCallback_Mixed_6 g,
                                                    double a, int8_t b, float c,
