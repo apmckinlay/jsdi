@@ -391,7 +391,7 @@ constexpr CLSID CLSID_SUNEIDO_PROTOCOL =
 
 void suneido_protocol::register_handler(JavaVM * jni_jvm)
 {
-    HRESULT hresult = CoInitialize(nullptr);
+    HRESULT hresult = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if (SUCCEEDED(hresult))
     {
         IInternetSession * iis(nullptr);
@@ -415,6 +415,12 @@ void suneido_protocol::register_handler(JavaVM * jni_jvm)
         assert(jni_jvm || !"valid Java virtual machine instance required");
         assert(!factory.d_jni_jvm || !"handler already registered");
         factory.d_jni_jvm = jni_jvm;
+    }
+    else
+    {
+        std::ostringstream() << "CoInitializeEx() failed in " __func__
+                             << "() with hresult " << hresult
+                             << throw_cpp<std::runtime_error>();
     }
 }
 
