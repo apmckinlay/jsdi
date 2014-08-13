@@ -418,7 +418,7 @@ void suneido_protocol::register_handler(JavaVM * jni_jvm)
     }
     else
     {
-        std::ostringstream() << "CoInitializeEx() failed in " __func__
+        std::ostringstream() << "CoInitializeEx() failed in " << __func__
                              << "() with hresult " << hresult
                              << throw_cpp<std::runtime_error>();
     }
