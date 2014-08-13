@@ -87,6 +87,7 @@ EXPORTS
     TestInvokeCallback_Int32_1
     TestInvokeCallback_Int32_1_2
     TestInvokeCallback_Int32_2
+    TestInvokeCallback_Int64
     TestInvokeCallback_Mixed_6
     TestInvokeCallback_Packed_Int8Int8Int16Int32
     TestInvokeCallback_Recursive_StringSum
