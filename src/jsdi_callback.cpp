@@ -108,14 +108,14 @@ uint64_t jsdi_callback_fast0::call(marshall_word_t const * args)
                                                     << args << " )");
     JNIEnv * const env(fetch_env());
     if (! env) return 0;
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     JNI_EXCEPTION_CHECK(env); // TODO: This goes away with proper SEH support
     result = env->CallStaticLongMethod(
         GLOBAL_REFS->suneido_jsdi_type_Callback(),
         GLOBAL_REFS->suneido_jsdi_type_Callback__m_invoke0(),
         d_suneido_bound_value_global_ref);
     // TODO: Should check exception here and raise SEH if JNI exception pending
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
 
@@ -139,7 +139,7 @@ uint64_t jsdi_callback_fast1::call(marshall_word_t const * args)
                                                     << args << " )");
     JNIEnv * const env(fetch_env());
     if (! env) return 0;
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     JNI_EXCEPTION_CHECK(env); // TODO: This goes away with proper SEH support
     jvalue out_args[2];
     out_args[0].l = d_suneido_bound_value_global_ref;
@@ -149,7 +149,7 @@ uint64_t jsdi_callback_fast1::call(marshall_word_t const * args)
         GLOBAL_REFS->suneido_jsdi_type_Callback(),
         GLOBAL_REFS->suneido_jsdi_type_Callback__m_invoke1(), out_args);
     // TODO: Should check exception here and raise SEH if JNI exception pending
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
 
@@ -173,7 +173,7 @@ uint64_t jsdi_callback_fast2::call(marshall_word_t const * args)
                                                     << args << " )");
     JNIEnv * const env(fetch_env());
     if (! env) return 0;
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     JNI_EXCEPTION_CHECK(env); // TODO: This goes away with proper SEH support
     jvalue out_args[3];
     out_args[0].l = d_suneido_bound_value_global_ref;
@@ -184,7 +184,7 @@ uint64_t jsdi_callback_fast2::call(marshall_word_t const * args)
         GLOBAL_REFS->suneido_jsdi_type_Callback(),
         GLOBAL_REFS->suneido_jsdi_type_Callback__m_invoke2(), out_args);
     // TODO: Should check exception here and raise SEH if JNI exception pending
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
 
@@ -208,7 +208,7 @@ uint64_t jsdi_callback_fast3::call(marshall_word_t const * args)
                                                     << args << " )");
     JNIEnv * const env(fetch_env());
     if (! env) return 0;
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     JNI_EXCEPTION_CHECK(env); // TODO: This goes away with proper SEH support
     jvalue out_args[4];
     out_args[0].l = d_suneido_bound_value_global_ref;
@@ -220,7 +220,7 @@ uint64_t jsdi_callback_fast3::call(marshall_word_t const * args)
         GLOBAL_REFS->suneido_jsdi_type_Callback(),
         GLOBAL_REFS->suneido_jsdi_type_Callback__m_invoke3(), out_args);
     // TODO: Should check exception here and raise SEH if JNI exception pending
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
 
@@ -244,7 +244,7 @@ uint64_t jsdi_callback_fast4::call(marshall_word_t const * args)
                                                     << args << " )");
     JNIEnv * const env(fetch_env());
     if (! env) return 0;
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     JNI_EXCEPTION_CHECK(env); // TODO: This goes away with proper SEH support
     jvalue out_args[5];
     out_args[0].l = d_suneido_bound_value_global_ref;
@@ -257,7 +257,7 @@ uint64_t jsdi_callback_fast4::call(marshall_word_t const * args)
         GLOBAL_REFS->suneido_jsdi_type_Callback(),
         GLOBAL_REFS->suneido_jsdi_type_Callback__m_invoke4(), out_args);
     // TODO: Should check exception here and raise SEH if JNI exception pending
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
 
@@ -279,7 +279,7 @@ uint64_t jsdi_callback_direct::call(marshall_word_t const * args)
                                                      << args << " )");
     JNIEnv * const env(fetch_env());
     if (! env) return 0;
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     JNI_EXCEPTION_CHECK(env); // TODO: This goes away with proper SEH support
     jni_auto_local<jobject> out_jarray(env, env->NewLongArray(
                                                 d_size_total_words));
@@ -301,7 +301,7 @@ uint64_t jsdi_callback_direct::call(marshall_word_t const * args)
         d_suneido_callback_global_ref,
         GLOBAL_REFS->suneido_jsdi_type_Callback(),
         GLOBAL_REFS->suneido_jsdi_type_Callback__m_invoke(), out_args);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     // TODO: Should check exception here and raise SEH if JNI exception pending
     return result;
 }
@@ -325,7 +325,7 @@ uint64_t jsdi_callback_indirect::call(marshall_word_t const * args)
                                                        << args << " )");
     JNIEnv * const env(fetch_env());
     if (! env) return 0;
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     JNI_EXCEPTION_CHECK(env); // TODO: This goes away with proper SEH support
     jni_auto_local<jobject> out_jarray(env, env->NewLongArray(
                                                 d_size_total_words));
@@ -351,7 +351,7 @@ uint64_t jsdi_callback_indirect::call(marshall_word_t const * args)
         d_suneido_callback_global_ref,
         GLOBAL_REFS->suneido_jsdi_type_Callback(),
         GLOBAL_REFS->suneido_jsdi_type_Callback__m_invoke(), out_args);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     // TODO: Should check exception here and raise SEH if JNI exception pending
     return result;
 }
@@ -381,7 +381,7 @@ uint64_t jsdi_callback_vi::call(marshall_word_t const * args)
                                                 << args << " )");
     JNIEnv * const env(fetch_env());
     if (!env) return 0;
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     JNI_EXCEPTION_CHECK(env); // TODO: This goes away with proper SEH support
     jni_auto_local<jobject> out_data_jarray(env, env->NewLongArray(
                                                      d_size_total_words));
@@ -419,7 +419,7 @@ uint64_t jsdi_callback_vi::call(marshall_word_t const * args)
         GLOBAL_REFS->suneido_jsdi_type_Callback__m_invokeVariableIndirect(),
         out_args
     );
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     // TODO: Should check exception here and raise SEH if JNI exception pending
     return result;
 }

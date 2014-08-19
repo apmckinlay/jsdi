@@ -150,6 +150,9 @@
     <ClInclude Include="..\..\..\src\jsdi_callback.h">
       <Filter>Header Files\src</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\seh.h">
+      <Filter>Header Files\src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\test_com\test_com.cpp">
@@ -243,6 +246,9 @@
       <Filter>Source Files\src\abi_x64</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\jsdi_callback.cpp">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\seh.cpp">
       <Filter>Source Files\src</Filter>
     </ClCompile>
   </ItemGroup>

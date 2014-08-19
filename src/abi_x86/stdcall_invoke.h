@@ -13,6 +13,8 @@
  *        calling convention
  */
 
+#include "util.h"
+
 #include <cassert>
 #include <cstdint>
 
@@ -26,7 +28,7 @@ namespace abi_x86 {
  * \since 20130805
  * \see stdcall_thunk
  */
-struct stdcall_invoke
+struct stdcall_invoke : private non_instantiable
 {
         /**
          * \brief Invokes a <code>__stdcall</code> function which expects all

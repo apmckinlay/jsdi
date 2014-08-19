@@ -22,9 +22,10 @@
 namespace jsdi {
 
 /**
- * \brief Non-copyable ancestor class.
+ * \brief Non-copyable ancestor class
  * \author Victor Schappert
  * \since 20130624
+ * \see non_instantiable
  *
  * The copy constructor and assignment operator of this class are disabled.
  * The same is true of every derived class. This prevents accidental copying of
@@ -38,9 +39,25 @@ struct non_copyable
 {
         /** \cond internal */
         non_copyable() = default;
-        non_copyable(const non_copyable&) = delete;
-        non_copyable& operator=(const non_copyable&) = delete;
+        non_copyable(non_copyable const&) = delete;
+        non_copyable& operator=(non_copyable const&) = delete;
         /** \endcond internal */
+};
+
+/**
+ * \brief Non-instantiable ancestor class
+ * \author Victor Schappert
+ * \since 20140819
+ * \see non_copyable
+ *
+ * Classes derived from this class cannot be instantiated at all.
+ */
+struct non_instantiable
+{
+        /** \cond internal */
+        non_instantiable() = delete;
+        non_instantiable(non_instantiable const&) = delete;
+        non_instantiable& operator=(non_instantiable const&) = delete;
 };
 
 /**

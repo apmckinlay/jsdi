@@ -49,7 +49,7 @@ typedef jlong marshall_word_t;
  * \author Victor Schappert
  * \since 20140729
  */
-struct marshalling_util
+struct marshalling_util : private non_instantiable
 {
         /**
          * \brief Type of a pointer, itself located within a marshalled data
