@@ -134,7 +134,7 @@ extern "C" {
 JNIEXPORT void JNICALL Java_suneido_jsdi_JSDI_init
   (JNIEnv * env, jclass)
 {
-    JNI_EXCEPTION_SAFE_BEGIN;
+    JNI_EXCEPTION_SAFE_CPP_BEGIN;
     log_manager::instance().set_path(std::string("jsdi.log"));
     LOG_TRACE("Initializing JSDI library built " << version::BUILD_DATE
                                                  << " for " << version::PLATFORM);
@@ -147,20 +147,20 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_JSDI_init
     }
     else throw std::runtime_error("Failed to obtain JavaVM in JSDI.init()");
     LOG_TRACE("JSDI library initialized OK");
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
 }
 
 JNIEXPORT jstring JNICALL Java_suneido_jsdi_JSDI_when
   (JNIEnv * env, jclass)
 {
     jstring result(0);
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     jni_utf16_ostream o(env);
     o << version::BUILD_DATE << " (" << version::PLATFORM;
     if (! version::IS_RELEASE) o << " debug";
     o << ')';
     result = o.jstr();
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
 
@@ -173,7 +173,7 @@ JNIEXPORT jobject JNICALL Java_suneido_jsdi_JSDI_logThreshold
   (JNIEnv * env, jclass, jobject threshold)
 {
     jobject result(nullptr);
-    JNI_EXCEPTION_SAFE_BEGIN;
+    JNI_EXCEPTION_SAFE_CPP_BEGIN;
     // Level can be null, which indicates just to return the value.
     if (threshold)
     {
@@ -183,7 +183,7 @@ JNIEXPORT jobject JNICALL Java_suneido_jsdi_JSDI_logThreshold
                                   << log_manager::instance().threshold());
     }
     result = log_level_cpp_to_java(env, log_manager::instance().threshold());
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
 
@@ -203,13 +203,13 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_DllFactory_loadLibrary
   (JNIEnv * env, jclass, jstring libraryName)
 {
     jlong result(0);
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     jni_utf16_string_region libraryName_(env, libraryName);
     HMODULE hmodule = LoadLibraryW(libraryName_.wstr());
     result = reinterpret_cast<jlong>(hmodule);
     LOG_INFO("LoadLibraryW('" << jni_utf8_string_region(env, libraryName)
                               << "') => " << hmodule);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
 
@@ -221,11 +221,11 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_DllFactory_loadLibrary
 JNIEXPORT void JNICALL Java_suneido_jsdi_DllFactory_freeLibrary
   (JNIEnv * env, jclass, jlong hModule)
 {
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     HMODULE hmodule = reinterpret_cast<HMODULE>(hModule);
     BOOL result = FreeLibrary(hmodule);
     LOG_INFO("FreeLibrary(" << hmodule << ") => " << result);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
 }
 
 /*
@@ -237,7 +237,7 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_DllFactory_getProcAddress
   (JNIEnv * env, jclass, jlong hModule, jstring procName)
 {
     jlong result(0);
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     jni_utf8_string_region procName_(env, procName);
     FARPROC addr = GetProcAddress(reinterpret_cast<HMODULE>(hModule),
         procName_.str());
@@ -245,7 +245,7 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_DllFactory_getProcAddress
         //       ANSI strings.
     result = reinterpret_cast<jlong>(addr);
     LOG_DEBUG("GetProcAddress('" << procName_.str() << "') => " << addr);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
 
@@ -263,7 +263,7 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_DllFactory_getProcAddress
 JNIEXPORT void JNICALL Java_suneido_jsdi_type_Structure_copyOutDirect(
     JNIEnv * env, jclass, jlong structAddr, jlongArray data, jint sizeDirect)
 {
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     LOG_TRACE("structAddr => "   << reinterpret_cast<void *>(structAddr) <<
               ", sizeDirect => " << sizeDirect);
     check_struct_size(sizeDirect);
@@ -277,7 +277,7 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_type_Structure_copyOutDirect(
     jni_critical_array<jlong> data_(env, data, min_whole_words(sizeDirect));
 #pragma warning(pop)
     std::memcpy(data_.data(), ptr, sizeDirect);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
 }
 
 /*
@@ -289,7 +289,7 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_type_Structure_copyOutIndirect(
     JNIEnv * env, jclass, jlong structAddr, jlongArray data, jint sizeDirect,
     jintArray ptrArray)
 {
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     LOG_TRACE("structAddr => "   << reinterpret_cast<void *>(structAddr) <<
               ", sizeDirect => " << sizeDirect);
     check_struct_size(sizeDirect);
@@ -302,7 +302,7 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_type_Structure_copyOutIndirect(
                             ptr_array.begin(), ptr_array.end());
     u.unmarshall_indirect(ptr,
                           reinterpret_cast<marshall_word_t *>(data_.data()));
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
 }
 
 /*
@@ -314,7 +314,7 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_type_Structure_copyOutVariableIndirect(
     JNIEnv * env, jclass, jlong structAddr, jlongArray data, jint sizeDirect,
     jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
 {
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     LOG_TRACE("structAddr => "   << reinterpret_cast<void *>(structAddr) <<
               ", sizeDirect => " << sizeDirect);
     check_struct_size(sizeDirect);
@@ -329,7 +329,7 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_type_Structure_copyOutVariableIndirect(
                       ptr_array.begin(), ptr_array.end(), vi_inst_array.size());
     u.unmarshall_vi(ptr, reinterpret_cast<marshall_word_t *>(data_.data()),
                     env, viArray, vi_inst_array.begin());
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
 }
 
 //==============================================================================
@@ -349,7 +349,7 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_com_COMobject_queryIDispatchAndProgId(
 {
     IUnknown * iunk(reinterpret_cast<IUnknown *>(ptrToIUnknown));
     IDispatch * idisp(0);
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     check_array_atleast_1("progid", env, progid); // check first, as may throw
     idisp = com::query_for_dispatch(iunk);
     if (idisp)
@@ -358,7 +358,7 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_com_COMobject_queryIDispatchAndProgId(
         env->SetObjectArrayElement(progid, 0,
                                    static_cast<jstring>(progid_jstr));
     }
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return reinterpret_cast<jlong>(idisp);
 }
 
@@ -371,7 +371,7 @@ JNIEXPORT jboolean JNICALL Java_suneido_jsdi_com_COMobject_coCreateFromProgId(
     JNIEnv * env, jclass, jstring progid, jlongArray ptrPair)
 {
     jboolean did_create_object(false);
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     IUnknown * iunk(0);
     IDispatch * idisp(0);
     check_array_atleast(2, "ptrPair", env, ptrPair); // check before creating
@@ -386,7 +386,7 @@ JNIEXPORT jboolean JNICALL Java_suneido_jsdi_com_COMobject_coCreateFromProgId(
         env->SetLongArrayRegion(ptrPair, 0, 2, ptrs);
         did_create_object = true;
     }
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return did_create_object;
 }
 
@@ -398,12 +398,12 @@ JNIEXPORT jboolean JNICALL Java_suneido_jsdi_com_COMobject_coCreateFromProgId(
 JNIEXPORT void JNICALL Java_suneido_jsdi_com_COMobject_release
  (JNIEnv * env, jclass, jlong ptrToIDispatch, jlong ptrToIUnknown)
 {
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     if (ptrToIDispatch)
         reinterpret_cast<IDispatch *>(ptrToIDispatch)->Release();
     if (ptrToIUnknown)
         reinterpret_cast<IUnknown *>(ptrToIUnknown)->Release();
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
 }
 
 /*
@@ -415,7 +415,7 @@ JNIEXPORT jobject JNICALL Java_suneido_jsdi_com_COMobject_getPropertyByName(
     JNIEnv * env, jclass, jlong ptrToIDispatch, jstring name, jintArray dispid)
 {
     jobject result(0);
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     IDispatch * idisp(reinterpret_cast<IDispatch *>(ptrToIDispatch));
     DISPID dispid_(com::get_dispid_of_name(idisp, env, name));
     // Check the dispid array before getting the property so that we don't throw
@@ -424,7 +424,7 @@ JNIEXPORT jobject JNICALL Java_suneido_jsdi_com_COMobject_getPropertyByName(
     env->SetIntArrayRegion(dispid, 0, 1,
                            reinterpret_cast<const jint *>(&dispid_));
     result = com::property_get(idisp, dispid_, env);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
 
@@ -437,10 +437,10 @@ JNIEXPORT jobject JNICALL Java_suneido_jsdi_com_COMobject_getPropertyByDispId(
     JNIEnv * env, jclass, jlong ptrToIDispatch, jint dispid)
 {
     jobject result(0);
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     IDispatch * idisp(reinterpret_cast<IDispatch *>(ptrToIDispatch));
     result = com::property_get(idisp, static_cast<DISPID>(dispid), env);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
 
@@ -453,11 +453,11 @@ JNIEXPORT jint JNICALL Java_suneido_jsdi_com_COMobject_putPropertyByName(
     JNIEnv * env, jclass, jlong ptrToIDispatch, jstring name, jobject value)
 {
     DISPID dispid(0);
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     IDispatch * idisp(reinterpret_cast<IDispatch *>(ptrToIDispatch));
     dispid = com::get_dispid_of_name(idisp, env, name);
     com::property_put(idisp, dispid, env, value);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return dispid;
 }
 
@@ -469,10 +469,10 @@ JNIEXPORT jint JNICALL Java_suneido_jsdi_com_COMobject_putPropertyByName(
 JNIEXPORT void JNICALL Java_suneido_jsdi_com_COMobject_putPropertyByDispId(
     JNIEnv * env, jclass, jlong ptrToIDispatch, jint dispid, jobject value)
 {
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     IDispatch * idisp(reinterpret_cast<IDispatch *>(ptrToIDispatch));
     com::property_put(idisp, static_cast<DISPID>(dispid), env, value);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
 }
 
 /*
@@ -485,7 +485,7 @@ JNIEXPORT jobject JNICALL Java_suneido_jsdi_com_COMobject_callMethodByName(
     jintArray dispid)
 {
     jobject result(0);
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     IDispatch * idisp(reinterpret_cast<IDispatch *>(ptrToIDispatch));
     DISPID dispid_(com::get_dispid_of_name(idisp, env, name));
     // Check the dispid array before calling the method so that we don't throw
@@ -494,7 +494,7 @@ JNIEXPORT jobject JNICALL Java_suneido_jsdi_com_COMobject_callMethodByName(
     env->SetIntArrayRegion(dispid, 0, 1,
                            reinterpret_cast<const jint *>(&dispid_));
     result = com::call_method(idisp, dispid_, env, args);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
 
@@ -507,10 +507,10 @@ JNIEXPORT jobject JNICALL Java_suneido_jsdi_com_COMobject_callMethodByDispId(
     JNIEnv * env, jclass, jlong ptrToIDispatch, jint dispid, jobjectArray args)
 {
     jobject result(0);
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     IDispatch * idisp(reinterpret_cast<IDispatch *>(ptrToIDispatch));
     result = com::call_method(idisp, static_cast<DISPID>(dispid), env, args);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
 

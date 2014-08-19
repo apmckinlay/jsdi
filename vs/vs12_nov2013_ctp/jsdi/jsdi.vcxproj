@@ -286,6 +286,7 @@
     <ClInclude Include="..\..\..\src\jsdi_windows.h" />
     <ClInclude Include="..\..\..\src\log.h" />
     <ClInclude Include="..\..\..\src\marshalling.h" />
+    <ClInclude Include="..\..\..\src\seh.h" />
     <ClInclude Include="..\..\..\src\suneido_protocol.h" />
     <ClInclude Include="..\..\..\src\test.h" />
     <ClInclude Include="..\..\..\src\test_com\test_com.h" />
@@ -393,6 +394,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-dll|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\src\marshalling.cpp" />
+    <ClCompile Include="..\..\..\src\seh.cpp" />
     <ClCompile Include="..\..\..\src\suneido_protocol.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release-dll|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release-dll|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>

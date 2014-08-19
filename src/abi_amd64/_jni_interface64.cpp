@@ -51,11 +51,11 @@ jlong call_fast(JNIEnv * env, jlong funcPtr, ArgTypes ... args)
     typedef jlong (* func_t)(ArgTypes ...);
     auto f = reinterpret_cast<func_t>(funcPtr);
     jlong r(0);
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     LOG_TRACE("funcPtr => " << reinterpret_cast<void *>(funcPtr)
                             << ", args => " << to_list(args...));
     r = f(args ...);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return r;
 }
 
@@ -71,7 +71,7 @@ jlong call_direct_nofp(JNIEnv * env, jlong funcPtr, jint sizeDirect,
                        jlongArray args)
 {
     uint64_t result(0);
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     LOG_TRACE("funcPtr => "    << reinterpret_cast<void *>(funcPtr) << ", " <<
               "sizeDirect => " << sizeDirect << ", args => " << args);
 #pragma warning(push) // TODO: remove after http://goo.gl/SvVcbg fixed
@@ -80,7 +80,7 @@ jlong call_direct_nofp(JNIEnv * env, jlong funcPtr, jint sizeDirect,
 #pragma warning(pop)
     result = invoke64_basic(sizeDirect, args_.data(),
                             reinterpret_cast<void *>(funcPtr));
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return static_cast<jlong>(result);
 }
 
@@ -92,7 +92,7 @@ jlong call_direct_fp(JNIEnv * env, jlong funcPtr, jint sizeDirect,
                      jlongArray args, jint registers)
 {
     jlong result(0);
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     LOG_TRACE("funcPtr => "    << reinterpret_cast<void *>(funcPtr) << ", " <<
               "sizeDirect => " << sizeDirect << ", registers " << registers
                                << ", args => " << args);
@@ -105,7 +105,7 @@ jlong call_direct_fp(JNIEnv * env, jlong funcPtr, jint sizeDirect,
                                          reinterpret_cast<void *>(funcPtr),
                                          registers);
     result = coerce_to_jlong(return_value);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
 
@@ -113,7 +113,7 @@ jlong call_indirect_nofp(JNIEnv * env, jlong funcPtr, jint sizeDirect,
                          jlongArray args, jintArray ptrArray)
 {
     uint64_t result(0);
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     LOG_TRACE("funcPtr => "    << reinterpret_cast<void *>(funcPtr) << ", " <<
               "sizeDirect => " << sizeDirect << ", args => " << args);
     jni_array<jlong> args_(env, args);
@@ -122,7 +122,7 @@ jlong call_indirect_nofp(JNIEnv * env, jlong funcPtr, jint sizeDirect,
                                      ptr_array.size());
     result = invoke64_basic(sizeDirect, args_.data(),
                             reinterpret_cast<void *>(funcPtr));
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return static_cast<jlong>(result);
 }
 
@@ -134,7 +134,7 @@ jlong call_indirect_fp(JNIEnv * env, jlong funcPtr, jint sizeDirect,
                        jlongArray args, jint registers, jintArray ptrArray)
 {
     jlong result(0);
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     LOG_TRACE("funcPtr => "    << reinterpret_cast<void *>(funcPtr) << ", " <<
               "sizeDirect => " << sizeDirect << ", registers " << registers
                                << ", args => " << args);
@@ -147,7 +147,7 @@ jlong call_indirect_fp(JNIEnv * env, jlong funcPtr, jint sizeDirect,
                                          reinterpret_cast<void *>(funcPtr),
                                          registers);
     result = coerce_to_jlong(return_value);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
 
@@ -174,7 +174,7 @@ CoerceReturnType
                jintArray viInstArray)
 {
     CoerceReturnType result(0);
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     LOG_TRACE("funcPtr => "    << reinterpret_cast<void *>(funcPtr) << ", " <<
               "sizeDirect => " << sizeDirect << ", registers " << registers
                                << ", args => " << args);
@@ -194,7 +194,7 @@ CoerceReturnType
                                                  vi_array_cpp);
     jni_array_region<jint> vi_inst_array(env, viInstArray);
     marshalling_roundtrip::ptrs_finish_vi(viArray, vi_array_cpp, vi_inst_array);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
 
@@ -417,7 +417,7 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_amd64_ThunkManager64_newThunk64(
   jint registerUsage, jint numParams, jboolean makeFastCall,
   jlongArray outThunkAddrs)
 {
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     LOG_DEBUG("newThunk64( sizeDirect => " << sizeDirect << ", sizeTotal => "
               << sizeTotal << ", viCount => " << variableIndirectCount
               << ", registerUsage => " << registerUsage << ", numParams => "
@@ -488,7 +488,7 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_amd64_ThunkManager64_newThunk64(
     ] = reinterpret_cast<jlong>(thunk);
     out_thunk_addrs[suneido_jsdi_abi_amd64_ThunkManager64_THUNK_FUNC_ADDR_INDEX
     ] = reinterpret_cast<jlong>(func_addr);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
 }
 
 /*
@@ -499,9 +499,9 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_amd64_ThunkManager64_newThunk64(
 JNIEXPORT void JNICALL Java_suneido_jsdi_abi_amd64_ThunkManager64_deleteThunk64
   (JNIEnv * env, jclass, jlong thunkObjectAddr)
 {
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     static_assert(sizeof(thunk64 *) <= sizeof(jlong), "fatal data loss");
     auto thunk(reinterpret_cast<thunk64 *>(thunkObjectAddr));
     clearing_list.clear_thunk(thunk);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
 }

@@ -64,7 +64,7 @@ inline jlong call_direct(JNIEnv * env, jlong funcPtr, jint sizeDirect,
                          jlongArray args, InvokeFunc invokeFunc)
 {
     jlong result(0);
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     LOG_TRACE("funcPtr => "    << reinterpret_cast<void *>(funcPtr) << ", " <<
               "sizeDirect => " << sizeDirect << ", args => " << args);
     // NOTE: I had earlier noted that you could write a critical array version
@@ -92,7 +92,7 @@ inline jlong call_direct(JNIEnv * env, jlong funcPtr, jint sizeDirect,
     jni_array_region<jlong> args_(env, args, min_whole_words(sizeDirect));
 #pragma warning(pop)
     result = invokeFunc(env, sizeDirect, args_.data(), funcPtr);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
 
@@ -102,7 +102,7 @@ inline jlong call_indirect(JNIEnv * env, jlong funcPtr, jint sizeDirect,
                            InvokeFunc invokeFunc)
 {
     jlong result(0);
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     LOG_TRACE("funcPtr => "    << reinterpret_cast<void *>(funcPtr) << ", " <<
               "sizeDirect => " << sizeDirect);
     jni_array<jlong> args_(env, args);
@@ -110,7 +110,7 @@ inline jlong call_indirect(JNIEnv * env, jlong funcPtr, jint sizeDirect,
     marshalling_roundtrip::ptrs_init(args_.data(), ptr_array.data(),
                                      ptr_array.size());
     result = invokeFunc(env, sizeDirect, args_.data(), funcPtr);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
 
@@ -120,7 +120,7 @@ inline jlong call_vi(JNIEnv * env, jlong funcPtr, jint sizeDirect,
                      jintArray viInstArray, InvokeFunc invokeFunc)
 {
     jlong result(0);
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     LOG_TRACE("funcPtr => "    << reinterpret_cast<void *>(funcPtr) << ", " <<
               "sizeDirect => " << sizeDirect);
     jni_array<jlong> args_(env, args);
@@ -133,7 +133,7 @@ inline jlong call_vi(JNIEnv * env, jlong funcPtr, jint sizeDirect,
     result = invokeFunc(env, sizeDirect, args_.data(), funcPtr);
     jni_array_region<jint> vi_inst_array(env, viInstArray);
     marshalling_roundtrip::ptrs_finish_vi(viArray, vi_array_cpp, vi_inst_array);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
 
@@ -232,7 +232,7 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callVariableIndir
     JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jlongArray args,
     jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
 {
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     LOG_TRACE("funcPtr => "    << reinterpret_cast<void *>(funcPtr) << ", " <<
               "sizeDirect => " << sizeDirect);
     jni_array<jlong> args_(env, args);
@@ -248,7 +248,7 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_NativeCallX86_callVariableIndir
     vi_array_cpp.put_return_value(returned_str);
     jni_array_region<jint> vi_inst_array(env, viInstArray);
     marshalling_roundtrip::ptrs_finish_vi(viArray, vi_array_cpp, vi_inst_array);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
 }
 
 //==============================================================================
@@ -267,7 +267,7 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_ThunkManagerX86_newThunkX86(
     jint sizeTotal, jintArray ptrArray, jint variableIndirectCount,
     jlongArray outThunkAddrs)
 {
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     jni_array_region<jint> ptr_array(env, ptrArray);
     jni_array<jlong> out_thunk_addrs(env, outThunkAddrs);
     std::shared_ptr<jsdi::callback> callback_ptr;
@@ -300,7 +300,7 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_ThunkManagerX86_newThunkX86(
     ] = reinterpret_cast<jlong>(thunk);
     out_thunk_addrs[suneido_jsdi_abi_x86_ThunkManagerX86_THUNK_FUNC_ADDR_INDEX
     ] = reinterpret_cast<jlong>(func_addr);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
 }
 
 /*
@@ -311,9 +311,9 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_ThunkManagerX86_newThunkX86(
 JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_ThunkManagerX86_deleteThunkX86
   (JNIEnv * env, jclass, jlong thunkObjectAddr)
 {
-    JNI_EXCEPTION_SAFE_BEGIN
+    JNI_EXCEPTION_SAFE_CPP_BEGIN
     static_assert(sizeof(stdcall_thunk *) <= sizeof(jlong), "fatal data loss");
     auto thunk(reinterpret_cast<stdcall_thunk *>(thunkObjectAddr));
     clearing_list.clear_thunk(thunk);
-    JNI_EXCEPTION_SAFE_END(env);
+    JNI_EXCEPTION_SAFE_CPP_END(env);
 }

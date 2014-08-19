@@ -30,11 +30,11 @@ namespace jsdi {
  *        out of.
  * \author Victor Schappert
  * \since 20130624
- * \see JNI_EXCEPTION_SAFE_END(env)
+ * \see JNI_EXCEPTION_SAFE_CPP_END(env)
  * \see JNI_EXCEPTION_CHECK(env)
  * \see jsdi::jni_exception
  */
-#define JNI_EXCEPTION_SAFE_BEGIN            \
+#define JNI_EXCEPTION_SAFE_CPP_BEGIN            \
     try {
 
 /**
@@ -42,7 +42,7 @@ namespace jsdi {
  *        out of.
  * \author Victor Schappert
  * \since 20130624
- * \see JNI_EXCEPTION_SAFE_BEGIN
+ * \see JNI_EXCEPTION_SAFE_CPP_BEGIN
  * \see JNI_EXCEPTION_CHECK(env)
  * \see jsdi::jni_exception
  *
@@ -51,7 +51,8 @@ namespace jsdi {
  * exception is raised \em or a Java/JNI exception is detected, JSDI unwinds
  * the stack to "JNI exception safe" block (which should be the last
  * <code>native</code> frame before control returns to the JVM). The
- * <code>JNI_EXCEPTION_SAFE_END</code> block then takes the appropriate action:
+ * <code>JNI_EXCEPTION_SAFE_CPP_END</code> block then takes the appropriate
+ * action:
  * </p>
  * <ul>
  * <li>
@@ -64,7 +65,7 @@ namespace jsdi {
  * </li>
  * </ul>
  */
-#define JNI_EXCEPTION_SAFE_END(env)                                     \
+#define JNI_EXCEPTION_SAFE_CPP_END(env)                                 \
     }                                                                   \
     catch (const jsdi::jni_exception& e)                                \
     {                                                                   \
@@ -83,18 +84,19 @@ namespace jsdi {
  * \brief Throws a jsdi::jni_exception if there is a pending JNI exception.
  * \author Victor Schappert
  * \since 20130628
- * \see JNI_EXCEPTION_SAFE_BEGIN
- * \see JNI_EXCEPTION_SAFE_END(env)
+ * \see JNI_EXCEPTION_SAFE_CPP_BEGIN
+ * \see JNI_EXCEPTION_SAFE_CPP_END(env)
  * \see jsdi::jni_exception
  *
  * <p>
  * The purpose of this macro is to immediately transfer control to the outermost
  * <code>native</code> stack frame (which must contain a
- * \link JNI_EXCEPTION_SAFE_BEGIN\endlink/\link JNI_EXCEPTION_SAFE_END\endlink
- * block) as soon as a Java exception is raised. The practical effect is to
- * respond properly to the exception condition by stopping whatever is being
- * done and letting the Java-land code handle Java exceptions. This is because
- * the \link JNI_EXCEPTION_SAFE_END\endlink block will catch the
+ * \link JNI_EXCEPTION_SAFE_CPP_BEGIN\endlink/
+ * \link JNI_EXCEPTION_SAFE_CPP_END\endlink block) as soon as a Java exception
+ * is raised. The practical effect is to respond properly to the exception
+ * condition by stopping whatever is being done and letting the Java-land code
+ * handle Java exceptions. This is because the
+ * \link JNI_EXCEPTION_SAFE_CPP_END\endlink block will catch the
  * jsdi::jni_exception and immediately allow control to exit the
  * <code>native</code> code and return to the last JVM stack frame.
  * </p>
@@ -137,8 +139,8 @@ namespace jsdi {
  * In both of these cases, this exception should be thrown in order to unwind
  * the stack to the last <code>native</code> frame (\em ie the JNI entry-point),
  * where it will be caught and dealt with appropriately by the
- * \link JNI_EXCEPTION_SAFE_BEGIN\endlink/\link JNI_EXCEPTION_SAFE_END\endlink
- * block protecting that frame.
+ * \link JNI_EXCEPTION_SAFE_CPP_BEGIN\endlink/
+ * \link JNI_EXCEPTION_SAFE_CPP_END\endlink block protecting that frame.
  * </p>
  */
 class jni_exception: public std::runtime_error
@@ -225,7 +227,6 @@ class jni_exception: public std::runtime_error
          * Otherwise, raises an appropriate JNI exception.
          */
         void throw_jni(JNIEnv * env) const;
-
 };
 
 //==============================================================================
