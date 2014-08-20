@@ -418,8 +418,8 @@ struct direct_callback : public jsdi::callback
     {
         const size_t args_size_bytes(static_cast<size_t>(d_size_direct));
         return d_register_types.has_fp()
-            ? invoke64_fp(args_size_bytes, args, d_func_ptr, d_register_types)
-            : invoke64_basic(args_size_bytes, args, d_func_ptr);
+            ? invoke64::fp(args_size_bytes, args, d_func_ptr, d_register_types)
+            : invoke64::basic(args_size_bytes, args, d_func_ptr);
     }
 };
 
@@ -551,8 +551,8 @@ TEST(fp_thorough,
                         assert(false || !"control should never pass here");
                 }
             } // for(args)
-            uint64_t result = invoke64_fp(f->invoker.nargs * sizeof(uint64_t),
-                                          &args[0], f->invoker.ptr,
+            uint64_t result = invoke64::fp(f->invoker.nargs * sizeof(uint64_t),
+                                           &args[0], f->invoker.ptr,
                                           f->invoker.register_types);
             thunk.clear();
             assert_equals(sum, result);

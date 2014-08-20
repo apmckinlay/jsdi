@@ -104,7 +104,7 @@ jni_utf16_ostream& operator<<(jni_utf16_ostream& o, jstring jstr)
 //                         string utility functions
 //==============================================================================
 
-std::vector<jchar> widen(const char * sz)
+std::vector<jchar> widen(char const * sz)
 {
     assert(sz || !"sz cannot be NULL");
     size_t N = std::strlen(sz);
@@ -118,7 +118,7 @@ std::vector<jchar> widen(const char * sz)
     return wide;
 }
 
-jstring make_jstring(JNIEnv * env, const char * sz)
+jstring make_jstring(JNIEnv * env, char const * sz)
 {
     assert(env || !"environment cannot be NULL");
     assert(sz || !"string cannot be null");

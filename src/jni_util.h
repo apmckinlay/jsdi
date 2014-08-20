@@ -1891,10 +1891,10 @@ jni_utf16_ostream& operator<<(jni_utf16_ostream&, jstring);
  * \see make_jstring(JNIEnv *, jbyte)
  * \since 20130801
  */
-std::vector<jchar> widen(const char * sz);
+std::vector<jchar> widen(char const * sz);
 
 /**\cond internal */
-jstring make_jstring(JNIEnv * env, const char * sz);
+jstring make_jstring(JNIEnv * env, char const * sz);
 /**\endcond internal */
 
 /**
@@ -1912,7 +1912,7 @@ jstring make_jstring(JNIEnv * env, const char * sz);
  * It is caller's responsibility to free the string returned.
  */
 template<typename CharType>
-inline jstring make_jstring(JNIEnv * env, const CharType * sz)
+inline jstring make_jstring(JNIEnv * env, CharType const * sz)
 {
     static_assert(1 == sizeof(CharType),
                   "make_jstring() requires 8-bit character");

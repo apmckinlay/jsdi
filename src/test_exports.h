@@ -158,6 +158,8 @@ EXPORT_STDCALL(int64_t) TestSumManyInts(int8_t a, int16_t b, int32_t c,
                                         Recursive_StringSum h,
                                         Recursive_StringSum * i);
 
+EXPORT_STDCALL(int32_t) TestDivideTwoInt32s(int a, int b);
+
 EXPORT_STDCALL(int32_t) TestStrLen(const char * str);
 
 EXPORT_STDCALL(const char *) TestHelloWorldReturn(int32_t flag);

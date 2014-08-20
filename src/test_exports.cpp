@@ -194,6 +194,9 @@ EXPORT_STDCALL(int64_t) TestSumManyInts(int8_t a, int16_t b, int32_t c,
            static_cast<int64_t>(TestSumString(i));
 }
 
+EXPORT_STDCALL(int32_t) TestDivideTwoInt32s(int a, int b)
+{ return a / b; }
+
 EXPORT_STDCALL(int32_t) TestStrLen(const char * str)
 { return str ? static_cast<int32_t>(std::strlen(str)) : 0; }
 

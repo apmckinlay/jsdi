@@ -14,6 +14,7 @@
 #include "jsdi_callback.h"
 #include "log.h"
 #include "marshalling.h"
+#include "seh.h"
 
 #include "stdcall_invoke.h"
 #include "stdcall_thunk.h"
@@ -27,12 +28,6 @@ using namespace jsdi::abi_x86;
 //==============================================================================
 //                                INTERNALS
 //==============================================================================
-
-/* TODO: do we need to be able to handle Win32 exceptions? If so, we'll want
- *       to wrap things in SEH code *at some level*. But do we want that
- *       overhead around every DLL call, regardless of whether it is expected
- *       to throw an exception? [See NOTES A-D in callback_x86.cpp]
- */
 
 namespace {
 
@@ -314,6 +309,10 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_ThunkManagerX86_deleteThunkX86
     JNI_EXCEPTION_SAFE_CPP_BEGIN
     static_assert(sizeof(stdcall_thunk *) <= sizeof(jlong), "fatal data loss");
     auto thunk(reinterpret_cast<stdcall_thunk *>(thunkObjectAddr));
-    clearing_list.clear_thunk(thunk);
+    std::function<void()> clear_func(
+        std::bind(
+            std::mem_fn(&thunk_clearing_list::clear_thunk),
+            clearing_list, thunk));
+    seh::convert_to_cpp(clear_func);
     JNI_EXCEPTION_SAFE_CPP_END(env);
 }

@@ -10,19 +10,17 @@
 ;===============================================================================
 
 ; List of exported functions 
-PUBLIC    invoke64_basic
-PUBLIC    invoke64_fp
-PUBLIC    invoke64_return_double
-PUBLIC    invoke64_return_float
+PUBLIC    invoke64_ll_basic
+PUBLIC    invoke64_ll_fp
 
 ;===============================================================================
-;                              invoke64_basic()
+;                             invoke64_ll_basic()
 ;===============================================================================
 
 comment @
     The "C" function signature is:
-        uint64_t invoke64_basic(size_t args_size_bytes, const void * args_ptr,
-                                void * func_ptr);
+        uint64_t invoke64_ll_basic(size_t args_size_bytes,
+                                   const void * args_ptr, void * func_ptr);
 
     The incoming register layout is therefore:
         - rcx : Contains the 'args_size_bytes' counter, which must be a multiple
@@ -43,7 +41,7 @@ comment @
 
 _TEXT SEGMENT
 
-invoke64_basic      PROC FRAME
+invoke64_ll_basic   PROC FRAME
 
 ; Prologue
 
@@ -141,18 +139,19 @@ Lbasic_jumptbl:
     DQ      Lbasic_mod2args ; f(x) = 6
     DQ      Lbasic_mod3args ; f(x) = 7
     
-invoke64_basic  ENDP
+invoke64_ll_basic   ENDP
 
 _TEXT ENDS
 
 ;===============================================================================
-;                                invoke64_fp()
+;                              invoke64_ll_fp()
 ;===============================================================================
 
 comment @
     The "C" function signature is:
-        uint64_t invoke64_fp(size_t args_size_bytes, const void * args_ptr,
-                             void * func_ptr, param_register_types register_types);
+        uint64_t invoke64_ll_fp(size_t args_size_bytes, const void * args_ptr,
+                                void * func_ptr,
+                                param_register_types register_types);
 
     The incoming register layout is therefore:
         - rcx : Contains the 'args_size_bytes' counter, which must be a multiple
@@ -175,7 +174,7 @@ comment @
 
 _TEXT SEGMENT
 
-invoke64_fp     PROC FRAME
+invoke64_ll_fp  PROC FRAME
 
 ; Prologue
 
@@ -370,47 +369,7 @@ Lfp_jumptbl:
     DQ      Lfp_jtbl_7      ; g(x) = 7
     DQ      Lfp_jtbl_8      ; g(x) = 8
     
-invoke64_fp     ENDP
-
-_TEXT ENDS
-
-;===============================================================================
-;                          invoke64_return_double()
-;===============================================================================
-
-comment @
-    The "C" signature for this function differs from invoke64_fp() only in its
-    return value. However, since the return value of invoke64_fp() is actually
-    provided by the invoked function ('func_ptr'), at a machine code level they
-    are the same function. The only difference is how the caller of this
-    function interprets the return value. Hence, we can implement 100% of the
-    required functionality by simply jumping to invoke64_fp(). (The only thing
-    to keep in mind is that since this function doesn't set up a stack frame,
-    for debugging purposes it will appear to "be" invoke64_fp()).
-@
-
-_TEXT SEGMENT
-
-invoke64_return_double  PROC
-    jmp     invoke64_fp
-invoke64_return_double  ENDP
-
-_TEXT ENDS
-
-;===============================================================================
-;                          invoke64_return_float()
-;===============================================================================
-
-comment @
-    The comments above in invoke64_return_double() apply equally to this
-    function.
-@
-
-_TEXT SEGMENT
-
-invoke64_return_float   PROC
-    jmp     invoke64_fp
-invoke64_return_float   ENDP
+invoke64_ll_fp  ENDP
 
 _TEXT ENDS
 

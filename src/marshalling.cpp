@@ -13,6 +13,7 @@
 #include "marshalling.h"
 
 #include "java_enum.h"
+#include "seh.h"
 
 namespace jsdi {
 
@@ -146,8 +147,14 @@ void marshalling_roundtrip::ptrs_finish_vi(
                 }
                 else
                 {
+                    // We can't know for certain whether the pointer is pointing
+                    // to a valid zero-terminated string, so this may raise an
+                    // access violation. Since the outer function isn't SEH-
+                    // wrapped, wrap the string access.
                     jni_auto_local<jstring> str(
-                        env, make_jstring(env, *tuple.d_pp_arr));
+                        env,
+                        seh::convert_to_cpp<jstring, JNIEnv *, jbyte const *>(
+                            make_jstring, env, *tuple.d_pp_arr));
                     vi_array_cpp.replace_byte_array(k, str);
                 }
                 break;
@@ -169,8 +176,14 @@ void marshalling_roundtrip::ptrs_finish_vi(
                 }
                 else
                 {
+                    // We can't know for certain whether the pointer is pointing
+                    // to a valid zero-terminated string, so this may raise an
+                    // access violation. Since the outer function isn't SEH-
+                    // wrapped, wrap the string access.
                     jni_auto_local<jstring> str(
-                        env, make_jstring(env, *tuple.d_pp_arr));
+                        env,
+                        seh::convert_to_cpp<jstring, JNIEnv *, jbyte const *>(
+                            make_jstring, env, *tuple.d_pp_arr));
                     vi_array_cpp.replace_byte_array(k, str);
                 }
                 break;
@@ -220,6 +233,21 @@ void unmarshaller_indirect::normal_ptr(
         jint const next_ptd_to_byte_offset = *ptr_i++;
         normal_ptr(data, next_ptr_byte_offset, next_ptd_to_byte_offset, ptr_i);
     }
+}
+
+void unmarshaller_indirect::unmarshall_indirect(
+    const void * from, marshall_word_t * to) const
+{
+    SEH_CONVERT_TO_CPP_BEGIN
+    std::memcpy(to, from, d_size_direct);
+    ptr_iterator_t ptr_i(d_ptr_begin), ptr_e(d_ptr_end);
+    while (ptr_i != ptr_e)
+    {
+        jint ptr_byte_offset = *ptr_i++;
+        jint ptd_to_byte_offset = *ptr_i++;
+        normal_ptr(to, ptr_byte_offset, ptd_to_byte_offset, ptr_i);
+    }
+    SEH_CONVERT_TO_CPP_END
 }
 
 //==============================================================================
@@ -300,6 +328,28 @@ void unmarshaller_vi_base::normal_ptr(
             normal_ptr(data, next_ptr_byte_offset, next_ptd_to_pos, ptr_i, env,
                        vi_array, vi_inst_array);
     }
+}
+
+void unmarshaller_vi_base::unmarshall_vi(
+    const void * from, marshall_word_t * to, JNIEnv * env,
+    jobjectArray vi_array, jint const * vi_inst_array)
+{
+    SEH_CONVERT_TO_CPP_BEGIN
+    std::memcpy(to, from, unmarshaller_base::d_size_direct);
+    ptr_iterator_t ptr_i(unmarshaller_indirect::d_ptr_begin),
+                   ptr_e(unmarshaller_indirect::d_ptr_end);
+    while (ptr_i != ptr_e)
+    {
+        jint ptr_byte_offset = *ptr_i++;
+        jint ptd_to_byte_offset = *ptr_i++;
+        if (is_vi_ptr(ptd_to_byte_offset))  // vi pointer
+            vi_ptr(to, ptr_byte_offset, ptd_to_byte_offset, env, vi_array,
+                   vi_inst_array);
+        else                                // normal pointer
+            normal_ptr(to, ptr_byte_offset, ptd_to_byte_offset, ptr_i, env,
+                       vi_array, vi_inst_array);
+    }
+    SEH_CONVERT_TO_CPP_END
 }
 
 //==============================================================================
@@ -414,7 +464,7 @@ inline uint64_t invoke_basic(FuncPtr f, size_t size_bytes,
 #if defined(_M_IX86)
     return abi_x86::stdcall_invoke::basic(size_bytes, args, f);
 #elif defined(_M_AMD64)
-    return invoke64_basic(size_bytes, args, f);
+    return abi_amd64::invoke64::basic(size_bytes, args, f);
 #else
 #error no invocation program for this platform
 #endif // if defined(_M_IX86)

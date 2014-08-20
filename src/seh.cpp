@@ -52,6 +52,9 @@ inline char const * seh_exception_name(DWORD code)
         SEH_FATAL_EXCEPTION(INVALID_DISPOSITION)
         SEH_FATAL_EXCEPTION(GUARD_PAGE)
 
+        case 0xE06D7363: return nullptr;
+            // Ignore C++ exception: http://goo.gl/XbJPdj
+
         default: return "???";
     } // switch
 }
@@ -64,9 +67,9 @@ std::string seh_exception_message(EXCEPTION_RECORD const& record)
     std::ostringstream o;
     o << "win32 exception: " << name;
     if (EXCEPTION_ACCESS_VIOLATION == code)
-    {
         o << " at address " << record.ExceptionAddress;
-    }
+    else if ('?' == *name)
+        o << " code " << std::hex << code;
     return o.str();
 }
 
@@ -135,17 +138,26 @@ int test_and_set(int * arr, int index, int new_val)
 
 } // anonymous namespace
 
-TEST(access_violation,
+TEST(seh_func_ptr,
     int x(1);
     assert_equals(1, test_and_set(&x, 0, 0));
     assert_equals(0, x);
     std::string message;
     try
-    {
-        seh::convert_to_cpp_func_ptr_wrapper(test_and_set,
-                                             static_cast<int *>(nullptr), 0,
-                                             10);
-    }
+    { seh::convert_to_cpp(test_and_set, static_cast<int *>(nullptr), 0, 10); }
+    catch (seh_exception const& e)
+    { message = e.what(); }
+    std::string const expected("win32 exception: ACCESS_VIOLATION at address ");
+    auto m = std::mismatch(expected.begin(), expected.end(), message.begin());
+    assert_true(expected.end() == m.first);
+);
+
+TEST(seh_std_func,
+    std::string message;
+    std::function<int()> f(std::bind(test_and_set, static_cast<int *>(nullptr),
+                                     0, 10));
+    try
+    { seh::convert_to_cpp(f); }
     catch (seh_exception const& e)
     { message = e.what(); }
     std::string const expected("win32 exception: ACCESS_VIOLATION at address ");
