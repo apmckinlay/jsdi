@@ -69,6 +69,7 @@ EXPORTS
     TestSumPackedInt8Int8Int16Int32
     TestSumPackedInt8x3
     TestSumManyInts
+    TestDivideTwoInt32s
     TestStrLen
     TestHelloWorldReturn
     TestHelloWorldOutParam

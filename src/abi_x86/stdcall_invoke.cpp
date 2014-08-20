@@ -11,6 +11,139 @@
 
 #include "stdcall_invoke.h"
 
+#include "seh.h"
+
+namespace jsdi {
+namespace abi_x86 {
+
+uint64_t stdcall_invoke::basic(int args_size_bytes, const void * args_ptr,
+                               void * func_ptr)
+{
+    SEH_CONVERT_TO_CPP_BEGIN
+    assert(
+        0 == args_size_bytes % 4
+            || !"argument size must be a multiple of 4 bytes");
+#if defined(__GNUC__)
+    uint64_t result;
+    asm volatile
+    (
+        /* OUTPUT PARAMS: %0 gets the 64-bit value EDX << 32 | EAX */
+        /* INPUT PARAMS:  %1 is the number of BYTES to push onto the stack, */
+        /*                   and during the copy loop it is the address of */
+        /*                   the next word to push */
+        /*                %2 is the base address of the array */
+        /*                %3 is the address of the function to call */
+            "testl %1, %1        # If zero argument bytes given, skip  \n\t"
+            "je    2f            # right to the function call.         \n\t"
+            "addl  %2, %1\n"
+        "1:\n\t"
+            "subl  $4, %1        # Push arguments onto the stack in    \n\t"
+            "pushl (%1)          # reverse order. Keep looping while   \n\t"
+            "cmp   %2, %1        # addr to push (%1) > base addr (%2). \n\t"
+            "jg    1b            # Callee cleans up b/c __stdcall.     \n"
+        "2:\n\t"
+            "call  * %3"
+        : "=A" (result)
+        : "r" (args_size_bytes), "r" (args_ptr), "r" (func_ptr)
+        : "%ecx" /* eax, ecx, edx are caller-save */, "cc", "memory"
+    );
+    return result;
+#elif defined(_MSC_VER)
+    uint32_t result[2];
+    // The assembly code below tries to clobber only the registers that are
+    // caller save under __stdcall anyway: eax, ecx, and edx. Hopefully this
+    // will cause MSVC to generate the minimum amount of register preserving
+    // code around this block.
+    __asm
+    {
+        mov   eax, args_size_bytes
+        test  eax, eax           // If zero argument bytes given, skip
+        je    ms_asm_basic_call  // right to the funtion call.
+        mov   edx, args_ptr
+        add   eax, edx
+    ms_asm_basic_loop:
+        sub   eax, 4             // Push arguments onto the stack in
+        push  dword ptr [eax]    // reverse order. Keep looping while
+        cmp   eax, edx           // addr to push (eax) > base addr (edx).
+        jg    ms_asm_basic_loop  // Callee cleans up b/c __stdcall.
+    ms_asm_basic_call:
+        mov   ecx, func_ptr      // Might as well clobber ecx since it is caller
+        call  ecx                // save under __stdcall anyway.
+        mov   result[0 * type int], eax
+        mov   result[1 * type int], edx
+    }
+    return *reinterpret_cast<uint64_t *>(result);
+#else
+#error replacement for inline assembler required
+#endif
+    SEH_CONVERT_TO_CPP_END
+    return 0; // Squelch compiler warning
+}
+
+double stdcall_invoke::return_double(int args_size_bytes,
+                                     const void * args_ptr, void * func_ptr)
+{
+    double result;
+    assert(
+        0 == args_size_bytes % 4
+            || !"argument size must be a multiple of 4 bytes");
+    SEH_CONVERT_TO_CPP_BEGIN
+#if defined(__GNUC__)
+    asm volatile
+    (
+        /* INPUT PARAMS:  %0 is the variable where ST0 should be stored
+         *                %1 is the number of BYTES to push onto the stack, */
+        /*                   and during the copy loop it is the address of */
+        /*                   the next word to push */
+        /*                %2 is the base address of the array */
+        /*                %3 is the address of the function to call */
+            "testl %1, %1        # If zero argument bytes given, skip \n\t"
+            "je    2f            # right to the function call.        \n\t"
+            "addl  %2, %1\n"
+        "1:\n\t"
+            "subl  $4, %1        # Push arguments onto the stack in   \n\t"
+            "pushl (%1)          # reverse order. Keep looping while  \n\t"
+            "cmp   %2, %1        # addr to push (%1) > base addr (%2) \n\t"
+            "jg    1b            # Callee cleans up b/c __stdcall.    \n"
+        "2:\n\t"
+            "call  * %3          # Callee will leave result in ST0."
+        : "=t" (result)
+        : "r" (args_size_bytes), "r" (args_ptr), "r" (func_ptr)
+        : "%eax", "%edx", "%ecx" /* eax, ecx, edx are caller-save */, "cc",
+          "memory"
+    );
+#elif defined(_MSC_VER)
+    __asm
+    {
+        mov   eax, args_size_bytes
+        test  eax, eax           // If zero argument bytes given, skip
+        je    ms_asm_double_call // right to the funtion call.
+        mov   edx, args_ptr
+        add   eax, edx
+    ms_asm_double_loop:
+        sub   eax, 4             // Push arguments onto the stack in
+        push  dword ptr [eax]    // reverse order. Keep looping while
+        cmp   eax, edx           // addr to push (eax) > base addr (edx).
+        jg    ms_asm_double_loop // Callee cleans up b/c __stdcall.
+    ms_asm_double_call:
+        mov   ecx, func_ptr      // Might as well clobber ecx since it is caller
+        call  ecx                // save under __stdcall anyway.
+        fstp  result             // Callee will leave result in ST0.
+    }
+#else
+#error replacement for inline assembler required
+#endif
+    SEH_CONVERT_TO_CPP_END
+    return result;
+}
+
+} // namespace abi_x86
+} // namespace jsdi
+
+//==============================================================================
+//                                  TESTS
+//==============================================================================
+
 #ifndef __NOTEST__
 
 #include "test.h"

@@ -16,6 +16,7 @@
 #include "jsdi_windows.h"
 
 #include <cassert>
+#include <functional>
 #include <stdexcept>
 
 namespace jsdi {
@@ -47,6 +48,39 @@ class seh_exception : public std::runtime_error
          */
         seh_exception(EXCEPTION_RECORD const& exception_record);
 };
+
+//==============================================================================
+//                                  MACROS
+//==============================================================================
+
+/**
+ * \brief Starts an "SEH exception conversion" block in which Win32 structured
+ *        exception handling exceptions will be caught and rethrown as C++
+ *        exceptions
+ * \author Victor Schappert
+ * \since 20140819
+ * \see SEH_CONVERT_TO_CPP_END
+ * \see jsdi::seh_exception
+ */
+#define SEH_CONVERT_TO_CPP_BEGIN                            \
+    __try                                                   \
+    {
+
+/**
+ * \brief Ends an "SEH exception conversion" block that converts structured
+ *        exception handling exceptions to C++ exceptions
+ * \author Victor Schappert
+ * \since 20140819
+ * \see SEH_CONVERT_TO_CPP_BEGIN
+ * \see jsdi::seh_exception
+ */
+#define SEH_CONVERT_TO_CPP_END                              \
+    }                                                       \
+    __except(jsdi::seh::filter(GetExceptionInformation()))  \
+    {                                                       \
+        jsdi::seh::convert_last_filtered_to_cpp();          \
+        assert(!"control should never pass here");          \
+    }
 
 //==============================================================================
 //                                struct seh
@@ -104,28 +138,40 @@ struct seh
          *         SEH exception
          */
         template<typename ReturnType, typename ... Args>
-        static ReturnType convert_to_cpp_func_ptr_wrapper(
+        static ReturnType convert_to_cpp(
             ReturnType (* func_ptr)(Args ... args), Args ... args);
 
-        // template<typename ReturnType, typename ... Args>
-        // static ReturnType convert_to_cpp_func_obj_wrapper(
-            // ReturnType
+        /**
+         * \brief Wraps a <code>std::function</code> call in an SEH
+         *        <code>__try/__except</code> block
+         * \param std_func Function to call
+         * \tparam ReturnType Return type of <code>std_func</code>
+         * \throws seh_exception If calling <code>func_ptr</code> raises an
+         *         SEH exception
+         */
+        template<typename ReturnType>
+        static ReturnType convert_to_cpp(
+            const std::function<ReturnType()>& std_func);
 };
 
 template<typename ReturnType, typename ... Args>
-inline ReturnType seh::convert_to_cpp_func_ptr_wrapper(
+inline ReturnType seh::convert_to_cpp(
     ReturnType (* func_ptr)(Args ... args), Args ... args)
 {
-    __try
-    {
-        return func_ptr(args...);
-    }
-    __except(filter(GetExceptionInformation()))
-    {
-        convert_last_filtered_to_cpp();
-        assert(!"control should never pass here");
-        return ReturnType(); // Squelch compiler warning
-    }
+    SEH_CONVERT_TO_CPP_BEGIN
+    return func_ptr(args...);
+    SEH_CONVERT_TO_CPP_END
+    return ReturnType(); // Squelch compiler warning
+}
+
+template<typename ReturnType>
+inline ReturnType seh::convert_to_cpp(
+    const std::function<ReturnType()>& std_func)
+{
+    SEH_CONVERT_TO_CPP_BEGIN
+    return std_func();
+    SEH_CONVERT_TO_CPP_END
+    return ReturnType(); // Squelch compiler warning
 }
 
 } // namespace jsdi

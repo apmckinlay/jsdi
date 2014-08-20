@@ -11,6 +11,77 @@
 
 #include "invoke64.h"
 
+#include "seh.h"
+
+#include <type_traits>
+
+using jsdi::abi_amd64::param_register_types;
+
+extern "C" {
+
+uint64_t invoke64_ll_basic(size_t args_size_bytes, const void * args_ptr,
+                           void * func_ptr);
+
+uint64_t invoke64_ll_fp(size_t args_size_bytes, const void * args_ptr,
+                        void * func_ptr, param_register_types register_types);
+
+} // extern "C"
+
+static_assert(std::is_standard_layout<param_register_types>::value, 
+              "must be standard layout to pass to invoke64_ll_* functions");
+
+//==============================================================================
+//                              struct invoke64
+//==============================================================================
+
+namespace jsdi {
+namespace abi_amd64 {
+
+uint64_t invoke64::basic(size_t args_size_bytes, const void * args_ptr,
+                         void * func_ptr)
+{
+    SEH_CONVERT_TO_CPP_BEGIN
+    return invoke64_ll_basic(args_size_bytes, args_ptr, func_ptr);
+    SEH_CONVERT_TO_CPP_END
+    return uint64_t(0); // Squelch compiler warning
+}
+
+uint64_t invoke64::fp(size_t args_size_bytes, const void * args_ptr,
+                      void * func_ptr, param_register_types register_types)
+{
+    SEH_CONVERT_TO_CPP_BEGIN
+    return invoke64_ll_fp(args_size_bytes, args_ptr, func_ptr, register_types);
+    SEH_CONVERT_TO_CPP_END
+    return uint64_t(0);
+}
+
+double invoke64::return_double(
+    size_t args_size_bytes, const void * args_ptr, void * func_ptr,
+    param_register_types register_types)
+{
+    SEH_CONVERT_TO_CPP_BEGIN
+    return reinterpret_cast<
+        double (*)(size_t, const void *, void *, param_register_types)
+    >(invoke64_ll_fp)(args_size_bytes, args_ptr, func_ptr, register_types);
+    SEH_CONVERT_TO_CPP_END
+    return 0.0; // Squelch compiler warning
+}
+
+float invoke64::return_float(
+    size_t args_size_bytes, const void * args_ptr, void * func_ptr,
+    param_register_types register_types)
+{
+    SEH_CONVERT_TO_CPP_BEGIN
+    return reinterpret_cast<
+        float (*)(size_t, const void *, void *, param_register_types)
+    >(invoke64_ll_fp)(args_size_bytes, args_ptr, func_ptr, register_types);
+    SEH_CONVERT_TO_CPP_END
+    return 0.0f; // Squelch compiler warning
+}
+
+} // namespace abi_amd64
+} // namespace jsdi
+
 //==============================================================================
 //                                  TESTS
 //==============================================================================
@@ -29,7 +100,7 @@ using namespace jsdi::abi_amd64;
 using namespace jsdi::abi_amd64::test64;
 
 //==============================================================================
-//                         TESTS : invoke64_basic()
+//                         TESTS : invoke64::basic()
 //==============================================================================
 
 namespace {
@@ -48,7 +119,7 @@ TEST(basic_int8,
     int8_t x = static_cast<int8_t>('J');
     uint64_t a;
     assert_true(copy_to(x, &a, 1));
-    int8_t result = static_cast<int8_t>(invoke64_basic(sizeof(a), &a, TestInt8));
+    int8_t result = static_cast<int8_t>(invoke64::basic(sizeof(a), &a, TestInt8));
     assert_equals(result, static_cast<int8_t>('J'));
 );
 
@@ -67,7 +138,7 @@ TEST(basic_int32,
             a[j] = i + j;
             sum += a[j];
         }
-        int32_t result = static_cast<int32_t>(invoke64_basic(
+        int32_t result = static_cast<int32_t>(invoke64::basic(
                                               (i + 1) * sizeof(uint64_t), &a, f[i]));
         assert_equals(static_cast<int32_t>(sum), result);
     }
@@ -79,12 +150,12 @@ TEST(basic_swap,
     s.str = nullptr;
     s.a = 33;
     s.b = 33;
-    assert_true(static_cast<int32_t>(invoke64_basic(sizeof(ps), &ps, TestSwap)));
+    assert_true(static_cast<int32_t>(invoke64::basic(sizeof(ps), &ps, TestSwap)));
     assert_equals(33, s.a);
     assert_equals(33, s.b);
     assert_equals(std::string("="), s.str);
     ++s.b;
-    assert_false(static_cast<int32_t>(invoke64_basic(sizeof(ps), &ps, TestSwap)));
+    assert_false(static_cast<int32_t>(invoke64::basic(sizeof(ps), &ps, TestSwap)));
     assert_equals(34, s.a);
     assert_equals(33, s.b);
     assert_equals(std::string("!="), s.str);
@@ -97,7 +168,7 @@ TEST(basic_aligned_byval,
     static_assert(8 == sizeof(a), "test assumes wrong structure size");
     uint64_t b(0);
     assert_true(copy_to(a, &b, 1));
-    int32_t result = static_cast<int32_t>(invoke64_basic(sizeof(b), &b,
+    int32_t result = static_cast<int32_t>(invoke64::basic(sizeof(b), &b,
                                           TestSumPackedInt8Int8Int16Int32));
     assert_equals(result, -10);
 );
@@ -107,8 +178,8 @@ TEST(basic_unaligned_byval,
     // 2, it secretly has to be passed by pointer according to the x64 ABI.
     Packed_Int8x3 u = { -5, 13, -1 }, *pu(&u);
     static_assert(3 == sizeof(u), "test assumes wrong structure size");
-    int32_t result = static_cast<int32_t>(invoke64_basic(sizeof(pu), &pu,
-                                                         TestSumPackedInt8x3));
+    int32_t result = static_cast<int32_t>(invoke64::basic(sizeof(pu), &pu,
+                                                          TestSumPackedInt8x3));
     assert_equals(result, 7);
 );
 
@@ -124,8 +195,8 @@ TEST(basic_oversize_byval,
     r.buffer = buffer;
     r.len = static_cast<int32_t>(jsdi::array_length(buffer));
     r.inner = nullptr;
-    int32_t result = static_cast<int32_t>(invoke64_basic(sizeof(pr), &pr,
-                                                         sum_string_byval));
+    int32_t result = static_cast<int32_t>(invoke64::basic(sizeof(pr), &pr,
+                                                          sum_string_byval));
     assert_equals(-25, result);
     assert_equals(std::string("-25"), buffer);
 );
@@ -159,32 +230,31 @@ TEST(basic_comprehensive,
     static_assert(48 == sizeof(h), "test assumes wrong structure size");
     assert_true(copy_to(ph, &args[7], 1)); // Pointer because > 8 bytes
     assert_true(copy_to(pi, &args[8], 1)); // Pointer because parameter is pass by pointer
-    int64_t result = static_cast<int64_t>(invoke64_basic(sizeof(args), args,
-                                                         TestSumManyInts));
+    int64_t result = static_cast<int64_t>(invoke64::basic(sizeof(args), args,
+                                                          TestSumManyInts));
     assert_equals(406, result);
 );
 
 TEST(basic_seh,
-    // This test ensures that on a basic level, the invoke64_basic() function
+    // This test ensures that on a simple level, the invoke64::basic() function
     // works with Windows structured exception handling.
     uint64_t a[] = { 0, 0 };
     bool caught = false;
-    __try
-    { invoke64_basic(sizeof(a), a, divide); } 
-    __except(GetExceptionCode() == EXCEPTION_INT_DIVIDE_BY_ZERO ? 
-             EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)
-    { caught = true; }
+    try
+    { invoke64::basic(sizeof(a), a, divide); } 
+    catch (jsdi::seh_exception const& e)
+    { caught = std::string("win32 exception: INT_DIVIDE_BY_ZERO") == e.what(); }
     assert_true(caught);
 );
 
 //==============================================================================
-//                           TESTS : invoke64_fp()
+//                          TESTS : invoke64::fp()
 //==============================================================================
 
 #include <algorithm>
 
 TEST(fp_noargs,
-    invoke64_fp(0, nullptr, TestVoid, param_register_types());
+    invoke64::fp(0, nullptr, TestVoid, param_register_types());
 );
 
 TEST(fp_comprehensive,
@@ -214,29 +284,28 @@ TEST(fp_comprehensive,
                         assert(false || !"control should never pass here");
                 }
             } // for(args)
-            uint64_t result = invoke64_fp(f->func.nargs * sizeof(uint64_t),
-                                          &args[0], f->func.ptr,
-                                          f->func.register_types);
+            uint64_t result = invoke64::fp(f->func.nargs * sizeof(uint64_t),
+                                           &args[0], f->func.ptr,
+                                           f->func.register_types);
             assert_equals(sum, result);
         } // lambda
     ); // std::for_each(FP_FUNCTIONS)
 );
 
 TEST(fp_seh,
-    // This test ensures that on a basic level, the invoke64_fp() function works
-    // with Windows structured exception handling.
+    // This test ensures that on a basic level, the invoke64::fp() function
+    // works with Windows structured exception handling.
     uint64_t a[] = { 0, 0 };
     bool caught = false;
-    __try
-    { invoke64_fp(sizeof(a), a, divide, param_register_types()); } 
-    __except(GetExceptionCode() == EXCEPTION_INT_DIVIDE_BY_ZERO ? 
-             EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)
-    { caught = true; }
+    try
+    { invoke64::fp(sizeof(a), a, divide, param_register_types()); } 
+    catch(jsdi::seh_exception const& e)
+    { caught = std::string("win32 exception: INT_DIVIDE_BY_ZERO") == e.what(); }
     assert_true(caught);
 );
 
 //==============================================================================
-//                     TESTS : invoke64_return_double()
+//                     TESTS : invoke64::return_double()
 //==============================================================================
 
 TEST(return_double,
@@ -247,21 +316,21 @@ TEST(return_double,
     param_register_types rt(
         DOUBLE, DOUBLE,
         param_register_type::UINT64, param_register_type::UINT64);
-    assert_equals(1.0, invoke64_return_double(0, args, TestReturn1_0Double, rt));
+    assert_equals(1.0, invoke64::return_double(0, args, TestReturn1_0Double, rt));
     assert_equals(
         -2300.5,
-        invoke64_return_double(sizeof(uint64_t), args, TestDouble, rt));
+        invoke64::return_double(sizeof(uint64_t), args, TestDouble, rt));
     assert_equals(
         -2.0,
-        invoke64_return_double(sizeof(uint64_t), args + 1, TestDouble, rt));
+        invoke64::return_double(sizeof(uint64_t), args + 1, TestDouble, rt));
     assert_equals(
         -2302.5,
-        invoke64_return_double(
+        invoke64::return_double(
             2 * sizeof(uint64_t), args, TestSumTwoDoubles, rt));
 );
 
 //==============================================================================
-//                     TESTS : invoke64_return_float()
+//                     TESTS : invoke64::return_float()
 //==============================================================================
 
 TEST(return_float,
@@ -272,14 +341,14 @@ TEST(return_float,
     param_register_types rt(
         param_register_type::FLOAT, param_register_type::FLOAT,
         param_register_type::UINT64, param_register_type::UINT64);
-    assert_equals(1.0f, invoke64_return_float(0, args, TestReturn1_0Float, rt));
+    assert_equals(1.0f, invoke64::return_float(0, args, TestReturn1_0Float, rt));
     assert_equals(
-        10.0f, invoke64_return_float(sizeof(uint64_t), args, TestFloat, rt));
+        10.0f, invoke64::return_float(sizeof(uint64_t), args, TestFloat, rt));
     assert_equals(
-        -1.0, invoke64_return_float(sizeof(uint64_t), args + 1, TestFloat, rt));
+        -1.0, invoke64::return_float(sizeof(uint64_t), args + 1, TestFloat, rt));
     assert_equals(
         9.0,
-        invoke64_return_float(
+        invoke64::return_float(
             2 * sizeof(uint64_t), args, TestSumTwoFloats, rt));
 );
 

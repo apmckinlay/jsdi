@@ -14,6 +14,7 @@
 #include "jsdi_callback.h"
 #include "log.h"
 #include "marshalling.h"
+#include "seh.h"
 
 #include "invoke64.h"
 #include "thunk64.h"
@@ -52,9 +53,8 @@ jlong call_fast(JNIEnv * env, jlong funcPtr, ArgTypes ... args)
     auto f = reinterpret_cast<func_t>(funcPtr);
     jlong r(0);
     JNI_EXCEPTION_SAFE_CPP_BEGIN
-    LOG_TRACE("funcPtr => " << reinterpret_cast<void *>(funcPtr)
-                            << ", args => " << to_list(args...));
-    r = f(args ...);
+    LOG_TRACE("funcPtr => " << f << ", args => " << to_list(args...));
+    r = seh::convert_to_cpp(f, args...);
     JNI_EXCEPTION_SAFE_CPP_END(env);
     return r;
 }
@@ -78,8 +78,8 @@ jlong call_direct_nofp(JNIEnv * env, jlong funcPtr, jint sizeDirect,
 #pragma warning(disable:4592)
     jni_array_region<jlong> args_(env, args, min_whole_words(sizeDirect));
 #pragma warning(pop)
-    result = invoke64_basic(sizeDirect, args_.data(),
-                            reinterpret_cast<void *>(funcPtr));
+    result = invoke64::basic(sizeDirect, args_.data(),
+                             reinterpret_cast<void *>(funcPtr));
     JNI_EXCEPTION_SAFE_CPP_END(env);
     return static_cast<jlong>(result);
 }
@@ -120,8 +120,8 @@ jlong call_indirect_nofp(JNIEnv * env, jlong funcPtr, jint sizeDirect,
     jni_array_region<jint> ptr_array(env, ptrArray);
     marshalling_roundtrip::ptrs_init(args_.data(), ptr_array.data(),
                                      ptr_array.size());
-    result = invoke64_basic(sizeDirect, args_.data(),
-                            reinterpret_cast<void *>(funcPtr));
+    result = invoke64::basic(sizeDirect, args_.data(),
+                             reinterpret_cast<void *>(funcPtr));
     JNI_EXCEPTION_SAFE_CPP_END(env);
     return static_cast<jlong>(result);
 }
@@ -274,8 +274,8 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_amd64_NativeCall64_callDirectNoFpR
 JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_amd64_NativeCall64_callDirectReturnInt64(
     JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jlongArray args, jint registers)
 {
-    return call_direct_fp<uint64_t, invoke64_fp>(env, funcPtr, sizeDirect, args,
-                                                 registers);
+    return call_direct_fp<uint64_t, invoke64::fp>(env, funcPtr, sizeDirect,
+                                                  args, registers);
 }
 
 /*
@@ -286,9 +286,9 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_amd64_NativeCall64_callDirectRetur
 JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_amd64_NativeCall64_callDirectReturnFloat
   (JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jlongArray args, jint registers)
 {
-    return call_direct_fp<float, invoke64_return_float>(env, funcPtr,
-                                                        sizeDirect, args,
-                                                        registers);
+    return call_direct_fp<float, invoke64::return_float>(env, funcPtr,
+                                                         sizeDirect, args,
+                                                         registers);
 }
   
 /*
@@ -299,7 +299,7 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_amd64_NativeCall64_callDirectRetur
 JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_amd64_NativeCall64_callDirectReturnDouble
   (JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jlongArray args, jint registers)
 {
-    return call_direct_fp<double, invoke64_return_double>(
+    return call_direct_fp<double, invoke64::return_double>(
         env, funcPtr, sizeDirect, args, registers);
 }
 
@@ -320,8 +320,8 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_amd64_NativeCall64_callIndirectNoF
 JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_amd64_NativeCall64_callIndirectReturnInt64
   (JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jlongArray args, jint registers, jintArray ptrArray)
 {
-    return call_indirect_fp<uint64_t, invoke64_fp>(env, funcPtr, sizeDirect,
-                                                   args, registers, ptrArray);
+    return call_indirect_fp<uint64_t, invoke64::fp>(env, funcPtr, sizeDirect,
+                                                    args, registers, ptrArray);
 }
 
 /*
@@ -332,7 +332,7 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_amd64_NativeCall64_callIndirectRet
 JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_amd64_NativeCall64_callIndirectReturnFloat
   (JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jlongArray args, jint registers, jintArray ptrArray)
 {
-    return call_indirect_fp<float, invoke64_return_float>(
+    return call_indirect_fp<float, invoke64::return_float>(
         env, funcPtr, sizeDirect, args, registers, ptrArray);
 }
 
@@ -344,7 +344,7 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_amd64_NativeCall64_callIndirectRet
 JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_amd64_NativeCall64_callIndirectReturnDouble
   (JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jlongArray args, jint registers, jintArray ptrArray)
 {
-    return call_indirect_fp<double, invoke64_return_double>(
+    return call_indirect_fp<double, invoke64::return_double>(
         env, funcPtr, sizeDirect, args, registers, ptrArray);
 }
 
@@ -356,7 +356,7 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_amd64_NativeCall64_callIndirectRet
 JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_amd64_NativeCall64_callVariableIndirectReturnInt64
   (JNIEnv *  env, jclass, jlong funcPtr, jint sizeDirect, jlongArray args, jint registers, jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
 {
-    return call_vi_fp<uint64_t, invoke64_fp>(
+    return call_vi_fp<uint64_t, invoke64::fp>(
         env, funcPtr, sizeDirect, args, registers, ptrArray,
         viArray, viInstArray);
 }
@@ -369,7 +369,7 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_amd64_NativeCall64_callVariableInd
 JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_amd64_NativeCall64_callVariableIndirectReturnFloat
   (JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jlongArray args, jint registers, jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
  {
-    return call_vi_fp<float, invoke64_return_float>(
+    return call_vi_fp<float, invoke64::return_float>(
         env, funcPtr, sizeDirect, args, registers, ptrArray,
         viArray, viInstArray);
  }
@@ -382,7 +382,7 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_amd64_NativeCall64_callVariableInd
 JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_amd64_NativeCall64_callVariableIndirectReturnDouble
   (JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jlongArray args, jint registers, jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
 {
-    return call_vi_fp<double, invoke64_return_double>(
+    return call_vi_fp<double, invoke64::return_double>(
         env, funcPtr, sizeDirect, args, registers, ptrArray,
         viArray, viInstArray);
 }
@@ -395,7 +395,7 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_abi_amd64_NativeCall64_callVariableInd
 JNIEXPORT void JNICALL Java_suneido_jsdi_abi_amd64_NativeCall64_callVariableIndirectReturnVariableIndirect
   (JNIEnv * env, jclass, jlong funcPtr, jint sizeDirect, jlongArray args, jint registers, jintArray ptrArray, jobjectArray viArray, jintArray viInstArray)
 {
-    call_vi_fp<uint64_t, invoke64_fp, jbyte *>(
+    call_vi_fp<uint64_t, invoke64::fp, jbyte *>(
         env, funcPtr, sizeDirect, args, registers, ptrArray,
         viArray, viInstArray);
 }
@@ -502,6 +502,10 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_amd64_ThunkManager64_deleteThunk64
     JNI_EXCEPTION_SAFE_CPP_BEGIN
     static_assert(sizeof(thunk64 *) <= sizeof(jlong), "fatal data loss");
     auto thunk(reinterpret_cast<thunk64 *>(thunkObjectAddr));
-    clearing_list.clear_thunk(thunk);
+    std::function<void()> clear_func(
+        std::bind(
+            std::mem_fn(&thunk_clearing_list::clear_thunk),
+            clearing_list, thunk));
+    seh::convert_to_cpp(clear_func);
     JNI_EXCEPTION_SAFE_CPP_END(env);
 }

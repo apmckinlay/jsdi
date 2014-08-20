@@ -486,6 +486,8 @@ struct marshalling_roundtrip : private marshalling_util
          *        extract
          * \param vi_inst_array Variable indirect instruction array, explains
          *        how to unmarshall out each variable indirect value
+         * \throws jsdi::seh_exception If a structure exception handling
+         *         exception is raised during the unmarshalling process
          * \see #ptrs_init_vi(marshall_word_t *, jsize, const jint *, jsize, JNIEnv *, jobjectArray, marshalling_vi_container&)
          */
         static void ptrs_finish_vi(jobjectArray vi_array_java,
@@ -654,6 +656,8 @@ class unmarshaller_indirect : public unmarshaller_base
          *        pointers but no variable indirect pointers)
          * \param from Address of marshalled data block
          * \param to Address of data block to unmarshall into
+         * \throws jsdi::seh_exception If a structure exception handling
+         *         exception is raised during the unmarshalling process
          */
         void unmarshall_indirect(const void * from, marshall_word_t * to) const;
 };
@@ -667,19 +671,6 @@ inline unmarshaller_indirect::unmarshaller_indirect(
     , d_ptr_begin(ptr_begin)
     , d_ptr_end(ptr_end)
 { }
-
-inline void unmarshaller_indirect::unmarshall_indirect(
-    const void * from, marshall_word_t * to) const
-{
-    std::memcpy(to, from, d_size_direct);
-    ptr_iterator_t ptr_i(d_ptr_begin), ptr_e(d_ptr_end);
-    while (ptr_i != ptr_e)
-    {
-        jint ptr_byte_offset = *ptr_i++;
-        jint ptd_to_byte_offset = *ptr_i++;
-        normal_ptr(to, ptr_byte_offset, ptd_to_byte_offset, ptr_i);
-    }
-}
 
 //==============================================================================
 //                        class unmarshaller_vi_base
@@ -786,6 +777,8 @@ class unmarshaller_vi_base : public unmarshaller_indirect
          * \param env JNI environment
          * \param vi_array Variable indirect output array
          * \param vi_inst_array Variable indirect instruction array
+         * \throws jsdi::seh_exception If a structure exception handling
+         *         exception is raised during the unmarshalling process
          *
          * The elements of <code>vi_inst_array</code> are in one-to-one
          * correspondence with the elements of <code>vi_array</code> and are
@@ -805,26 +798,6 @@ inline unmarshaller_vi_base::unmarshaller_vi_base(
     : unmarshaller_indirect(size_direct, size_total, ptr_begin, ptr_end)
     , d_vi_count(vi_count)
 { assert(0 <= vi_count); }
-
-inline void unmarshaller_vi_base::unmarshall_vi(
-    const void * from, marshall_word_t * to, JNIEnv * env,
-    jobjectArray vi_array, jint const * vi_inst_array)
-{
-    std::memcpy(to, from, unmarshaller_base::d_size_direct);
-    ptr_iterator_t ptr_i(unmarshaller_indirect::d_ptr_begin),
-                   ptr_e(unmarshaller_indirect::d_ptr_end);
-    while (ptr_i != ptr_e)
-    {
-        jint ptr_byte_offset = *ptr_i++;
-        jint ptd_to_byte_offset = *ptr_i++;
-        if (is_vi_ptr(ptd_to_byte_offset))  // vi pointer
-            vi_ptr(to, ptr_byte_offset, ptd_to_byte_offset, env, vi_array,
-                   vi_inst_array);
-        else                                // normal pointer
-            normal_ptr(to, ptr_byte_offset, ptd_to_byte_offset, ptr_i, env,
-                       vi_array, vi_inst_array);
-    }
-}
 
 //==============================================================================
 //                        class unmarshaller_vi_test

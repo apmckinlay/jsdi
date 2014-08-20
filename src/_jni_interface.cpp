@@ -18,6 +18,7 @@
 #include "jsdi_windows.h"
 #include "log.h"
 #include "marshalling.h"
+#include "seh.h"
 #include "suneido_protocol.h"
 #include "version.h"
 
@@ -28,12 +29,6 @@ using namespace jsdi;
 //==============================================================================
 //                                INTERNALS
 //==============================================================================
-
-/* TODO: do we need to be able to handle Win32 exceptions? If so, we'll want
- *       to wrap things in SEH code *at some level*. But do we want that
- *       overhead around every DLL call, regardless of whether it is expected
- *       to throw an exception? [See NOTES A-D in callback_x86.cpp]
- */
 
 namespace {
 
@@ -112,14 +107,22 @@ void check_array_atleast(jsize size, const char * array_name, JNIEnv * env,
 void check_array_atleast_1(const char * array_name, JNIEnv * env, jarray array)
 { check_array_atleast(1, array_name, env, array); }
 
-inline const char * get_struct_ptr(jlong struct_addr)
+inline const char * struct_get_ptr(jlong struct_addr)
 {
     assert(struct_addr || !"can't copy out a NULL pointer");
     return reinterpret_cast<const char *>(struct_addr);
 }
 
-inline void check_struct_size(jint size_direct)
+inline void struct_check_size(jint size_direct)
 { assert(0 < size_direct || !"structure must have positive size"); }
+
+void struct_unmarshall_direct_seh(void * dest, void const * src,
+                                         size_t size_direct)
+{
+    SEH_CONVERT_TO_CPP_BEGIN
+    std::memcpy(dest, src, size_direct);
+    SEH_CONVERT_TO_CPP_END
+}
 
 } // anonymous namespace
 
@@ -186,7 +189,6 @@ JNIEXPORT jobject JNICALL Java_suneido_jsdi_JSDI_logThreshold
     JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
-
 
 //==============================================================================
 //                    JAVA CLASS: suneido.jsdi.DllFactory
@@ -266,8 +268,8 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_type_Structure_copyOutDirect(
     JNI_EXCEPTION_SAFE_CPP_BEGIN
     LOG_TRACE("structAddr => "   << reinterpret_cast<void *>(structAddr) <<
               ", sizeDirect => " << sizeDirect);
-    check_struct_size(sizeDirect);
-    auto ptr(get_struct_ptr(structAddr));
+    struct_check_size(sizeDirect);
+    auto ptr(struct_get_ptr(structAddr));
     // NOTE: In contrast to most other situations, it is safe to use a primitive
     // critical array here because in a struct copy out, we don't call any other
     // JNI functions (nor is it possible to surreptitiously re-enter the Java
@@ -276,7 +278,7 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_type_Structure_copyOutDirect(
 #pragma warning(disable:4592)
     jni_critical_array<jlong> data_(env, data, min_whole_words(sizeDirect));
 #pragma warning(pop)
-    std::memcpy(data_.data(), ptr, sizeDirect);
+    struct_unmarshall_direct_seh(data_.data(), ptr, sizeDirect);
     JNI_EXCEPTION_SAFE_CPP_END(env);
 }
 
@@ -292,15 +294,15 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_type_Structure_copyOutIndirect(
     JNI_EXCEPTION_SAFE_CPP_BEGIN
     LOG_TRACE("structAddr => "   << reinterpret_cast<void *>(structAddr) <<
               ", sizeDirect => " << sizeDirect);
-    check_struct_size(sizeDirect);
-    auto ptr(get_struct_ptr(structAddr));
+    struct_check_size(sizeDirect);
+    auto ptr(struct_get_ptr(structAddr));
     // See note above: critical arrays safe here.
     const jni_array_region<jint> ptr_array(env, ptrArray);
     jni_critical_array<jlong> data_(env, data);
     unmarshaller_indirect u(sizeDirect,
                             data_.size() * sizeof(decltype(data_)::value_type),
                             ptr_array.begin(), ptr_array.end());
-    u.unmarshall_indirect(ptr,
+    u.unmarshall_indirect(ptr, // SEH-safe
                           reinterpret_cast<marshall_word_t *>(data_.data()));
     JNI_EXCEPTION_SAFE_CPP_END(env);
 }
@@ -317,8 +319,8 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_type_Structure_copyOutVariableIndirect(
     JNI_EXCEPTION_SAFE_CPP_BEGIN
     LOG_TRACE("structAddr => "   << reinterpret_cast<void *>(structAddr) <<
               ", sizeDirect => " << sizeDirect);
-    check_struct_size(sizeDirect);
-    auto ptr(get_struct_ptr(structAddr));
+    struct_check_size(sizeDirect);
+    auto ptr(struct_get_ptr(structAddr));
     // Can't use critical arrays here because the unmarshalling process isn't
     // guaranteed to follow the JNI critical array function restrictions.
     jni_array<jlong> data_(env, data);
@@ -328,7 +330,7 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_type_Structure_copyOutVariableIndirect(
                       data_.size() * sizeof(decltype(data_)::value_type),
                       ptr_array.begin(), ptr_array.end(), vi_inst_array.size());
     u.unmarshall_vi(ptr, reinterpret_cast<marshall_word_t *>(data_.data()),
-                    env, viArray, vi_inst_array.begin());
+                    env, viArray, vi_inst_array.begin()); // SEH-safe
     JNI_EXCEPTION_SAFE_CPP_END(env);
 }
 
@@ -351,10 +353,11 @@ JNIEXPORT jlong JNICALL Java_suneido_jsdi_com_COMobject_queryIDispatchAndProgId(
     IDispatch * idisp(0);
     JNI_EXCEPTION_SAFE_CPP_BEGIN
     check_array_atleast_1("progid", env, progid); // check first, as may throw
-    idisp = com::query_for_dispatch(iunk);
+    idisp = seh::convert_to_cpp(com::query_for_dispatch, iunk);
     if (idisp)
     {
-        jni_auto_local<jstring> progid_jstr(env, com::get_progid(idisp, env));
+        jni_auto_local<jstring> progid_jstr(
+            env, seh::convert_to_cpp(com::get_progid, idisp, env));
         env->SetObjectArrayElement(progid, 0,
                                    static_cast<jstring>(progid_jstr));
     }
@@ -375,7 +378,11 @@ JNIEXPORT jboolean JNICALL Java_suneido_jsdi_com_COMobject_coCreateFromProgId(
     IUnknown * iunk(0);
     IDispatch * idisp(0);
     check_array_atleast(2, "ptrPair", env, ptrPair); // check before creating
-    if (com::create_from_progid(env, progid, iunk, idisp))
+    bool created(
+        seh::convert_to_cpp<bool, JNIEnv *, jstring, IUnknown *&, IDispatch *&>(
+            com::create_from_progid, env, progid, iunk, idisp)
+    );
+    if (created)
     {
         assert(iunk || idisp);
         const jlong ptrs[2] =
@@ -417,13 +424,13 @@ JNIEXPORT jobject JNICALL Java_suneido_jsdi_com_COMobject_getPropertyByName(
     jobject result(0);
     JNI_EXCEPTION_SAFE_CPP_BEGIN
     IDispatch * idisp(reinterpret_cast<IDispatch *>(ptrToIDispatch));
-    DISPID dispid_(com::get_dispid_of_name(idisp, env, name));
+    DISPID dispid_(seh::convert_to_cpp(com::get_dispid_of_name, idisp, env, name));
     // Check the dispid array before getting the property so that we don't throw
     // an exception while we have a local reference to be freed...
     check_array_atleast_1("dispid", env, dispid);
     env->SetIntArrayRegion(dispid, 0, 1,
                            reinterpret_cast<const jint *>(&dispid_));
-    result = com::property_get(idisp, dispid_, env);
+    result = seh::convert_to_cpp(com::property_get, idisp, dispid_, env);
     JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
@@ -439,7 +446,8 @@ JNIEXPORT jobject JNICALL Java_suneido_jsdi_com_COMobject_getPropertyByDispId(
     jobject result(0);
     JNI_EXCEPTION_SAFE_CPP_BEGIN
     IDispatch * idisp(reinterpret_cast<IDispatch *>(ptrToIDispatch));
-    result = com::property_get(idisp, static_cast<DISPID>(dispid), env);
+    result = seh::convert_to_cpp(
+        com::property_get, idisp, static_cast<DISPID>(dispid), env);
     JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
@@ -455,8 +463,8 @@ JNIEXPORT jint JNICALL Java_suneido_jsdi_com_COMobject_putPropertyByName(
     DISPID dispid(0);
     JNI_EXCEPTION_SAFE_CPP_BEGIN
     IDispatch * idisp(reinterpret_cast<IDispatch *>(ptrToIDispatch));
-    dispid = com::get_dispid_of_name(idisp, env, name);
-    com::property_put(idisp, dispid, env, value);
+    dispid = seh::convert_to_cpp(com::get_dispid_of_name, idisp, env, name);
+    seh::convert_to_cpp(com::property_put, idisp, dispid, env, value);
     JNI_EXCEPTION_SAFE_CPP_END(env);
     return dispid;
 }
@@ -471,7 +479,8 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_com_COMobject_putPropertyByDispId(
 {
     JNI_EXCEPTION_SAFE_CPP_BEGIN
     IDispatch * idisp(reinterpret_cast<IDispatch *>(ptrToIDispatch));
-    com::property_put(idisp, static_cast<DISPID>(dispid), env, value);
+    seh::convert_to_cpp(
+        com::property_put, idisp, static_cast<DISPID>(dispid), env, value);
     JNI_EXCEPTION_SAFE_CPP_END(env);
 }
 
@@ -487,13 +496,13 @@ JNIEXPORT jobject JNICALL Java_suneido_jsdi_com_COMobject_callMethodByName(
     jobject result(0);
     JNI_EXCEPTION_SAFE_CPP_BEGIN
     IDispatch * idisp(reinterpret_cast<IDispatch *>(ptrToIDispatch));
-    DISPID dispid_(com::get_dispid_of_name(idisp, env, name));
+    DISPID dispid_(seh::convert_to_cpp(com::get_dispid_of_name, idisp, env, name));
     // Check the dispid array before calling the method so that we don't throw
     // an exception while we have a local reference to be freed...
     check_array_atleast_1("dispid", env, dispid);
     env->SetIntArrayRegion(dispid, 0, 1,
                            reinterpret_cast<const jint *>(&dispid_));
-    result = com::call_method(idisp, dispid_, env, args);
+    result = seh::convert_to_cpp(com::call_method, idisp, dispid_, env, args);
     JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
@@ -509,7 +518,8 @@ JNIEXPORT jobject JNICALL Java_suneido_jsdi_com_COMobject_callMethodByDispId(
     jobject result(0);
     JNI_EXCEPTION_SAFE_CPP_BEGIN
     IDispatch * idisp(reinterpret_cast<IDispatch *>(ptrToIDispatch));
-    result = com::call_method(idisp, static_cast<DISPID>(dispid), env, args);
+    result = seh::convert_to_cpp(com::call_method, idisp,
+                                 static_cast<DISPID>(dispid), env, args);
     JNI_EXCEPTION_SAFE_CPP_END(env);
     return result;
 }
