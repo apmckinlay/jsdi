@@ -46,7 +46,7 @@ class stdcall_thunk : public thunk
         /**
          * \brief Constructs a <code>__stdcall</code> thunk
          * \param callback_ptr Valid pointer to the callback to invoke when
-         *        #func_addr() is called
+         *        #func_addr() const is called
          */
         stdcall_thunk(const std::shared_ptr<callback>& callback_ptr);
 
@@ -61,7 +61,7 @@ class stdcall_thunk : public thunk
          *        <code>__stdcall</code> thunk function
          * \return Thunk function address
          */
-        void * func_addr();
+        void * func_addr() const;
 };
 
 } // namespace x86

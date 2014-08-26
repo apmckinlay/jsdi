@@ -483,6 +483,7 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_amd64_ThunkManager64_newThunk64(
                                                 NUM_PARAM_REGISTERS);
     jni_array<jlong> out_thunk_addrs(env, outThunkAddrs);
     thunk64 * thunk(new thunk64(callback_ptr, num_register_params, registers));
+    LOG_DEBUG("Created " << *thunk);
     void * func_addr(thunk->func_addr());
     out_thunk_addrs[suneido_jsdi_abi_amd64_ThunkManager64_THUNK_OBJECT_ADDR_INDEX
     ] = reinterpret_cast<jlong>(thunk);

@@ -298,6 +298,12 @@ struct thunk64_impl
     static uint64_t wrapper(thunk64_impl *, const marshall_word_t *);
 
     //
+    // ACCESSORS
+    //
+
+    void * func_addr();
+
+    //
     // OPERATORS
     //
 
@@ -324,8 +330,8 @@ uint64_t thunk64_impl::wrapper(thunk64_impl * impl,
                                const marshall_word_t * args)
 {
     uint64_t result(0);
-    LOG_TRACE("thunk64_impl::wrapper ( impl => " << impl << ", args => "
-                                                 << args << " )");
+    LOG_TRACE("thunk64_impl::wrapper ( func_addr() => " << impl->func_addr()
+              << ", args => " << args << " )");
     impl->d_setup();
     // NOTE: It is [C++] callback's responsibility to ensure that no C++
     //       exceptions propagate out to this level. Furthermore, C++ callback
@@ -350,6 +356,9 @@ uint64_t thunk64_impl::wrapper(thunk64_impl * impl,
     return result;
 }
 
+inline void * thunk64_impl::func_addr()
+{ return d_code.d_instructions; }
+
 void * thunk64_impl::operator new(size_t n)
 { return impl_heap.alloc(n); }
 
@@ -370,8 +379,8 @@ thunk64::thunk64(const std::shared_ptr<callback>& callback_ptr,
           std::bind(std::mem_fn(&thunk64::teardown_call), this)))
 { }
 
-void * thunk64::func_addr()
-{ return d_impl->d_code.d_instructions; }
+void * thunk64::func_addr() const
+{ return d_impl->func_addr(); }
 
 } // namespace abi_amd64
 } // namespace jsdi
