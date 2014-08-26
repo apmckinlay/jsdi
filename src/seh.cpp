@@ -52,7 +52,7 @@ inline char const * seh_exception_name(DWORD code)
         SEH_FATAL_EXCEPTION(INVALID_DISPOSITION)
         SEH_FATAL_EXCEPTION(GUARD_PAGE)
 
-        case 0xE06D7363: return nullptr;
+        case 0xe06d7363: return nullptr;
             // Ignore C++ exception: http://goo.gl/XbJPdj
 
         default: return "???";
