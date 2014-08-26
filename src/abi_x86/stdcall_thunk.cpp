@@ -174,6 +174,12 @@ struct stdcall_thunk_impl
                                       const marshall_word_t *);
 
     //
+    // ACCESSORS
+    //
+
+    void * func_addr();
+
+    //
     // OPERATORS
     //
 
@@ -199,8 +205,8 @@ uint64_t __stdcall stdcall_thunk_impl::wrapper(stdcall_thunk_impl * impl,
                                                const marshall_word_t * args)
 {
     uint64_t result(0);
-    LOG_TRACE("stdcall_thunk_impl::wrapper( impl => " << impl << ", args => "
-                                                      << args << " )");
+    LOG_TRACE("stdcall_thunk_impl::wrapper( func_addr() => "
+              << impl->func_addr() << ", args => " << args << " )");
     impl->d_setup();
     // NOTE: It is [C++] callback's responsibility to ensure that no C++
     //       exceptions propagate out to this level. Furthermore, C++ callback
@@ -225,6 +231,9 @@ uint64_t __stdcall stdcall_thunk_impl::wrapper(stdcall_thunk_impl * impl,
     return result;
 }
 
+inline void * stdcall_thunk_impl::func_addr()
+{ return d_code.d_instructions; }
+
 void * stdcall_thunk_impl::operator new(size_t n)
 { return impl_heap.alloc(n); }
 
@@ -243,8 +252,8 @@ stdcall_thunk::stdcall_thunk(const std::shared_ptr<callback>& callback_ptr)
           std::bind(std::mem_fn(&stdcall_thunk::teardown_call), this)))
 { }
 
-void * stdcall_thunk::func_addr()
-{ return d_impl->d_code.d_instructions; }
+void * stdcall_thunk::func_addr() const
+{ return d_impl->func_addr(); }
 
 } // namespace abi_x86
 } // namespace jsdi

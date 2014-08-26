@@ -104,7 +104,7 @@ thunk::thunk(const std::shared_ptr<callback>& callback_ptr)
       d_state(thunk_state::READY)
     , d_clearing(false)
     , d_callback(callback_ptr)
-{ LOG_DEBUG("New thunk " << static_cast<void *>(this)); }
+{ }
 
 thunk::~thunk()
 {
@@ -140,6 +140,13 @@ thunk_state thunk::state() const
         return d_clearing.load() ? thunk_state::CLEARING : thunk_state::READY;
 }
 
+std::ostream& operator<<(std::ostream& o, thunk const& t)
+{
+    o << "jsdi::thunk[func_addr() => " << t.func_addr() << ", state() => "
+      << t.state() << ", this => " << static_cast<void const *>(&t) << ']';
+    return o;
+}
+
 //==============================================================================
 //                         class thunk_clearing_list
 //==============================================================================
@@ -148,7 +155,7 @@ struct thunk_clearing_list_impl
 {
     std::deque<thunk *> d_cleared_list;
     std::deque<thunk *> d_clearing_list;
-    std::mutex               d_mutex;
+    std::mutex          d_mutex;
     // Use default destructor. Thus it will leak whatever is on the lists at
     // time of destruction.
     void clear_thunk(thunk * thunk_)
@@ -158,9 +165,11 @@ struct thunk_clearing_list_impl
         switch (thunk_->clear())
         {
             case thunk_state::CLEARED:
-                d_clearing_list.push_back(thunk_);
+                LOG_DEBUG("Putting " << *thunk_ << " into cleared list");
+                d_cleared_list.push_back(thunk_);
                 break;
             case thunk_state::CLEARING:
+                LOG_DEBUG("Putting " << *thunk_ << " into clearing list");
                 d_clearing_list.push_back(thunk_);
                 break;
             default:
@@ -168,19 +177,21 @@ struct thunk_clearing_list_impl
                 break;
         }
         // Don't let the cleared list grow indefinitely
-        if (10 < d_clearing_list.size())
+        if (10 < d_cleared_list.size())
         {
-            assert(thunk_ != d_clearing_list.front());
-            LOG_DEBUG("Deleting thunk " << static_cast<void *>(
-                                               d_clearing_list.front()));
-            delete d_clearing_list.front();
-            d_clearing_list.pop_front();
+            assert(thunk_ != d_cleared_list.front());
+            assert(thunk_state::CLEARED == d_cleared_list.front()->state());
+            LOG_DEBUG("Deleting " << *d_cleared_list.front());
+            delete d_cleared_list.front();
+            d_cleared_list.pop_front();
         }
         // Don't let the clearing list grow indefinitely
         if (1 < d_clearing_list.size() &&
             thunk_state::CLEARED == d_clearing_list.front()->state())
         {
-            d_clearing_list.push_back(d_clearing_list.front());
+            LOG_TRACE("Moving " << *d_clearing_list.front()
+                                << " to cleared list");
+            d_cleared_list.push_back(d_clearing_list.front());
             d_clearing_list.pop_front();
         }
     }

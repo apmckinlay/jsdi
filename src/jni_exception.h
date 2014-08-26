@@ -69,14 +69,17 @@ namespace jsdi {
     }                                                                   \
     catch (const jsdi::jni_exception& e)                                \
     {                                                                   \
+        LOG_DEBUG("caught " << e);                                      \
         e.throw_jni(env);                                               \
     }                                                                   \
     catch (const std::exception& e)                                     \
     {                                                                   \
+        LOG_ERROR("caught std::exception('" << e.what() << "')");       \
         jsdi::jni_exception(e.what(), false).throw_jni(env);            \
     }                                                                   \
     catch (...)                                                         \
     {                                                                   \
+        LOG_FATAL("caught an unknown exception");                       \
         jsdi::jni_exception("unknown exception", false).throw_jni(env); \
     }
 
@@ -228,6 +231,17 @@ class jni_exception: public std::runtime_error
          */
         void throw_jni(JNIEnv * env) const;
 };
+
+inline bool jni_exception::jni_except_pending() const
+{ return d_jni_except_pending; }
+
+/**
+ * \brief Stream insertion operator for a jsdi::jni_exception
+ * \param o Output stream to insert into
+ * \param e Exception to insert into the stream
+ * \return o
+ */
+std::ostream& operator<<(std::ostream& o, jni_exception const& e);
 
 //==============================================================================
 //                           class jni_bad_alloc

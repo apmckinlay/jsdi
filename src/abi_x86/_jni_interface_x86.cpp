@@ -288,6 +288,7 @@ JNIEXPORT void JNICALL Java_suneido_jsdi_abi_x86_ThunkManagerX86_newThunkX86(
                                  variableIndirectCount));
     }
     stdcall_thunk * thunk(new stdcall_thunk(callback_ptr));
+    LOG_DEBUG("Created " << *thunk);
     void * func_addr(thunk->func_addr());
     static_assert(sizeof(stdcall_thunk *) <= sizeof(jlong), "fatal data loss");
     static_assert(sizeof(void *) <= sizeof(jlong), "fatal data loss");

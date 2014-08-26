@@ -76,4 +76,14 @@ void jni_exception::throw_jni(JNIEnv * env) const
     }
 }
 
+std::ostream& operator<<(std::ostream& o, jni_exception const& e)
+{
+    o << "jsdi::jni_exception('" << e.what() << "', pending => ";
+    std::ios::fmtflags const f(o.flags());
+    o << std::boolalpha << e.jni_except_pending();
+    o.flags(f);
+    o << ')';
+    return o;
+}
+
 } // namespace jsdi

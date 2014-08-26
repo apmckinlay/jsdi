@@ -106,7 +106,7 @@ class thunk : private non_copyable
         /**
          * \brief Constructs a thunk
          * \param callback_ptr Non-<code>null</code> pointer to the callback
-         *        to invoke when #func_addr() is called
+         *        to invoke when #func_addr() const is called
          */
         thunk(const std::shared_ptr<callback>& callback_ptr);
 
@@ -127,7 +127,7 @@ class thunk : private non_copyable
          * this member, which will in turn invoke the jsdi::callback attached
          * to this thunk.
          */
-        virtual void * func_addr() = 0;
+        virtual void * func_addr() const = 0;
 
         /**
          * \brief Returns the thunk state
@@ -150,14 +150,22 @@ class thunk : private non_copyable
          * <em>As soon as</em> any thread calls this function, <em>and before
          * this function returns</em>, the thunk will be moved to
          * thunk_state#CLEARED and no other thread may attempt to call
-         * #func_addr().
+         * #func_addr() const.
          *
          * \warning
-         * No thread may call this function while #func_addr() is being called
-         * by any thread.
+         * No thread may call this function while #func_addr() const is being
+         * called by any thread.
          */
         thunk_state clear();
 };
+
+/**
+ * \brief Stream insertion operator for a jsdi::thunk
+ * \param o Output stream to insert into
+ * \param t Thunk to insert into stream
+ * \return o
+ */
+std::ostream& operator<<(std::ostream& o, thunk const& t);
 
 //==============================================================================
 //                         class thunk_clearing_list

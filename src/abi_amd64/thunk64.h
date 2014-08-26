@@ -44,7 +44,7 @@
         /**
          * \brief Constructs an x64 ABI thunk
          * \param callback_ptr Valid pointer to the callback to invoke when
-         *        #func_addr() is called
+         *        #func_addr() const is called
          * \param num_param_registers Number of parameters that will be passed
          *        to the thunk in registers <em>must be in the range
          *        [0..#NUM_PARAM_REGISTERS]</em>
@@ -65,7 +65,7 @@
          *        thunk function
          * \return Thunk function address
          */
-        void * func_addr();
+        void * func_addr() const;
  };
  
  } // namespace abi_amd64
