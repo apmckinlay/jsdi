@@ -194,15 +194,6 @@ class jni_exception: public std::runtime_error
          * C++ exception must be raised but it is not known whether a JNI
          * exception is already pending.
          * </p>
-         *
-         * \todo
-         * FIXME: Is this constructor really a good idea? The program should
-         * never be in a state where it needs to raise a C++ exception and it
-         * doesn't know whether a JNI exception is pending!!! If you are, it
-         * means you ignored a JNI exception and blithely kept on processing
-         * until you had to raise a C++ exception and you are in the position
-         * where you can communicate one, but not both, of these exceptions back
-         * to Java-land.
          */
         jni_exception(const std::string& what_arg, JNIEnv * env);
 
