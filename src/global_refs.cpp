@@ -148,7 +148,7 @@ void global_refs::init(JNIEnv * env)
 
     global_refs * g = &global_refs_;
 
-    // [BEGIN:GENERATED CODE last updated Fri Aug 01 03:45:11 PDT 2014]
+    // [BEGIN:GENERATED CODE last updated Fri Aug 29 18:24:00 PDT 2014]
     g->java_lang_Object_ = get_global_class_ref(env, "java/lang/Object");
     g->java_lang_Object__m_toString_ = get_method_id(env, g->java_lang_Object_, "toString", "()Ljava/lang/String;");
     g->java_lang_Boolean_ = get_global_class_ref(env, "java/lang/Boolean");
@@ -191,9 +191,9 @@ void global_refs::init(JNIEnv * env)
     g->suneido_jsdi_com_COMException__init_ = get_method_id(env, g->suneido_jsdi_com_COMException_, "<init>", "(Ljava/lang/String;)V");
     g->suneido_jsdi_suneido_protocol_InternetProtocol_ = get_global_class_ref(env, "suneido/jsdi/suneido_protocol/InternetProtocol");
     g->suneido_jsdi_suneido_protocol_InternetProtocol__m_start_ = get_static_method_id(env, g->suneido_jsdi_suneido_protocol_InternetProtocol_, "start", "(Ljava/lang/String;)[B");
-    g->suneido_language_Numbers_ = get_global_class_ref(env, "suneido/language/Numbers");
-    g->suneido_language_Numbers__m_narrow_ = get_static_method_id(env, g->suneido_language_Numbers_, "narrow", "(Ljava/lang/Number;)Ljava/lang/Number;");
-    g->suneido_language_Numbers__f_MC_ = get_static_field_id(env, g->suneido_language_Numbers_, "MC", "Ljava/math/MathContext;");
+    g->suneido_runtime_Numbers_ = get_global_class_ref(env, "suneido/runtime/Numbers");
+    g->suneido_runtime_Numbers__m_narrow_ = get_static_method_id(env, g->suneido_runtime_Numbers_, "narrow", "(Ljava/lang/Number;)Ljava/lang/Number;");
+    g->suneido_runtime_Numbers__f_MC_ = get_static_field_id(env, g->suneido_runtime_Numbers_, "MC", "Ljava/math/MathContext;");
     // [END:GENERATED CODE]
 
     g->TRUE_object_ = get_static_field_value_object(
