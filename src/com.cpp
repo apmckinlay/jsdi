@@ -121,8 +121,8 @@ jobject jni_make_bigdecimal(JNIEnv * env, double value)
 {
     jni_auto_local<jobject> MC(env,
                                env->GetStaticObjectField(
-                                   GLOBAL_REFS->suneido_language_Numbers(),
-                                   GLOBAL_REFS->suneido_language_Numbers__f_MC()
+                                   GLOBAL_REFS->suneido_runtime_Numbers(),
+                                   GLOBAL_REFS->suneido_runtime_Numbers__f_MC()
                                ));
     JNI_EXCEPTION_CHECK(env);
     jobject result(
@@ -269,8 +269,8 @@ VARIANT& jsuneido_to_com(JNIEnv * env, jobject in, VARIANT& out)
         jni_auto_local<jobject> number(
             env,
             env->CallStaticObjectMethod(
-                GLOBAL_REFS->suneido_language_Numbers(),
-                GLOBAL_REFS->suneido_language_Numbers__m_narrow(), in));
+                GLOBAL_REFS->suneido_runtime_Numbers(),
+                GLOBAL_REFS->suneido_runtime_Numbers__m_narrow(), in));
         if (env->IsInstanceOf(static_cast<jobject>(number),
                               GLOBAL_REFS->java_lang_Integer()))
         {
