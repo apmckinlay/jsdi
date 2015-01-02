@@ -5,6 +5,8 @@ This is the C++ part of the DLL, COM, and APP interface which allows jSuneido to
 
 Building
 --------
+Building with Visual Studio 2013 requires the November 2013 CTP Platform Toolset
+
 You must set environment variables `JAVA_HOME_AMD64` and `JAVA_HOME_X86`
 (or else you will get errors that jni.h is not found) For example:
 
